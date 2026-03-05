@@ -1,0 +1,16 @@
+# Normalize line endings on commit
+* text=auto
+
+# Shell scripts must always be LF -- CRLF breaks execution on macOS
+*.sh text eol=lf
+
+# Markdown files: LF
+*.md text eol=lf
+
+# PowerShell: CRLF on Windows checkout, UTF-8 BOM required for PS 5.1
+*.ps1 text eol=crlf working-tree-encoding=UTF-8
+
+# Binary files -- do not touch
+*.png binary
+*.jpg binary
+*.gif binary

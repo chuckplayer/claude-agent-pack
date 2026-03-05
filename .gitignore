@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Visual Studio / VS Code
+.vs/
+*.user
+*.suo
+.vscode/
+!.vscode/extensions.json
+
+# JetBrains Rider
+.idea/
+*.iml
+
+# Build output
+bin/
+obj/
+node_modules/
+dist/
+
+# Environment files -- never commit secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
