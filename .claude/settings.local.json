@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(cmd:*)",
+      "Bash(GIT_PAGER='' git:*)"
     ]
   }
 }

@@ -22,34 +22,36 @@ Without orchestration, a single session planning an architecture change, writing
 
 ## Installation
 
+Clone the repo anywhere, then run the installer:
+
 ```powershell
 # Windows (PowerShell)
-git clone https://github.com/chuckplayer/claude-agent-pack.git "$env:USERPROFILE\.claude\skills\claude-agent-pack"
-& "$env:USERPROFILE\.claude\skills\claude-agent-pack\install.ps1"
+git clone https://github.com/chuckplayer/claude-agent-pack.git
+& ".\claude-agent-pack\install.ps1"
 ```
 
 ```bash
 # macOS
-git clone https://github.com/chuckplayer/claude-agent-pack.git ~/.claude/skills/claude-agent-pack
-bash ~/.claude/skills/claude-agent-pack/install.sh
+git clone https://github.com/chuckplayer/claude-agent-pack.git
+bash ./claude-agent-pack/install.sh
 ```
 
-After the installer runs, complete setup in each project:
+After the installer runs, complete setup in each project. Replace `<pack-dir>` with the path to your clone:
 
 ```powershell
 # Windows -- run from your project root
-Copy-Item "$env:USERPROFILE\.claude\skills\claude-agent-pack\CLAUDE.md" ".\CLAUDE.md"
+Copy-Item "<pack-dir>\CLAUDE.md" ".\CLAUDE.md"
 New-Item -ItemType Directory -Force -Path ".\docs" | Out-Null
-Copy-Item "$env:USERPROFILE\.claude\skills\claude-agent-pack\docs\CONVENTIONS.template.md" ".\docs\CONVENTIONS.md"
-Copy-Item -Recurse -Force "$env:USERPROFILE\.claude\skills\claude-agent-pack\memory" "."
+Copy-Item "<pack-dir>\docs\CONVENTIONS.template.md" ".\docs\CONVENTIONS.md"
+Copy-Item -Recurse -Force "<pack-dir>\memory" "."
 ```
 
 ```bash
 # macOS -- run from your project root
-cp ~/.claude/skills/claude-agent-pack/CLAUDE.md ./CLAUDE.md
+cp <pack-dir>/CLAUDE.md ./CLAUDE.md
 mkdir -p ./docs
-cp ~/.claude/skills/claude-agent-pack/docs/CONVENTIONS.template.md ./docs/CONVENTIONS.md
-cp -r ~/.claude/skills/claude-agent-pack/memory .
+cp <pack-dir>/docs/CONVENTIONS.template.md ./docs/CONVENTIONS.md
+cp -r <pack-dir>/memory .
 ```
 
 Fill in `docs/CONVENTIONS.md` with your project's standards. Commit the `memory/` scaffold.
@@ -95,19 +97,35 @@ Place an agent file in `.claude/agents/` in the project root to override the glo
 
 ## Updating
 
-```bash
-# Windows
-cd "$env:USERPROFILE\.claude\skills\claude-agent-pack"
+```powershell
+# Windows (PowerShell) -- from your clone directory
+cd <pack-dir>
 git pull
 & ".\install.ps1"
+```
 
-# macOS
-cd ~/.claude/skills/claude-agent-pack
+```bash
+# macOS -- from your clone directory
+cd <pack-dir>
 git pull
 bash install.sh
 ```
 
 Agents are updated in-place. Re-running the installer is safe -- it is idempotent.
+
+## Uninstalling
+
+```powershell
+# Windows (PowerShell) -- from your clone directory
+& "<pack-dir>\uninstall.ps1"
+```
+
+```bash
+# macOS -- from your clone directory
+bash <pack-dir>/uninstall.sh
+```
+
+The uninstaller removes agents from `~/.claude/agents/` after confirmation. Project-level `memory/` directories are not touched.
 
 ## License
 
