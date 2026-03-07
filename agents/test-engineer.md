@@ -1,11 +1,11 @@
 ---
 name: test-engineer
 description: >
-  Invoke after implementation is complete and reviewed. Generates tests for new
-  or modified code. Uses xUnit for C# and Vitest for TypeScript. Reads existing
-  tests before generating new ones to match established patterns. Do NOT invoke
-  before implementation is complete -- tests must match actual code, not assumed
-  interfaces.
+  Invoke after code-reviewer has completed its review of new or modified code.
+  Generates xUnit tests for C# and Vitest tests for TypeScript. Reads existing
+  tests before writing new ones to match established patterns. Do NOT invoke
+  before code-reviewer has run -- tests must match the reviewed, final
+  implementation, not assumed interfaces.
 tools: Read, Write, Edit, Glob, Grep
 model: sonnet
 permissionMode: acceptEdits

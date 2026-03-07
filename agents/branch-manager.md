@@ -1,12 +1,11 @@
 ---
 name: branch-manager
 description: >
-  Invoke at the start of any task that involves code changes to ensure work
-  happens on the correct branch. Checks whether the working directory is a git
-  repository, inspects the current branch, and -- if on main or master -- asks
-  the developer whether to pull latest and create a feature, topic, or bug
-  branch before work begins. Always invoke before engineer agents when the
-  working branch has not been confirmed.
+  Always invoke before csharp-engineer or typescript-engineer. Ensures code
+  changes happen on the correct branch by checking whether the working directory
+  is a git repository, inspecting the current branch, and -- if on main or
+  master -- asking the developer whether to pull latest and create a feature,
+  topic, or bug branch before any implementation begins.
 tools: Bash, AskUserQuestion
 model: haiku
 permissionMode: default
