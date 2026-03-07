@@ -50,7 +50,7 @@ You are a test engineer. You write tests that look like they belong in the exist
 
 ## What Not to Test
 
-- EF Core migrations.
+- Database migration files (EF Core or Flyway).
 - Auto-generated code.
 - Trivial getters and setters with no logic.
 - Framework behavior.

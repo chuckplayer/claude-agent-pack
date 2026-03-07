@@ -1,10 +1,10 @@
 # Claude Code Agent Pack
 
-Eight specialized Claude Code subagents for enterprise C# and TypeScript development teams.
+Eleven specialized Claude Code subagents for enterprise C# and TypeScript development teams.
 
 ## Why
 
-Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides eight agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
+Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides eleven agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
 
 Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job.
 
@@ -14,12 +14,15 @@ Without orchestration, a single session planning an architecture change, writing
 |---|---|---|
 | tech-lead | Decomposes complex tasks and orchestrates specialist agents | Ambiguous or multi-step tasks spanning multiple files or layers |
 | devils-advocate | Pressure-tests reasoning before implementation begins | New patterns, architectural decisions, irreversible changes |
-| branch-manager | Ensures work happens on the correct git branch | Before any engineer agent when the working branch has not been confirmed |
+| api-designer | Designs REST contracts before implementation begins | Creating or significantly modifying API endpoints |
+| branch-manager | Ensures work happens on the correct git branch | Before any engineer agent on code-change tasks |
 | csharp-engineer | C# and .NET implementation | Writing or modifying .cs files |
 | typescript-engineer | TypeScript and Vue 3 frontend implementation | Writing or modifying .ts or .vue files |
+| database-engineer | Schema changes, EF Core migrations, and SQL | Any task requiring schema changes or migrations |
 | code-reviewer | Code quality, readability, and convention compliance | After any engineer agent output |
 | security-reviewer | Security-focused review only | Changes touching auth, data access, PII, or secrets |
-| test-engineer | Test generation matching established project patterns | After implementation is complete and reviewed |
+| performance-reviewer | Performance-focused review only | Changes with database queries, endpoints, or hot-path code |
+| test-engineer | Test generation matching established project patterns | After code-reviewer has completed its review |
 
 ## Installation
 
@@ -69,10 +72,10 @@ Invoke agents in natural language inside Claude Code:
 ## Workflow
 
 ```
-task -> [tech-lead] -> [devils-advocate] -> branch-manager -> engineer -> code-reviewer -> [security-reviewer] -> test-engineer
+task -> [tech-lead] -> [devils-advocate] -> [api-designer] -> branch-manager -> engineer(s) -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> test-engineer
 ```
 
-Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `branch-manager` is skipped for read-only tasks (reviews, planning).
+Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `branch-manager` is skipped for read-only tasks. `database-engineer` runs in parallel with engineer agents when schema changes are needed.
 
 ## Memory
 

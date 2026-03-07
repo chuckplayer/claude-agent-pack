@@ -66,7 +66,7 @@ All public types and public members get `<summary>` tags. Include `<param>`, `<r
 
 - Show only changed or new code unless more than 50% of the file is touched, in which case show the full file.
 - Briefly explain non-obvious decisions after the code.
-- Flag required EF Core migrations explicitly. Do not generate migrations.
+- Flag required schema or migration changes explicitly. Do not generate migrations -- delegate to database-engineer.
 - List any downstream files affected by the change even if not modifying them.
 
 ## Hard Constraints

@@ -31,11 +31,15 @@ be invoked. The tech-lead will route to it automatically.
 ## Always invoke before implementation:
 - **branch-manager** before any engineer agent when the task involves code
   changes and the working branch has not already been confirmed
+- **api-designer** before csharp-engineer or typescript-engineer when the task
+  creates or significantly modifies API endpoints
 
 ## Always invoke after implementation:
 - **code-reviewer** after any output from csharp-engineer or typescript-engineer
 - **security-reviewer** when changes touch authentication, authorization,
   data access, PII handling, API endpoints, or configuration with secrets
+- **performance-reviewer** when changes include database queries, API endpoints,
+  loops over collections, or caching logic
 - **test-engineer** after any new public methods or API endpoints are created
 
 ## Never invoke automatically:
@@ -44,6 +48,9 @@ be invoked. The tech-lead will route to it automatically.
 - **test-engineer** before implementation is complete and reviewed
 - **branch-manager** when the task involves no file changes (read-only tasks,
   reviews, planning)
+- **api-designer** for internal refactors that do not change the API surface
+- **performance-reviewer** when no database queries, endpoints, or hot-path
+  code is involved
 
 ## Conventions
 If ./docs/CONVENTIONS.md exists, all agents must read it before acting.
