@@ -28,6 +28,10 @@ be invoked. The tech-lead will route to it automatically.
 - Any two tasks that modify the same file
 - Always: implementation -> code-reviewer -> (if applicable) security-reviewer
 
+## Always invoke before implementation:
+- **branch-manager** before any engineer agent when the task involves code
+  changes and the working branch has not already been confirmed
+
 ## Always invoke after implementation:
 - **code-reviewer** after any output from csharp-engineer or typescript-engineer
 - **security-reviewer** when changes touch authentication, authorization,
@@ -38,6 +42,8 @@ be invoked. The tech-lead will route to it automatically.
 - **devils-advocate** on small bug fixes or trivial changes
 - **tech-lead** when the task is already well-defined and scoped
 - **test-engineer** before implementation is complete and reviewed
+- **branch-manager** when the task involves no file changes (read-only tasks,
+  reviews, planning)
 
 ## Conventions
 If ./docs/CONVENTIONS.md exists, all agents must read it before acting.

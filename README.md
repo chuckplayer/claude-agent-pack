@@ -1,10 +1,10 @@
 # Claude Code Agent Pack
 
-Seven specialized Claude Code subagents for enterprise C# and TypeScript development teams.
+Eight specialized Claude Code subagents for enterprise C# and TypeScript development teams.
 
 ## Why
 
-Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides seven agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
+Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides eight agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
 
 Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job.
 
@@ -14,6 +14,7 @@ Without orchestration, a single session planning an architecture change, writing
 |---|---|---|
 | tech-lead | Decomposes complex tasks and orchestrates specialist agents | Ambiguous or multi-step tasks spanning multiple files or layers |
 | devils-advocate | Pressure-tests reasoning before implementation begins | New patterns, architectural decisions, irreversible changes |
+| branch-manager | Ensures work happens on the correct git branch | Before any engineer agent when the working branch has not been confirmed |
 | csharp-engineer | C# and .NET implementation | Writing or modifying .cs files |
 | typescript-engineer | TypeScript and Vue 3 frontend implementation | Writing or modifying .ts or .vue files |
 | code-reviewer | Code quality, readability, and convention compliance | After any engineer agent output |
@@ -68,10 +69,10 @@ Invoke agents in natural language inside Claude Code:
 ## Workflow
 
 ```
-task -> [tech-lead] -> [devils-advocate] -> engineer -> code-reviewer -> [security-reviewer] -> test-engineer
+task -> [tech-lead] -> [devils-advocate] -> branch-manager -> engineer -> code-reviewer -> [security-reviewer] -> test-engineer
 ```
 
-Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration.
+Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `branch-manager` is skipped for read-only tasks (reviews, planning).
 
 ## Memory
 
