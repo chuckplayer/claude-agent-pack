@@ -8,7 +8,7 @@ description: >
   for bug fixes, trivial changes, or established patterns already in the codebase.
 tools: Read, Write, Edit, Grep, Glob
 model: opus
-permissionMode: plan
+permissionMode: default
 version: "1.0.0"
 ---
 

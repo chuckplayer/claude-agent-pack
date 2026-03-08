@@ -30,7 +30,10 @@ be invoked. The tech-lead will route to it automatically.
 
 ## Always invoke before implementation:
 - **branch-manager** before any engineer agent when the task involves code
-  changes and the working branch has not already been confirmed
+  changes and the working branch has not already been confirmed:
+  - If on `main` or `master`: ask whether to pull latest and create a new branch
+  - If on any other branch: confirm with the user that it is the correct branch
+    for this work before proceeding
 - **api-designer** before csharp-engineer or typescript-engineer when the task
   creates or significantly modifies API endpoints
 
