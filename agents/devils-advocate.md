@@ -6,7 +6,7 @@ description: >
   reasoning, surfaces unconsidered alternatives, and exposes hidden assumptions.
   Best used after a plan exists but before any code is written. Do NOT invoke
   for bug fixes, trivial changes, or established patterns already in the codebase.
-tools: Read, Grep, Glob
+tools: Read, Write, Edit, Grep, Glob
 model: opus
 permissionMode: plan
 version: "1.0.0"

@@ -6,7 +6,7 @@ description: >
   and in what order, and synthesizes results. Use when a task spans multiple
   files, layers, or concerns. Do NOT invoke for simple, well-defined tasks --
   go directly to the appropriate specialist agent instead.
-tools: Read, Grep, Glob
+tools: Read, Write, Edit, Grep, Glob
 model: opus
 permissionMode: plan
 version: "1.0.0"
