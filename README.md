@@ -131,6 +131,18 @@ bash <pack-dir>/uninstall.sh
 
 The uninstaller removes agents from `~/.claude/agents/` after confirmation. Project-level `memory/` directories are not touched.
 
+## Agent Dashboard
+
+[claude-agent-dashboard](https://github.com/chuckplayer/claude-agent-dashboard) is a companion local web UI for monitoring Claude Code sessions in real time.
+
+- **Live session feed** — agent Gantt timeline and scrolling event log, updated within 1 second of any Claude Code hook event
+- **Memory browser** — browse and search `memory/*.md` files across all projects; renders full markdown on click
+- **Session history** — SQLite-backed log of past sessions with duration, prompt counts, and agent invocation counts
+
+The dashboard works with any Claude Code installation. The agent pack is optional — if both are installed, the memory browser surfaces the architectural decisions and challenge records that tech-lead and devils-advocate write during sessions.
+
+Requires Node.js 22+ (uses the built-in `node:sqlite` module). Nothing leaves your machine — the server binds to `127.0.0.1` only.
+
 ## License
 
 MIT. See LICENSE.
