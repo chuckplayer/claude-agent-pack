@@ -67,7 +67,30 @@ Use Glob on memory/**/*.md to discover files. Skip any file with
 The tech-lead and devils-advocate agents write new memory files after significant
 decisions. All other agents are read-only with respect to ./memory/.
 
-**Precedence rules:**
+### Subdirectory taxonomy
+
+Each subdirectory serves a distinct purpose. Writers must place files in the
+correct subdirectory based on content type:
+
+- **`memory/decisions/`** — Architectural and design decisions with rationale.
+  Write here when: tech-lead dispatches a plan involving a new pattern, or a
+  devils-advocate challenge resolves with a clear proceed/reject outcome.
+- **`memory/architecture/`** — Structural descriptions of how major subsystems
+  work, including module boundaries, data flow, and integration patterns.
+  Write here when: a change alters module boundaries, data flow between
+  components, or integration patterns with external systems.
+- **`memory/context/`** — Environmental constraints, platform quirks, external
+  dependency notes, and tooling workarounds.
+  Write here when: a constraint is discovered that would surprise a future
+  reader (e.g., a library incompatibility, a platform-specific behavior, a
+  version requirement).
+- **`memory/known-issues/`** — Bugs, limitations, or workarounds that remain
+  unresolved.
+  Write here when: a workaround is applied, a limitation is accepted, or a
+  devils-advocate concern is acknowledged but left unresolved.
+
+### Precedence rules
+
 - Active memory files without `Overrides-convention: yes` take lower precedence
   than CONVENTIONS.md and higher precedence than agent defaults
 - Active memory files with `Overrides-convention: yes` take higher precedence

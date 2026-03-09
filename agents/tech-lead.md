@@ -37,7 +37,12 @@ Respond with these sections in order:
    - Whether it runs in parallel or sequentially with adjacent subtasks
    - Success criteria for the subtask
 4. **Sequencing rationale** -- why tasks are ordered or parallelized as specified
-5. **Open questions** -- anything that needs resolution before proceeding
+5. **Memory candidates** -- list of memory files to write after execution completes, each with target subdirectory, proposed filename, and one-line description. Omit this section if no memory writes are warranted. Examples of when to include entries:
+   - A new pattern is being introduced (decisions/)
+   - Module boundaries or data flow are changing (architecture/)
+   - A platform quirk or dependency constraint was discovered during planning (context/)
+   - A workaround or known limitation is part of the plan (known-issues/)
+6. **Open questions** -- anything that needs resolution before proceeding
 
 ## Routing
 
@@ -69,9 +74,23 @@ Routing is description-driven. Do not maintain a hardcoded list of agents. Befor
 
 ## Memory Writes
 
-After significant architectural decisions or non-obvious choices, write a memory file to `memory/decisions/` with `status: active`. Use the filename format `YYYY-MM-DD-decision-brief-slug.md`.
+Write memory files to the appropriate subdirectory based on content type.
+Use the filename format `YYYY-MM-DD-{prefix}-brief-slug.md`.
 
-Required frontmatter fields:
+### Subdirectory routing
+
+| Subdirectory | Prefix | Write when |
+|---|---|---|
+| `memory/decisions/` | `decision-` | The plan involves a new pattern not already in the codebase, OR a devils-advocate challenge resolves with a proceed decision, OR a technology/library choice is made |
+| `memory/architecture/` | `arch-` | The plan will alter module boundaries, change data flow between components, add/remove a subsystem, or change integration patterns with external systems |
+| `memory/context/` | `context-` | A platform quirk, tooling constraint, dependency limitation, or environment-specific behavior is discovered during planning that would surprise a future reader |
+| `memory/known-issues/` | `known-issue-` | A workaround is planned rather than a proper fix, a limitation is accepted, or a constraint forces a suboptimal approach |
+
+Write to multiple subdirectories when a single planning session produces
+findings of different types. Each file stands alone -- do not combine
+different types into one file.
+
+### Required frontmatter fields
 
 ```
 **Date:** YYYY-MM-DD
@@ -83,7 +102,14 @@ Required frontmatter fields:
 **Related-to:** n/a | [comma-separated filenames]
 ```
 
-Required sections: Summary, Context, Rationale, Alternatives Rejected, Implications, and (when Overrides-convention is yes) Convention Override Rationale.
+### Required sections by subdirectory
+
+- **decisions/**: Summary, Context, Rationale, Alternatives Rejected, Implications, and (when Overrides-convention is yes) Convention Override Rationale
+- **architecture/**: Summary, Components, Data Flow, Implications
+- **context/**: Summary, Discovery Context, Impact, Workaround (if applicable)
+- **known-issues/**: Summary, Symptoms, Root Cause (if known), Workaround, Revisit Trigger
+
+### Superseding prior files
 
 When superseding a prior decision: update the old file's `status` to `superseded` and populate its `Superseded-by` field in the same operation as writing the new file.
 

@@ -54,9 +54,25 @@ Cover all of these dimensions, scaled to the change's scope:
 
 ## Memory Writes
 
-After a session where concerns are raised and the team decides to proceed, write a memory file to `memory/decisions/` with `status: active`. Use the filename format `YYYY-MM-DD-challenge-brief-slug.md`.
+Write memory files after ANY session where substantive concerns are raised,
+regardless of whether the full challenge-then-proceed cycle completes. Do not
+wait for an explicit "proceed" decision to write. If concerns were raised,
+they are worth recording.
 
-Required frontmatter fields:
+### When to write and where
+
+| Situation | Subdirectory | Prefix |
+|---|---|---|
+| Concerns raised, team decides to proceed | `memory/decisions/` | `challenge-` |
+| Concerns raised, session ends without explicit resolution | `memory/known-issues/` | `challenge-` |
+| A concern reveals an unresolved limitation or needed workaround | `memory/known-issues/` | `known-issue-` |
+| A concern reveals an environmental constraint or dependency quirk | `memory/context/` | `context-` |
+| A concern leads to a change in module boundaries or data flow | `memory/architecture/` | `arch-` |
+
+Write to multiple subdirectories when a single session produces findings of
+different types. Each file stands alone.
+
+### Required frontmatter fields
 
 ```
 **Date:** YYYY-MM-DD
@@ -68,13 +84,19 @@ Required frontmatter fields:
 **Related-to:** [filename of the corresponding decision file, if one exists] | n/a
 ```
 
-Required sections: Summary, Context, Rationale (the concern raised), Implications.
+### Required sections
 
-The Rationale section must explicitly state the resolution state as one of:
-- **Addressed:** the concern was resolved before proceeding -- explain how
-- **Accepted risk:** the concern remains unresolved; the team chose to proceed with full awareness -- document what would trigger revisiting this
+- **Summary** -- one-paragraph description of what was challenged and why
+- **Context** -- what proposal or plan triggered the challenge
+- **Concerns Raised** -- each concern, with its resolution state:
+  - **Addressed:** the concern was resolved before proceeding -- explain how
+  - **Accepted risk:** the concern remains unresolved; the team chose to proceed with full awareness -- document what would trigger revisiting this
+  - **Unresolved:** the session ended without resolution -- document the concern and its potential impact
+- **Implications** -- what future readers need to know
 
-This distinction is not optional. Agents reading this file must know whether the concern is closed or remains an open acknowledged risk.
+The resolution state distinction is not optional. Agents reading this file
+must know whether each concern is closed, an open acknowledged risk, or
+unresolved.
 
 ## Hard Constraints
 
