@@ -13,6 +13,9 @@ fi
 AGENTS_DIR="$CLAUDE_DIR/agents"
 mkdir -p "$AGENTS_DIR"
 
+SKILLS_DIR="$CLAUDE_DIR/skills"
+mkdir -p "$SKILLS_DIR"
+
 VERSION=$(cat "$SCRIPT_DIR/VERSION")
 echo "Claude Agent Pack v$VERSION"
 echo ""
@@ -20,7 +23,15 @@ echo ""
 for agent_file in "$SCRIPT_DIR/agents/"*.md; do
     filename="$(basename "$agent_file")"
     cp "$agent_file" "$AGENTS_DIR/$filename"
-    echo "  [ok] ${filename%.md}"
+    echo "  [ok] agent:  ${filename%.md}"
+done
+
+echo ""
+for skill_dir in "$SCRIPT_DIR/skills/"*/; do
+    skill_name="$(basename "$skill_dir")"
+    mkdir -p "$SKILLS_DIR/$skill_name"
+    cp "$skill_dir/SKILL.md" "$SKILLS_DIR/$skill_name/SKILL.md"
+    echo "  [ok] skill:  $skill_name"
 done
 
 echo ""
@@ -36,6 +47,6 @@ echo ""
 echo "  3. Copy memory scaffold:"
 echo "     cp -r \"\$SCRIPT_DIR/memory\" ."
 echo ""
-echo "  4. In Claude Code, try: Use the tech-lead agent to plan this feature"
+echo "  4. In Claude Code, try: /agent-plan add a payment processing feature"
 echo ""
 echo "To verify: open Claude Code and run /agents -- your new agents should appear in the list."

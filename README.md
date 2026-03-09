@@ -60,9 +60,29 @@ cp -r <pack-dir>/memory .
 
 Fill in `docs/CONVENTIONS.md` with your project's standards. Commit the `memory/` scaffold.
 
+## Skills
+
+Four slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+
+| Skill | Trigger | What it does |
+|---|---|---|
+| `/implement` | `implement a feature` | Runs the full pipeline: branch-manager → engineer(s) → code-reviewer → test-engineer, with conditional reviewers |
+| `/agent-plan` | `plan a task` | Routes to tech-lead for decomposition, then asks whether to proceed |
+| `/challenge` | `challenge this plan` | Pressure-tests a proposal using devils-advocate |
+| `/memory-audit` | `audit memory` | Reviews all active memory files and archives or supersedes stale entries |
+
 ## Quick Start
 
-Invoke agents in natural language inside Claude Code:
+Use skills as entry points:
+
+```
+/agent-plan add a payment processing feature
+/implement add a GetByExternalId method to OrderRepository
+/challenge we're considering migrating from REST to GraphQL
+/memory-audit
+```
+
+Or invoke agents directly in natural language:
 
 1. "Use the tech-lead agent to plan adding a payment processing feature."
 2. "Use the csharp-engineer to add a `GetByExternalId` method to `OrderRepository`."

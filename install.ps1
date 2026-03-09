@@ -16,6 +16,9 @@ if (-not (Test-Path $claudeDir)) {
 $agentsDir = "$claudeDir\agents"
 New-Item -ItemType Directory -Force -Path $agentsDir | Out-Null
 
+$skillsDir = "$claudeDir\skills"
+New-Item -ItemType Directory -Force -Path $skillsDir | Out-Null
+
 $version = Get-Content "$PSScriptRoot\VERSION" -Raw | ForEach-Object { $_.Trim() }
 Write-Host "Claude Agent Pack v$version" -ForegroundColor Cyan
 Write-Host ""
@@ -23,7 +26,16 @@ Write-Host ""
 $agentFiles = Get-ChildItem -Path "$PSScriptRoot\agents\" -Filter "*.md"
 foreach ($file in $agentFiles) {
     Copy-Item -Path $file.FullName -Destination "$agentsDir\$($file.Name)" -Force
-    Write-Host "  Installed: $($file.BaseName)" -ForegroundColor Green
+    Write-Host "  Installed agent:  $($file.BaseName)" -ForegroundColor Green
+}
+
+Write-Host ""
+$skillDirs = Get-ChildItem -Path "$PSScriptRoot\skills\" -Directory
+foreach ($dir in $skillDirs) {
+    $targetDir = "$skillsDir\$($dir.Name)"
+    New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+    Copy-Item -Path "$($dir.FullName)\SKILL.md" -Destination "$targetDir\SKILL.md" -Force
+    Write-Host "  Installed skill:  $($dir.Name)" -ForegroundColor Green
 }
 
 Write-Host ""
@@ -39,6 +51,6 @@ Write-Host ""
 Write-Host "  3. Copy memory scaffold:"
 Write-Host '     Copy-Item -Recurse -Force "$PSScriptRoot\memory" "."'
 Write-Host ""
-Write-Host "  4. In Claude Code, try: Use the tech-lead agent to plan this feature"
+Write-Host "  4. In Claude Code, try: /agent-plan add a payment processing feature"
 Write-Host ""
 Write-Host "To verify: open Claude Code and run /agents -- your new agents should appear in the list." -ForegroundColor Cyan
