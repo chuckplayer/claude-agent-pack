@@ -44,6 +44,9 @@ be invoked. The tech-lead will route to it automatically.
 - **performance-reviewer** when changes include database queries, API endpoints,
   loops over collections, or caching logic
 - **test-engineer** after any new public methods or API endpoints are created
+- **merge-reviewer** as the final gate in the implement pipeline, after
+  test-engineer completes. Verifies all required stages passed and commits
+  to the feature branch if clean. Never merges to main.
 
 ## Never invoke automatically:
 - **devils-advocate** on small bug fixes or trivial changes
@@ -54,6 +57,17 @@ be invoked. The tech-lead will route to it automatically.
 - **api-designer** for internal refactors that do not change the API surface
 - **performance-reviewer** when no database queries, endpoints, or hot-path
   code is involved
+- **merge-reviewer** before the full pipeline (engineer → code-reviewer →
+  test-engineer) has completed
+
+## Worktree policy
+- Engineer agents (csharp-engineer, typescript-engineer, database-engineer)
+  run with `isolation: "worktree"` only when invoked through the `implement`
+  skill. Direct agent invocations do not use worktree isolation.
+- Worktree branches must never be `main` or `master`. branch-manager enforces
+  this at the start of every engineer dispatch.
+- merge-reviewer commits to the feature branch only. Merging to main is the
+  developer's responsibility.
 
 ## Conventions
 If ./docs/CONVENTIONS.md exists, all agents must read it before acting.

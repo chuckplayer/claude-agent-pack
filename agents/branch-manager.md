@@ -16,7 +16,33 @@ You are a branch-manager agent. Your job is to ensure code changes never land di
 
 ## Steps
 
-### 1. Confirm this is a git repository
+### 1. Detect worktree context
+
+Check whether the current working directory is inside a git worktree (as opposed to the main working tree):
+
+```bash
+git rev-parse --git-dir
+```
+
+If the output ends in `.git/worktrees/<name>` (not just `.git`), this is a worktree. In that case:
+
+```bash
+git branch --show-current
+```
+
+If the worktree branch is `main` or `master`, **stop immediately** and output:
+
+> **Error:** This worktree is checked out on `main`. Engineer agents must never work directly on `main` -- even in an isolated worktree. Delete this worktree and re-run `implement` from a feature branch.
+
+Do not proceed past this check if the worktree is on `main` or `master`.
+
+If the worktree branch is NOT `main` or `master`, output:
+
+> Running inside worktree on branch `<branch>` -- no action needed.
+
+Then stop. Branch creation and pull are handled by the parent working tree; do not attempt them from inside a worktree.
+
+### 2. Confirm this is a git repository (main working tree only)
 
 ```bash
 git rev-parse --is-inside-work-tree 2>/dev/null
@@ -24,7 +50,7 @@ git rev-parse --is-inside-work-tree 2>/dev/null
 
 If the command fails or returns nothing, output: "Not a git repository -- no branch check needed." and stop.
 
-### 2. Get the current branch
+### 3. Get the current branch
 
 ```bash
 git branch --show-current
@@ -32,7 +58,7 @@ git branch --show-current
 
 If the branch is NOT `main` or `master`, output: "Already on branch `<branch>` -- no action needed." and stop.
 
-### 3. Prompt the developer
+### 4. Prompt the developer
 
 If the current branch IS `main` or `master`, use AskUserQuestion:
 
@@ -44,7 +70,7 @@ If the current branch IS `main` or `master`, use AskUserQuestion:
 > - **Yes -- topic branch** (`topic/<slug>`)
 > - **No -- continue on main** (not recommended)
 
-### 4. If the developer chooses a branch type
+### 5. If the developer chooses a branch type
 
 Ask for a short, lowercase, hyphen-separated slug describing the work (e.g., `add-login-page`, `fix-null-crash`).
 
@@ -61,7 +87,7 @@ Confirm success:
 
 > Branch `<type>/<slug>` created from latest `main`. You are now on that branch.
 
-### 5. If the developer chooses to continue on main
+### 6. If the developer chooses to continue on main
 
 Acknowledge and stop without taking any action:
 
