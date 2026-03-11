@@ -1,10 +1,10 @@
 # Claude Code Agent Pack
 
-Eleven specialized Claude Code subagents for enterprise C# and TypeScript development teams.
+Twelve specialized Claude Code subagents for enterprise C# and TypeScript development teams.
 
 ## Why
 
-Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides eleven agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
+Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides twelve agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
 
 Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job.
 
@@ -23,6 +23,7 @@ Without orchestration, a single session planning an architecture change, writing
 | security-reviewer | Security-focused review only | Changes touching auth, data access, PII, or secrets |
 | performance-reviewer | Performance-focused review only | Changes with database queries, endpoints, or hot-path code |
 | test-engineer | Test generation matching established project patterns | After code-reviewer has completed its review |
+| merge-reviewer | Final pipeline gate -- verifies all stages passed and commits to the feature branch | After test-engineer completes; never merges to main |
 
 ## Installation
 
@@ -66,7 +67,7 @@ Four slash-command entry points are included. Invoke them directly in Claude Cod
 
 | Skill | Trigger | What it does |
 |---|---|---|
-| `/implement` | `implement a feature` | Runs the full pipeline: branch-manager → engineer(s) → code-reviewer → test-engineer, with conditional reviewers |
+| `/implement` | `implement a feature` | Runs the full pipeline: branch-manager → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer. Engineers run in isolated worktrees. |
 | `/agent-plan` | `plan a task` | Routes to tech-lead for decomposition, then asks whether to proceed |
 | `/challenge` | `challenge this plan` | Pressure-tests a proposal using devils-advocate |
 | `/memory-audit` | `audit memory` | Reviews all active memory files and archives or supersedes stale entries |
@@ -92,10 +93,10 @@ Or invoke agents directly in natural language:
 ## Workflow
 
 ```
-task -> [tech-lead] -> [devils-advocate] -> [api-designer] -> branch-manager -> engineer(s) -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> test-engineer
+task -> branch-manager -> [tech-lead] -> [devils-advocate] -> [api-designer] -> engineer(s) -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> test-engineer -> merge-reviewer
 ```
 
-Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `branch-manager` is skipped for read-only tasks. `database-engineer` runs in parallel with engineer agents when schema changes are needed.
+Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `branch-manager` is skipped for read-only tasks. `database-engineer` runs in parallel with engineer agents when schema changes are needed. When invoked through `/implement`, engineer agents run in isolated git worktrees and merge-reviewer commits the result to the feature branch if all gates pass.
 
 ## Memory
 
