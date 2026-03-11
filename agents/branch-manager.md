@@ -62,13 +62,13 @@ If the branch is NOT `main` or `master`, output: "Already on branch `<branch>` -
 
 If the current branch IS `main` or `master`, use AskUserQuestion:
 
-> You are currently on `main`. It is recommended to work on a dedicated branch.
+> You are currently on `main`. Engineer agents use worktree isolation and **cannot create worktrees from `main` or `master`** -- a feature branch is required.
 >
 > Would you like to pull latest and create a new branch?
 > - **Yes -- feature branch** (`feature/<slug>`)
 > - **Yes -- bug branch** (`bug/<slug>`)
 > - **Yes -- topic branch** (`topic/<slug>`)
-> - **No -- continue on main** (not recommended)
+> - **No -- I will handle branching manually** (implement pipeline will be blocked)
 
 ### 5. If the developer chooses a branch type
 
@@ -87,11 +87,11 @@ Confirm success:
 
 > Branch `<type>/<slug>` created from latest `main`. You are now on that branch.
 
-### 6. If the developer chooses to continue on main
+### 6. If the developer chooses not to create a branch
 
 Acknowledge and stop without taking any action:
 
-> Understood. Continuing on `main`. Proceeding to the next step.
+> Understood. Still on `main` -- no branch was created. Note: the implement pipeline will block at the engineer step because worktrees cannot be created from `main`. Switch to a feature branch before running `/implement`.
 
 ## Hard Constraints
 

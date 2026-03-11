@@ -9,6 +9,12 @@ Run the full agent pipeline for the task the user described:
 
 1. **branch-manager** — always first. Confirm the working branch is correct before any code changes.
 
+   **After branch-manager returns:** check the current branch with `git branch --show-current`. If the branch is still `main` or `master`, **stop immediately** and output:
+
+   > **Cannot proceed:** Engineer agents use worktree isolation, and worktrees must not be created from `main` or `master`. Please switch to a feature branch first, then re-run `/implement`.
+
+   Do not invoke any further agents until the user is on a non-main/master branch.
+
 2. **tech-lead** — invoke if the task is ambiguous, spans multiple concerns, or touches more than three files. Skip for well-scoped, single-file tasks.
 
 3. **devils-advocate** — invoke before implementation if the task introduces a new pattern, a new dependency, or an irreversible architectural change. Skip for small bug fixes and established patterns.

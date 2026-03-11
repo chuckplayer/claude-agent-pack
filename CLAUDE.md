@@ -64,6 +64,11 @@ be invoked. The tech-lead will route to it automatically.
 - Engineer agents (csharp-engineer, typescript-engineer, database-engineer)
   run with `isolation: "worktree"` only when invoked through the `implement`
   skill. Direct agent invocations do not use worktree isolation.
+- Worktrees are always created from the **current branch** at the time the
+  engineer agent is invoked -- never from `main` or `master` directly.
+- If the current branch is `main` or `master` when engineer agents are about
+  to be dispatched, **stop the pipeline** and prompt the user to switch to a
+  feature branch first. Do not create a worktree from `main` or `master`.
 - Worktree branches must never be `main` or `master`. branch-manager enforces
   this at the start of every engineer dispatch.
 - merge-reviewer commits to the feature branch only. Merging to main is the
