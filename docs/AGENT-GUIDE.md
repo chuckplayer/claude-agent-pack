@@ -180,7 +180,7 @@ Before scaling to multi-server, evaluate Hangfire Pro licensing cost.
 1. "Use the tech-lead agent to plan adding a payment processing feature."
 2. "Use the devils-advocate agent to challenge our plan to migrate from REST to GraphQL."
 3. "Use the csharp-engineer to add a `GetByExternalId` method to `OrderRepository`."
-4. "Use the typescript-engineer to create a `useOrderStatus` composable that polls the order endpoint."
+4. "Use the frontend-engineer to create a `useOrderStatus` composable that polls the order endpoint."
 5. "Use the code-reviewer to review the changes in `OrderService.cs`."
 6. "Use the security-reviewer to check the new authentication middleware."
 7. "Use the test-engineer to write tests for `OrderService.GetById`."
@@ -197,7 +197,7 @@ Before scaling to multi-server, evaluate Hangfire Pro licensing cost.
 
 Not every change needs the full pipeline.
 
-- **Small bug fix** (one method, obvious cause): Go directly to `csharp-engineer` or `typescript-engineer`. Skip `tech-lead` and `devils-advocate`.
+- **Small bug fix** (one method, obvious cause): Go directly to `csharp-engineer` or `frontend-engineer`. Skip `tech-lead` and `devils-advocate`.
 - **Trivial one-liner** (fixing a typo, updating a constant): No orchestration needed. Make the change directly.
 - **Already-established pattern** (adding another endpoint that follows the exact same shape as existing ones): Skip `devils-advocate`. Use `csharp-engineer` directly.
 - **Style or naming fix**: Use `code-reviewer` to verify if uncertain. No engineer agent needed.

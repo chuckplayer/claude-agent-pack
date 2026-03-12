@@ -6,7 +6,9 @@
       "Bash(cmd:*)",
       "Bash(GIT_PAGER='' git:*)",
       "Bash(bash:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s https://raw.githubusercontent.com/msitarzewski/agency-agents/main/specialized/specialized-mcp-builder.md)"
     ]
   }
 }

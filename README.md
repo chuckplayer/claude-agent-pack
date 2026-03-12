@@ -19,8 +19,9 @@ Without orchestration, a single session planning an architecture change, writing
 | api-designer | Designs REST contracts before implementation begins | Creating or significantly modifying API endpoints |
 | git-engineer | Git lifecycle specialist: branch setup, conventional commits, push, and PR | Before any engineer agent; after merge-reviewer for push/PR |
 | csharp-engineer | C# and .NET implementation | Writing or modifying .cs files |
-| typescript-engineer | TypeScript and Vue 3 frontend implementation | Writing or modifying .ts or .vue files |
-| ts-linter | Type checking (tsc) and ESLint on changed TS/Vue files | After typescript-engineer, before code-reviewer |
+| frontend-engineer | TypeScript and Vue 3 frontend implementation | Writing or modifying .ts or .vue files |
+| mcp-engineer | MCP server implementation: tools, resources, prompts, Zod schemas | Building or modifying MCP servers |
+| ts-linter | Type checking (tsc) and ESLint on changed TS/Vue files | After frontend-engineer or mcp-engineer, before code-reviewer |
 | database-engineer | Schema changes, EF Core migrations, and SQL | Any task requiring schema changes or migrations |
 | code-reviewer | Code quality, readability, and convention compliance | After any engineer agent output |
 | security-reviewer | Security-focused review only | Changes touching auth, data access, PII, or secrets |

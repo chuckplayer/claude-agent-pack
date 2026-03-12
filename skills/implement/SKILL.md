@@ -35,13 +35,14 @@ Run the full agent pipeline for the task the user described:
 
    Then invoke each engineer with `isolation: "worktree"` so it works on the branch you just created. Invoke based on the file types being changed:
    - C# / .NET changes: **csharp-engineer**
-   - TypeScript / Vue 3 changes: **typescript-engineer**
+   - TypeScript / Vue 3 changes: **frontend-engineer**
+   - MCP server changes: **mcp-engineer**
    - Schema, migrations, SQL: **database-engineer**
-   - Run csharp-engineer and typescript-engineer in parallel if both are needed and there are no shared files between them.
+   - Run csharp-engineer and frontend-engineer in parallel if both are needed and there are no shared files between them.
 
    When each agent completes, the worktree path and branch are returned. Collect all worktree branch names — you will pass them to merge-reviewer.
 
-5a. **ts-linter** — invoke immediately after **typescript-engineer** completes, before code-reviewer. Pass the list of modified `.ts` and `.vue` files. If ts-linter returns FAIL, route back to typescript-engineer for fixes before continuing. Do not proceed to code-reviewer until ts-linter returns PASS or SKIP.
+5a. **ts-linter** — invoke immediately after **frontend-engineer** or **mcp-engineer** completes, before code-reviewer. Pass the list of modified `.ts` and `.vue` files. If ts-linter returns FAIL, route back to the originating engineer for fixes before continuing. Do not proceed to code-reviewer until ts-linter returns PASS or SKIP.
 
 6. **code-reviewer** — always after any engineer agent output.
 

@@ -21,12 +21,13 @@ be invoked. The tech-lead will route to it automatically.
 ### Parallel dispatch (run simultaneously):
 - Tasks with no shared files and no output dependencies
 - Independent reviews of separate files or modules
-- Example: csharp-engineer and typescript-engineer on separate layers
+- Example: csharp-engineer and frontend-engineer on separate layers
 
 ### Sequential dispatch (run in order):
 - Any task where agent B depends on output from agent A
 - Any two tasks that modify the same file
-- Always: typescript-engineer -> ts-linter -> code-reviewer -> (if applicable) security-reviewer
+- Always: frontend-engineer -> ts-linter -> code-reviewer -> (if applicable) security-reviewer
+- Always: mcp-engineer -> ts-linter -> code-reviewer -> (if applicable) security-reviewer
 - Always: csharp-engineer -> code-reviewer -> (if applicable) security-reviewer
 
 ## Always invoke before implementation:
@@ -35,14 +36,14 @@ be invoked. The tech-lead will route to it automatically.
   - If on `main` or `master`: ask whether to pull latest and create a new branch
   - If on any other branch: confirm with the user that it is the correct branch
     for this work before proceeding
-- **api-designer** before csharp-engineer or typescript-engineer when the task
+- **api-designer** before csharp-engineer or frontend-engineer when the task
   creates or significantly modifies API endpoints
 
 ## Always invoke after implementation:
-- **ts-linter** immediately after typescript-engineer, before code-reviewer.
-  Pass the list of modified `.ts` and `.vue` files. Block on FAIL -- route
-  back to typescript-engineer before proceeding.
-- **code-reviewer** after any output from csharp-engineer or typescript-engineer
+- **ts-linter** immediately after frontend-engineer or mcp-engineer, before code-reviewer.
+  Pass the list of modified `.ts` files. Block on FAIL -- route
+  back to the originating engineer before proceeding.
+- **code-reviewer** after any output from csharp-engineer, frontend-engineer, or mcp-engineer
 - **security-reviewer** when changes touch authentication, authorization,
   data access, PII handling, API endpoints, or configuration with secrets
 - **performance-reviewer** when changes include database queries, API endpoints,
@@ -54,7 +55,7 @@ be invoked. The tech-lead will route to it automatically.
   test-engineer completes. Verifies all required stages passed and commits
   to the feature branch if clean. Never merges to main.
 
-## Engineer responsibilities (csharp-engineer, typescript-engineer, database-engineer)
+## Engineer responsibilities (csharp-engineer, frontend-engineer, mcp-engineer, database-engineer)
 Before handing off to code-reviewer, every engineer agent must:
 1. **Verify unit test coverage** — identify which changed methods/functions lack
    adequate test coverage and flag gaps explicitly in the handoff summary.

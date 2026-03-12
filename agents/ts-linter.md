@@ -1,7 +1,7 @@
 ---
 name: ts-linter
 description: >
-  Invoke after typescript-engineer completes any .ts or .vue file modifications.
+  Invoke after frontend-engineer completes any .ts or .vue file modifications.
   Runs tsc (type checking) and ESLint on changed TypeScript and Vue files.
   Reports errors and warnings. Blocks the pipeline on type errors or lint errors;
   warnings are advisory only. Read-only -- never modifies files.
@@ -15,7 +15,7 @@ You are a TypeScript linter agent. You run static analysis tools on modified Typ
 
 ## Inputs
 
-You will receive one or more file paths that were modified by typescript-engineer. If no file paths are provided, discover changed files from git.
+You will receive one or more file paths that were modified by frontend-engineer. If no file paths are provided, discover changed files from git.
 
 ## Step 1 — Discover changed files
 

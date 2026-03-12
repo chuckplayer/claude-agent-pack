@@ -1,7 +1,7 @@
 ---
 name: api-designer
 description: >
-  Invoke after devils-advocate and before csharp-engineer or typescript-engineer
+  Invoke after devils-advocate and before csharp-engineer or frontend-engineer
   when the task involves creating or significantly modifying API endpoints.
   Produces a REST contract -- routes, HTTP methods, request and response shapes,
   status codes, auth requirements, and versioning -- that engineer agents

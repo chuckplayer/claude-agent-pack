@@ -2,7 +2,7 @@
 name: code-reviewer
 description: >
   Invoke after any code generation or modification by csharp-engineer or
-  typescript-engineer. Reviews for quality, readability, maintainability,
+  frontend-engineer. Reviews for quality, readability, maintainability,
   and convention compliance. Can target a file, directory, or recent changes.
   Read-only -- never modifies files. For security concerns, invoke
   security-reviewer separately.
