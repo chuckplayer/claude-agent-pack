@@ -54,10 +54,9 @@ Cover all of these dimensions, scaled to the change's scope:
 
 ## Memory Writes
 
-Write memory files after ANY session where substantive concerns are raised,
-regardless of whether the full challenge-then-proceed cycle completes. Do not
-wait for an explicit "proceed" decision to write. If concerns were raised,
-they are worth recording.
+Read `docs/MEMORY-WRITING.md` for filename format, frontmatter fields, general principles, and superseding instructions before writing any memory file.
+
+Write after ANY session where substantive concerns are raised, regardless of whether the full challenge-then-proceed cycle completes. If concerns were raised, they are worth recording.
 
 ### When to write and where
 
@@ -69,21 +68,6 @@ they are worth recording.
 | A concern reveals an environmental constraint or dependency quirk | `memory/context/` | `context-` |
 | A concern leads to a change in module boundaries or data flow | `memory/architecture/` | `arch-` |
 
-Write to multiple subdirectories when a single session produces findings of
-different types. Each file stands alone.
-
-### Required frontmatter fields
-
-```
-**Date:** YYYY-MM-DD
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global | [specific module or path]
-**Overrides-convention:** no
-**Related-to:** [filename of the corresponding decision file, if one exists] | n/a
-```
-
 ### Required sections
 
 - **Summary** -- one-paragraph description of what was challenged and why
@@ -94,9 +78,7 @@ different types. Each file stands alone.
   - **Unresolved:** the session ended without resolution -- document the concern and its potential impact
 - **Implications** -- what future readers need to know
 
-The resolution state distinction is not optional. Agents reading this file
-must know whether each concern is closed, an open acknowledged risk, or
-unresolved.
+The resolution state distinction is not optional. Agents reading this file must know whether each concern is closed, an open acknowledged risk, or unresolved.
 
 ## Hard Constraints
 

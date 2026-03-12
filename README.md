@@ -51,6 +51,7 @@ After the installer runs, complete setup in each project. Replace `<pack-dir>` w
 Copy-Item "<pack-dir>\CLAUDE.md" ".\CLAUDE.md"
 New-Item -ItemType Directory -Force -Path ".\docs" | Out-Null
 Copy-Item "<pack-dir>\docs\CONVENTIONS.template.md" ".\docs\CONVENTIONS.md"
+Copy-Item "<pack-dir>\docs\MEMORY-WRITING.md" ".\docs\MEMORY-WRITING.md"
 Copy-Item -Recurse -Force "<pack-dir>\memory" "."
 ```
 
@@ -59,6 +60,7 @@ Copy-Item -Recurse -Force "<pack-dir>\memory" "."
 cp <pack-dir>/CLAUDE.md ./CLAUDE.md
 mkdir -p ./docs
 cp <pack-dir>/docs/CONVENTIONS.template.md ./docs/CONVENTIONS.md
+cp <pack-dir>/docs/MEMORY-WRITING.md ./docs/MEMORY-WRITING.md
 cp -r <pack-dir>/memory .
 ```
 
@@ -113,7 +115,7 @@ Memory is committed to version control so the full team shares accumulated conte
 
 **Agents skip** files with `status: superseded` or `status: archived` automatically.
 
-See `docs/AGENT-GUIDE.md` for the full memory format, hygiene guidance, and scaling notes.
+See `docs/MEMORY-WRITING.md` for the file format spec (frontmatter, subdirectory taxonomy, precedence rules). See `docs/AGENT-GUIDE.md` for hygiene guidance and scaling notes.
 
 ## Customization
 

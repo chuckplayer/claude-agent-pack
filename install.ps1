@@ -44,9 +44,10 @@ Write-Host ""
 Write-Host "  1. Copy CLAUDE.md to your project root:"
 Write-Host '     Copy-Item "$PSScriptRoot\CLAUDE.md" ".\CLAUDE.md"'
 Write-Host ""
-Write-Host "  2. Copy CONVENTIONS template:"
+Write-Host "  2. Copy docs:"
 Write-Host '     New-Item -ItemType Directory -Force -Path ".\docs" | Out-Null'
 Write-Host '     Copy-Item "$PSScriptRoot\docs\CONVENTIONS.template.md" ".\docs\CONVENTIONS.md"'
+Write-Host '     Copy-Item "$PSScriptRoot\docs\MEMORY-WRITING.md" ".\docs\MEMORY-WRITING.md"'
 Write-Host ""
 Write-Host "  3. Copy memory scaffold:"
 Write-Host '     Copy-Item -Recurse -Force "$PSScriptRoot\memory" "."'
