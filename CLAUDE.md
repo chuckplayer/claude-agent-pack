@@ -26,7 +26,8 @@ be invoked. The tech-lead will route to it automatically.
 ### Sequential dispatch (run in order):
 - Any task where agent B depends on output from agent A
 - Any two tasks that modify the same file
-- Always: implementation -> code-reviewer -> (if applicable) security-reviewer
+- Always: typescript-engineer -> ts-linter -> code-reviewer -> (if applicable) security-reviewer
+- Always: csharp-engineer -> code-reviewer -> (if applicable) security-reviewer
 
 ## Always invoke before implementation:
 - **branch-manager** before any engineer agent when the task involves code
@@ -38,6 +39,9 @@ be invoked. The tech-lead will route to it automatically.
   creates or significantly modifies API endpoints
 
 ## Always invoke after implementation:
+- **ts-linter** immediately after typescript-engineer, before code-reviewer.
+  Pass the list of modified `.ts` and `.vue` files. Block on FAIL -- route
+  back to typescript-engineer before proceeding.
 - **code-reviewer** after any output from csharp-engineer or typescript-engineer
 - **security-reviewer** when changes touch authentication, authorization,
   data access, PII handling, API endpoints, or configuration with secrets

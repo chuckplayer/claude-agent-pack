@@ -1,12 +1,14 @@
 # Claude Code Agent Pack
 
-Twelve specialized Claude Code subagents for enterprise C# and TypeScript development teams.
+Thirteen specialized Claude Code subagents for enterprise C# and TypeScript development teams.
 
 ## Why
 
 Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides twelve agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
 
 Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job.
+
+
 
 ## Agents
 
@@ -18,6 +20,7 @@ Without orchestration, a single session planning an architecture change, writing
 | branch-manager | Ensures work happens on the correct git branch | Before any engineer agent on code-change tasks |
 | csharp-engineer | C# and .NET implementation | Writing or modifying .cs files |
 | typescript-engineer | TypeScript and Vue 3 frontend implementation | Writing or modifying .ts or .vue files |
+| ts-linter | Type checking (tsc) and ESLint on changed TS/Vue files | After typescript-engineer, before code-reviewer |
 | database-engineer | Schema changes, EF Core migrations, and SQL | Any task requiring schema changes or migrations |
 | code-reviewer | Code quality, readability, and convention compliance | After any engineer agent output |
 | security-reviewer | Security-focused review only | Changes touching auth, data access, PII, or secrets |
@@ -67,7 +70,7 @@ Four slash-command entry points are included. Invoke them directly in Claude Cod
 
 | Skill | Trigger | What it does |
 |---|---|---|
-| `/implement` | `implement a feature` | Runs the full pipeline: branch-manager → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer. Engineers run in isolated worktrees. |
+| `/implement` | `implement a feature` | Runs the full pipeline: branch-manager → [tech-lead] → engineer(s) → ts-linter → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer. Engineers run in isolated worktrees. |
 | `/agent-plan` | `plan a task` | Routes to tech-lead for decomposition, then asks whether to proceed |
 | `/challenge` | `challenge this plan` | Pressure-tests a proposal using devils-advocate |
 | `/memory-audit` | `audit memory` | Reviews all active memory files and archives or supersedes stale entries |
@@ -93,10 +96,10 @@ Or invoke agents directly in natural language:
 ## Workflow
 
 ```
-task -> branch-manager -> [tech-lead] -> [devils-advocate] -> [api-designer] -> engineer(s) -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> test-engineer -> merge-reviewer
+task -> branch-manager -> [tech-lead] -> [devils-advocate] -> [api-designer] -> engineer(s) -> [ts-linter] -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> test-engineer -> merge-reviewer
 ```
 
-Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `branch-manager` is skipped for read-only tasks. `database-engineer` runs in parallel with engineer agents when schema changes are needed. When invoked through `/implement`, engineer agents run in isolated git worktrees and merge-reviewer commits the result to the feature branch if all gates pass.
+Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `branch-manager` is skipped for read-only tasks. `ts-linter` runs only when TypeScript or Vue files were modified. `database-engineer` runs in parallel with engineer agents when schema changes are needed. When invoked through `/implement`, engineer agents run in isolated git worktrees and merge-reviewer commits the result to the feature branch if all gates pass.
 
 ## Memory
 

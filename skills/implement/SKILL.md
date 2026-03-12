@@ -29,6 +29,8 @@ Run the full agent pipeline for the task the user described:
 
    Each engineer agent runs in its own worktree. When the agent completes, the worktree path and branch are returned. Collect all worktree branches before proceeding.
 
+5a. **ts-linter** — invoke immediately after **typescript-engineer** completes, before code-reviewer. Pass the list of modified `.ts` and `.vue` files. If ts-linter returns FAIL, route back to typescript-engineer for fixes before continuing. Do not proceed to code-reviewer until ts-linter returns PASS or SKIP.
+
 6. **code-reviewer** — always after any engineer agent output.
 
 7. **security-reviewer** — invoke if changes touch authentication, authorization, data access, PII, external endpoints, or secrets.
