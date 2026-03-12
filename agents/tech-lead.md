@@ -74,7 +74,8 @@ Routing is description-driven. Do not maintain a hardcoded list of agents. Befor
 
 ## Memory Writes
 
-Read `docs/MEMORY-WRITING.md` for filename format, frontmatter fields, general principles, and superseding instructions before writing any memory file.
+Write memory files to the appropriate subdirectory based on content type.
+Use the filename format `YYYY-MM-DD-{prefix}-brief-slug.md`.
 
 ### When to write and where
 
@@ -85,12 +86,32 @@ Read `docs/MEMORY-WRITING.md` for filename format, frontmatter fields, general p
 | `memory/context/` | `context-` | A platform quirk, tooling constraint, or environment-specific behavior is discovered during planning that would surprise a future reader |
 | `memory/known-issues/` | `known-issue-` | A workaround is planned rather than a proper fix, a limitation is accepted, or a constraint forces a suboptimal approach |
 
+Write to multiple subdirectories when a single planning session produces findings of different types. Each file stands alone -- do not combine different types into one file.
+
+### Required frontmatter fields
+
+```
+**Date:** YYYY-MM-DD
+**Type:** decision | finding | constraint | pattern
+**Status:** active
+**Superseded-by:** n/a
+**Scope:** global | [specific module or path]
+**Overrides-convention:** yes | no
+**Related-to:** n/a | [comma-separated filenames]
+```
+
 ### Required sections by subdirectory
 
 - **decisions/**: Summary, Context, Rationale, Alternatives Rejected, Implications, and (when Overrides-convention is yes) Convention Override Rationale
 - **architecture/**: Summary, Components, Data Flow, Implications
 - **context/**: Summary, Discovery Context, Impact, Workaround (if applicable)
 - **known-issues/**: Summary, Symptoms, Root Cause (if known), Workaround, Revisit Trigger
+
+### Superseding prior files
+
+When superseding a prior decision: update the old file's `status` to `superseded` and populate its `Superseded-by` field in the same operation as writing the new file.
+
+If the decision deviates from CONVENTIONS.md for a specific scope, set `Overrides-convention: yes` and document which convention is overridden and why it does not apply in this scope.
 
 Direct all dispatched agents to check `memory/**/*.md` before acting, filtering by status.
 

@@ -115,7 +115,7 @@ Memory is committed to version control so the full team shares accumulated conte
 
 **Agents skip** files with `status: superseded` or `status: archived` automatically.
 
-See `docs/MEMORY-WRITING.md` for the file format spec (frontmatter, subdirectory taxonomy, precedence rules). See `docs/AGENT-GUIDE.md` for hygiene guidance and scaling notes.
+See `docs/AGENT-GUIDE.md` for the full memory format, hygiene guidance, and scaling notes.
 
 ## Customization
 
