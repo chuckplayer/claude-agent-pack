@@ -47,15 +47,27 @@ be invoked. The tech-lead will route to it automatically.
   data access, PII handling, API endpoints, or configuration with secrets
 - **performance-reviewer** when changes include database queries, API endpoints,
   loops over collections, or caching logic
-- **test-engineer** after any new public methods or API endpoints are created
+- **test-engineer** after any new public methods or API endpoints are created, or
+  when existing methods are modified -- engineer agents must verify test coverage
+  and assess test impact (which existing tests are affected) before handoff
 - **merge-reviewer** as the final gate in the implement pipeline, after
   test-engineer completes. Verifies all required stages passed and commits
   to the feature branch if clean. Never merges to main.
 
+## Engineer responsibilities (csharp-engineer, typescript-engineer, database-engineer)
+Before handing off to code-reviewer, every engineer agent must:
+1. **Verify unit test coverage** — identify which changed methods/functions lack
+   adequate test coverage and flag gaps explicitly in the handoff summary.
+2. **Run existing tests** — execute the existing test suite (or the relevant subset
+   that covers the changed code) and confirm all tests pass. If any tests fail,
+   fix them before handing off. Do not proceed to code-reviewer with failing tests.
+3. **Do not skip this step** even for small changes -- a one-line fix can break
+   multiple tests or leave a coverage gap.
+
 ## Never invoke automatically:
 - **devils-advocate** on small bug fixes or trivial changes
 - **tech-lead** when the task is already well-defined and scoped
-- **test-engineer** before implementation is complete and reviewed
+- **test-engineer** before implementation is complete, reviewed, and test impact assessed
 - **branch-manager** when the task involves no file changes (read-only tasks,
   reviews, planning)
 - **api-designer** for internal refactors that do not change the API surface
