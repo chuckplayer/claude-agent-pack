@@ -30,7 +30,7 @@ be invoked. The tech-lead will route to it automatically.
 - Always: csharp-engineer -> code-reviewer -> (if applicable) security-reviewer
 
 ## Always invoke before implementation:
-- **branch-manager** before any engineer agent when the task involves code
+- **git-engineer** before any engineer agent when the task involves code
   changes and the working branch has not already been confirmed:
   - If on `main` or `master`: ask whether to pull latest and create a new branch
   - If on any other branch: confirm with the user that it is the correct branch
@@ -68,7 +68,7 @@ Before handing off to code-reviewer, every engineer agent must:
 - **devils-advocate** on small bug fixes or trivial changes
 - **tech-lead** when the task is already well-defined and scoped
 - **test-engineer** before implementation is complete, reviewed, and test impact assessed
-- **branch-manager** when the task involves no file changes (read-only tasks,
+- **git-engineer** when the task involves no file changes (read-only tasks,
   reviews, planning)
 - **api-designer** for internal refactors that do not change the API surface
 - **performance-reviewer** when no database queries, endpoints, or hot-path

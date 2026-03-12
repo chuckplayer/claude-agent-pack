@@ -1,15 +1,15 @@
 ---
 name: implement
-description: Orchestrates the full agent-pack pipeline for a task: branch-manager → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer. Use when implementing a feature, fix, or change end-to-end.
+description: Orchestrates the full agent-pack pipeline for a task: git-engineer → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer. Use when implementing a feature, fix, or change end-to-end.
 ---
 
 # Implement Task
 
 Run the full agent pipeline for the task the user described:
 
-1. **branch-manager** — always first. Confirm the working branch is correct before any code changes.
+1. **git-engineer** — always first. Confirm the working branch is correct before any code changes.
 
-   **After branch-manager returns:** check the current branch with `git branch --show-current`. If the branch is still `main` or `master`, **stop immediately** and output:
+   **After git-engineer returns:** check the current branch with `git branch --show-current`. If the branch is still `main` or `master`, **stop immediately** and output:
 
    > **Cannot proceed:** Engineer agents use worktree isolation, and worktrees must not be created from `main` or `master`. Please switch to a feature branch first, then re-run `/implement`.
 

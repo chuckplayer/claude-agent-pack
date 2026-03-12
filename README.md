@@ -17,7 +17,7 @@ Without orchestration, a single session planning an architecture change, writing
 | tech-lead | Decomposes complex tasks and orchestrates specialist agents | Ambiguous or multi-step tasks spanning multiple files or layers |
 | devils-advocate | Pressure-tests reasoning before implementation begins | New patterns, architectural decisions, irreversible changes |
 | api-designer | Designs REST contracts before implementation begins | Creating or significantly modifying API endpoints |
-| branch-manager | Ensures work happens on the correct git branch | Before any engineer agent on code-change tasks |
+| git-engineer | Git lifecycle specialist: branch setup, conventional commits, push, and PR | Before any engineer agent; after merge-reviewer for push/PR |
 | csharp-engineer | C# and .NET implementation | Writing or modifying .cs files |
 | typescript-engineer | TypeScript and Vue 3 frontend implementation | Writing or modifying .ts or .vue files |
 | ts-linter | Type checking (tsc) and ESLint on changed TS/Vue files | After typescript-engineer, before code-reviewer |
@@ -72,7 +72,7 @@ Four slash-command entry points are included. Invoke them directly in Claude Cod
 
 | Skill | Trigger | What it does |
 |---|---|---|
-| `/implement` | `implement a feature` | Runs the full pipeline: branch-manager → [tech-lead] → engineer(s) → ts-linter → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer. Engineers run in isolated worktrees. |
+| `/implement` | `implement a feature` | Runs the full pipeline: git-engineer → [tech-lead] → engineer(s) → ts-linter → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer. Engineers run in isolated worktrees. |
 | `/agent-plan` | `plan a task` | Routes to tech-lead for decomposition, then asks whether to proceed |
 | `/challenge` | `challenge this plan` | Pressure-tests a proposal using devils-advocate |
 | `/memory-audit` | `audit memory` | Reviews all active memory files and archives or supersedes stale entries |
@@ -98,10 +98,10 @@ Or invoke agents directly in natural language:
 ## Workflow
 
 ```
-task -> branch-manager -> [tech-lead] -> [devils-advocate] -> [api-designer] -> engineer(s) -> [ts-linter] -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> test-engineer -> merge-reviewer
+task -> git-engineer -> [tech-lead] -> [devils-advocate] -> [api-designer] -> engineer(s) -> [ts-linter] -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> test-engineer -> merge-reviewer
 ```
 
-Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `branch-manager` is skipped for read-only tasks. `ts-linter` runs only when TypeScript or Vue files were modified. `database-engineer` runs in parallel with engineer agents when schema changes are needed. When invoked through `/implement`, engineer agents run in isolated git worktrees and merge-reviewer commits the result to the feature branch if all gates pass.
+Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `git-engineer` is skipped for read-only tasks. `ts-linter` runs only when TypeScript or Vue files were modified. `database-engineer` runs in parallel with engineer agents when schema changes are needed. When invoked through `/implement`, engineer agents run in isolated git worktrees and merge-reviewer commits the result to the feature branch if all gates pass.
 
 ## Memory
 
