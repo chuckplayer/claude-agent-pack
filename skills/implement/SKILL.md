@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Orchestrates the full agent-pack pipeline for a task: git-engineer → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer. Use when implementing a feature, fix, or change end-to-end.
+description: Orchestrates the full agent-pack pipeline for a task: git-engineer → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer → git-engineer (push/PR). Use when implementing a feature, fix, or change end-to-end.
 ---
 
 # Implement Task
@@ -53,7 +53,9 @@ Run the full agent pipeline for the task the user described:
 
 10. **merge-reviewer** — always last. Pass a summary of: the task description, which pipeline stages ran, all findings from code-reviewer / security-reviewer / performance-reviewer, whether test-engineer produced tests, and **the list of worktree branch names** collected in step 5. merge-reviewer will merge those branches into the feature branch before running gate checks.
 
-    **If merge-reviewer returns PASS:** the changes are committed to the feature branch. Report the commit SHA to the user and stop.
+    **If merge-reviewer returns PASS:** the changes are committed to the feature branch. Proceed to step 11.
+
+11. **git-engineer (push/PR mode)** — invoke after merge-reviewer returns PASS. Ask the user whether to push the feature branch and optionally open a pull request. Pass the feature branch name and the commit SHA from merge-reviewer.
 
     **If merge-reviewer returns FAIL:** begin a retry cycle:
     - Route each failed item back to the agent responsible (e.g., Critical code finding → engineer agent, missing tests → test-engineer).

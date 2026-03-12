@@ -72,7 +72,7 @@ Four slash-command entry points are included. Invoke them directly in Claude Cod
 
 | Skill | Trigger | What it does |
 |---|---|---|
-| `/implement` | `implement a feature` | Runs the full pipeline: git-engineer → [tech-lead] → engineer(s) → ts-linter → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer. Engineers run in isolated worktrees. |
+| `/implement` | `implement a feature` | Runs the full pipeline: git-engineer → [tech-lead] → engineer(s) → ts-linter → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer → git-engineer (push/PR). Engineers run in isolated worktrees. |
 | `/agent-plan` | `plan a task` | Routes to tech-lead for decomposition, then asks whether to proceed |
 | `/challenge` | `challenge this plan` | Pressure-tests a proposal using devils-advocate |
 | `/memory-audit` | `audit memory` | Reviews all active memory files and archives or supersedes stale entries |
@@ -98,7 +98,7 @@ Or invoke agents directly in natural language:
 ## Workflow
 
 ```
-task -> git-engineer -> [tech-lead] -> [devils-advocate] -> [api-designer] -> engineer(s) -> [ts-linter] -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> test-engineer -> merge-reviewer
+task -> git-engineer -> [tech-lead] -> [devils-advocate] -> [api-designer] -> engineer(s) -> [ts-linter] -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> test-engineer -> merge-reviewer -> git-engineer (push/PR)
 ```
 
 Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `git-engineer` is skipped for read-only tasks. `ts-linter` runs only when TypeScript or Vue files were modified. `database-engineer` runs in parallel with engineer agents when schema changes are needed. When invoked through `/implement`, engineer agents run in isolated git worktrees and merge-reviewer commits the result to the feature branch if all gates pass.
