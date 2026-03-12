@@ -80,13 +80,20 @@ Before handing off to code-reviewer, every engineer agent must:
 - Engineer agents (csharp-engineer, typescript-engineer, database-engineer)
   run with `isolation: "worktree"` only when invoked through the `implement`
   skill. Direct agent invocations do not use worktree isolation.
-- Worktrees are always created from the **current branch** at the time the
-  engineer agent is invoked -- never from `main` or `master` directly.
+- Before dispatching each engineer agent with worktree isolation, the implement
+  skill must create a dedicated `worktree/<engineer-type>/<yyyymmdd-hhmmss>`
+  branch from the current feature branch. The engineer's worktree runs on this
+  branch -- never directly on the feature branch and never on `main` or `master`.
+- For parallel dispatch (e.g., csharp + typescript), create each worktree branch
+  sequentially before starting any agent, then dispatch agents in parallel.
+  Branch names are auto-generated; no user prompt is required.
+- After all engineer agents complete, merge-reviewer merges each
+  `worktree/<type>/<timestamp>` branch back into the feature branch using
+  `--no-ff` before running pipeline gate checks. Worktree branches are never
+  pushed directly to the remote.
 - If the current branch is `main` or `master` when engineer agents are about
   to be dispatched, **stop the pipeline** and prompt the user to switch to a
-  feature branch first. Do not create a worktree from `main` or `master`.
-- Worktree branches must never be `main` or `master`. branch-manager enforces
-  this at the start of every engineer dispatch.
+  feature branch first. Do not create a worktree branch from `main` or `master`.
 - merge-reviewer commits to the feature branch only. Merging to main is the
   developer's responsibility.
 

@@ -25,8 +25,34 @@ You will receive a summary from the implement skill containing:
 - Which pipeline stages ran
 - Findings from each stage (code-reviewer, security-reviewer, performance-reviewer)
 - Whether test-engineer produced tests
+- The list of worktree branch names produced by engineer agents (e.g., `worktree/csharp/20240312-143022`)
 
 If any of this context is missing, run the checks below directly.
+
+## Step 0 — Merge worktree branches
+
+If one or more worktree branch names were provided, merge each into the current feature branch before running any gate checks:
+
+```bash
+git checkout <feature-branch>
+```
+
+For each worktree branch:
+```bash
+git merge --no-ff <worktree-branch> -m "Merge <worktree-branch> into <feature-branch>"
+```
+
+If any merge produces conflicts (`git status` shows `UU` files), **stop immediately** and output:
+
+```
+FAIL -- merge conflict when integrating worktree branch <branch>.
+
+Required actions:
+- Resolve conflicts in: <list of conflicting files>
+- Route back to the appropriate engineer agent for resolution.
+```
+
+Do not proceed to the checklist until all worktree branches are cleanly merged.
 
 ## Checklist
 
