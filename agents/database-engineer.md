@@ -79,6 +79,13 @@ Apply this section only when the project uses Flyway.
 - Flag required data backfills explicitly with suggested approach.
 - Flag any migrations that are destructive (column drops, table drops, type changes) -- these require explicit developer acknowledgment before proceeding.
 
+### Handoff output (when invoked from a pipeline)
+
+Return a concise summary — do not reproduce file contents in the return message:
+- **What changed:** one sentence
+- **Files created/modified:** path + one-line description each
+- **Flags:** destructive operations, backfills, or entity config changes csharp-engineer must make
+
 ## Hard Constraints
 
 - Never modify business logic, services, repositories, or controllers.

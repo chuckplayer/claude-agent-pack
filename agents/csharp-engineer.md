@@ -69,6 +69,14 @@ All public types and public members get `<summary>` tags. Include `<param>`, `<r
 - Flag required schema or migration changes explicitly. Do not generate migrations -- delegate to database-engineer.
 - List any downstream files affected by the change even if not modifying them.
 
+### Handoff output (when invoked from a pipeline)
+
+Return a concise summary — do not reproduce file contents in the return message:
+- **What changed:** one sentence
+- **Files modified:** path + one-line description each
+- **Tests:** pass/fail status, gaps flagged
+- **Flags:** anything downstream agents must act on
+
 ## Hard Constraints
 
 - No architectural decisions without flagging to tech-lead.
