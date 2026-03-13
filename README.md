@@ -69,14 +69,21 @@ Fill in `docs/CONVENTIONS.md` with your project's standards. Commit the `memory/
 
 ## Skills
 
-Four slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Eleven slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
-| Skill | Trigger | What it does |
-|---|---|---|
-| `/implement` | `implement a feature` | Runs the full pipeline: git-engineer → [tech-lead] → engineer(s) → ts-linter → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer → git-engineer (push/PR). Engineers run in isolated worktrees. |
-| `/agent-plan` | `plan a task` | Routes to tech-lead for decomposition, then asks whether to proceed |
-| `/challenge` | `challenge this plan` | Pressure-tests a proposal using devils-advocate |
-| `/memory-audit` | `audit memory` | Reviews all active memory files and archives or supersedes stale entries |
+| Skill | What it does |
+|---|---|
+| `/implement` | Runs the full pipeline: git-engineer → [tech-lead] → engineer(s) → ts-linter → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer → git-engineer (push/PR). Engineers run in isolated worktrees. |
+| `/scaffold` | End-to-end feature scaffolding: api-designer → database-engineer → backend engineer → frontend-engineer, in dependency order. Use when building something new across all layers. |
+| `/hotfix` | Abbreviated pipeline for production incidents. No worktree isolation, 1 retry max. Still requires code-reviewer and merge-reviewer. |
+| `/refactor` | Refactor with impact analysis first: tech-lead → engineer(s) → mandatory test verification → code-reviewer. Enforces a no-behavior-delta constraint. |
+| `/debug` | Diagnose and fix a failing test or error. Reads the stack trace, forms a hypothesis, routes to the right engineer, then runs a lightweight code-reviewer pass. |
+| `/review-pr` | Runs code-reviewer, security-reviewer, and performance-reviewer against a PR or diff. Produces a consolidated findings report. |
+| `/agent-plan` | Routes to tech-lead for decomposition, then asks whether to proceed |
+| `/challenge` | Pressure-tests a proposal using devils-advocate |
+| `/onboard` | Reads the codebase, memory, and conventions to produce a structured orientation: architecture, entry points, data flow, and known gotchas. |
+| `/conventions` | Scaffolds or updates `docs/CONVENTIONS.md` by reading actual code patterns and interviewing the user. |
+| `/memory-audit` | Reviews all active memory files and archives or supersedes stale entries |
 
 ## Quick Start
 
@@ -85,6 +92,13 @@ Use skills as entry points:
 ```
 /agent-plan add a payment processing feature
 /implement add a GetByExternalId method to OrderRepository
+/scaffold add a notifications feature with API, DB, backend, and frontend
+/review-pr 42
+/debug the OrderService.GetById test is failing with a null reference exception
+/hotfix fix the null check in PaymentController.ProcessRefund
+/refactor extract the retry logic in HttpClientWrapper into a separate class
+/onboard
+/conventions
 /challenge we're considering migrating from REST to GraphQL
 /memory-audit
 ```

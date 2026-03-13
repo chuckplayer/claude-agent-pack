@@ -1,0 +1,80 @@
+---
+name: scaffold
+description: Scaffold a new feature end-to-end: API contract → database schema → backend service/controller → frontend. Use when building something new from scratch across multiple layers. More opinionated than /implement — always runs the full vertical slice in order.
+---
+
+# Scaffold New Feature
+
+Build a new feature end-to-end across all layers in the correct dependency order.
+
+## 1. Confirm scope
+
+Before starting, confirm with the user:
+- **What** is being built (feature name and one-sentence description)
+- **Which layers** are needed (API, DB, backend, frontend — not every feature needs all four)
+- **Any constraints** (naming conventions, existing patterns to follow, related entities)
+
+Read `docs/CONVENTIONS.md` if it exists. Check `memory/**/*.md` for any architecture or design decisions relevant to this feature.
+
+## 2. git-engineer — branch setup
+
+Always first. Confirm the working branch. If on `main` or `master`, ask the user to name the feature branch before proceeding. Do not start any implementation until the branch is confirmed.
+
+## 3. api-designer — REST contract
+
+Always invoke for new features that expose any endpoint. Pass:
+- The feature description and scope confirmed in step 1
+- Any existing API patterns to follow (from CONVENTIONS.md or memory)
+
+The api-designer will produce routes, HTTP methods, request/response shapes, status codes, and auth requirements. Present the contract to the user and ask for approval before proceeding to implementation.
+
+## 4. database-engineer — schema and migrations
+
+Invoke if the feature requires new or modified tables, columns, indexes, or stored procedures. Pass the approved API contract as context so entity names and field names stay consistent.
+
+Use `isolation: "worktree"` for database-engineer.
+
+## 5. Backend engineer — services and controllers
+
+Invoke **csharp-engineer** (or the appropriate backend engineer for this project). Pass:
+- The approved API contract
+- The migration output or schema changes from database-engineer
+- Existing patterns for services, repositories, and controllers
+
+Use `isolation: "worktree"` for the engineer agent.
+
+Run **ts-linter** immediately after if any `.ts` files were touched. Block on FAIL before continuing.
+
+## 6. frontend-engineer — UI and API client
+
+Invoke if the feature has a frontend component. Pass:
+- The approved API contract (as the source of truth for endpoint URLs, request/response shapes)
+- Any relevant component patterns from CONVENTIONS.md
+
+Use `isolation: "worktree"` for frontend-engineer.
+
+Run **ts-linter** immediately after. Block on FAIL before continuing.
+
+> **Sequencing note:** frontend-engineer must run after csharp-engineer because the frontend depends on the API surface being defined. Do not run them in parallel.
+
+## 7. Review pass
+
+Run in parallel:
+- **code-reviewer** — on all layers
+- **security-reviewer** — always for new API endpoints and data access
+- **performance-reviewer** — always for new database queries and API endpoints
+
+## 8. test-engineer
+
+After code-reviewer completes. Cover all new public methods, API endpoints, and frontend components.
+
+## 9. merge-reviewer
+
+Final gate. Pass the worktree branch names from steps 4–6 and a summary of all pipeline stages.
+
+If PASS: proceed to step 10.
+If FAIL: retry up to 2 cycles, routing findings back to the responsible engineer.
+
+## 10. git-engineer — push and PR
+
+After merge-reviewer returns PASS. Ask the user whether to push and open a pull request. Include the API contract summary in the PR description.
