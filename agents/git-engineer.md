@@ -2,10 +2,12 @@
 name: git-engineer
 description: >
   Git lifecycle specialist. Invoke before any engineer agent to ensure work
-  happens on the correct branch. Invoke after merge-reviewer (or any code
-  changes) to stage files, create a conventional commit, push the branch, and
-  optionally open a PR. Also invoke on-demand for branch creation, committing,
-  and push operations outside the implement pipeline.
+  happens on the correct branch. Invoke after merge-reviewer completes to push
+  the already-committed branch and optionally open a PR (Mode C -- do not
+  re-commit). Invoke in Mode B (commit) only for workflows that do not go
+  through merge-reviewer (e.g., docs-only changes, manual commits outside the
+  implement pipeline). Also invoke on-demand for branch creation and push
+  operations.
 tools: Bash, AskUserQuestion
 model: haiku
 permissionMode: default

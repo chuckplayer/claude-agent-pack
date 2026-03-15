@@ -3,8 +3,10 @@ name: mcp-engineer
 description: >
   Use for all Model Context Protocol (MCP) server implementation: tool definitions,
   resource handlers, prompt registration, Zod parameter schemas, and transport
-  setup. Invoke when building or modifying MCP servers (.ts files in an MCP server
-  project). Do NOT invoke for frontend UI code, C# backend code, or SQL.
+  setup. Invoke only when the .ts file being modified lives inside an MCP server
+  directory (e.g., a project whose entry point registers MCP tools/resources via
+  @modelcontextprotocol/sdk). Do NOT invoke for frontend UI code (.vue components,
+  Pinia stores, API clients), C# backend code, or SQL.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 permissionMode: acceptEdits

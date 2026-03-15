@@ -9,7 +9,9 @@ description: >
   branch with a summary message. If any checks fail, outputs a structured
   FAIL report so the implement skill can route specific findings back to the
   appropriate agent. Never merges to main -- that is the developer's
-  responsibility.
+  responsibility. After merge-reviewer commits, invoke git-engineer (Mode C)
+  to push the branch and optionally open a PR -- git-engineer does not
+  re-commit in this context.
 tools: Bash, Read, Glob, Grep
 model: sonnet
 permissionMode: default

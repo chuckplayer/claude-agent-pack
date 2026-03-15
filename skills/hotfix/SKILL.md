@@ -1,6 +1,6 @@
 ---
 name: hotfix
-description: Fast-track fix pipeline for production incidents. Skips worktree isolation and planning ceremony. Still requires code-reviewer and merge-reviewer as a safety gate. Use when speed matters and the fix is already understood.
+description: Fast-track fix pipeline for production incidents. Skips worktree isolation and planning ceremony. Still requires code-reviewer and merge-reviewer as a safety gate. Use only when the root cause is already known and the fix is well-understood. If diagnosis is still needed, use /debug first, then return here to apply the fix.
 ---
 
 # Hotfix

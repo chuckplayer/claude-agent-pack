@@ -5,6 +5,9 @@ description: >
   EF Core models and queries, domain entities, middleware, background jobs,
   Hangfire tasks, and API endpoints. Invoke when writing or modifying .cs files.
   Do NOT invoke for TypeScript, SQL schema changes, or architectural decisions.
+  When entity model changes require a schema migration, invoke database-engineer
+  first (for the migration), then invoke this agent (for the C# model and EF
+  Core configuration).
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 permissionMode: acceptEdits
