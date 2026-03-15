@@ -9,7 +9,11 @@
       "Bash(gh api:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(curl -s https://raw.githubusercontent.com/msitarzewski/agency-agents/main/specialized/specialized-mcp-builder.md)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//Users/<user>/Repos/claude-agent-pack/**)",
+      "Bash(done)"
     ]
   }
 }

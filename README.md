@@ -61,7 +61,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Eleven slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Sixteen slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -76,6 +76,11 @@ Eleven slash-command entry points are included. Invoke them directly in Claude C
 | `/onboard` | Reads the codebase, memory, and conventions to produce a structured orientation: architecture, entry points, data flow, and known gotchas. |
 | `/conventions` | Scaffolds or updates `docs/CONVENTIONS.md` by reading actual code patterns and interviewing the user. |
 | `/memory-audit` | Reviews all active memory files and archives or supersedes stale entries |
+| `/setup-project` | Scaffolds a project with `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` structure, then guides through next steps |
+| `/check-readiness` | Verifies Claude Code, all agents, all skills, and the current project's scaffolding are fully installed; reports specific remediation steps for any failures |
+| `/check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated or missing and offers to run the installer |
+| `/lint-agents` | Validates required frontmatter fields and body content in every agent and skill file; reports specific fixes for any failures |
+| `/memory-query` | Searches `memory/` by keyword or regex, then summarizes matching files and their relevance to the query |
 
 ## Scripts
 
@@ -122,6 +127,11 @@ Use skills as entry points:
 /conventions
 /challenge we're considering migrating from REST to GraphQL
 /memory-audit
+/memory-query auth token storage
+/setup-project
+/check-readiness
+/check-updates
+/lint-agents
 ```
 
 Or invoke agents directly in natural language:
