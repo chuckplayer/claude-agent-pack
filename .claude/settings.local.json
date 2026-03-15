@@ -8,7 +8,8 @@
       "Bash(bash:*)",
       "Bash(gh api:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(curl -s https://raw.githubusercontent.com/msitarzewski/agency-agents/main/specialized/specialized-mcp-builder.md)"
+      "Bash(curl -s https://raw.githubusercontent.com/msitarzewski/agency-agents/main/specialized/specialized-mcp-builder.md)",
+      "Bash(chmod:*)"
     ]
   }
 }

@@ -1,10 +1,10 @@
 # Claude Code Agent Pack
 
-Thirteen specialized Claude Code subagents for enterprise C# and TypeScript development teams.
+Fourteen specialized Claude Code subagents for enterprise C# and TypeScript development teams.
 
 ## Why
 
-Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides twelve agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
+Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides fourteen agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
 
 Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job.
 
@@ -45,27 +45,19 @@ git clone https://github.com/chuckplayer/claude-agent-pack.git
 bash ./claude-agent-pack/install.sh
 ```
 
-After the installer runs, complete setup in each project. Replace `<pack-dir>` with the path to your clone:
+After the installer runs, scaffold each project using the setup script. Replace `<pack-dir>` with the path to your clone and `<project>` with your project root:
 
 ```powershell
-# Windows -- run from your project root
-Copy-Item "<pack-dir>\CLAUDE.md" ".\CLAUDE.md"
-New-Item -ItemType Directory -Force -Path ".\docs" | Out-Null
-Copy-Item "<pack-dir>\docs\CONVENTIONS.template.md" ".\docs\CONVENTIONS.md"
-Copy-Item "<pack-dir>\docs\MEMORY-WRITING.md" ".\docs\MEMORY-WRITING.md"
-Copy-Item -Recurse -Force "<pack-dir>\memory" "."
+# Windows
+& "<pack-dir>\scripts\setup-project.ps1" -Target <project>
 ```
 
 ```bash
-# macOS -- run from your project root
-cp <pack-dir>/CLAUDE.md ./CLAUDE.md
-mkdir -p ./docs
-cp <pack-dir>/docs/CONVENTIONS.template.md ./docs/CONVENTIONS.md
-cp <pack-dir>/docs/MEMORY-WRITING.md ./docs/MEMORY-WRITING.md
-cp -r <pack-dir>/memory .
+# macOS
+bash <pack-dir>/scripts/setup-project.sh <project>
 ```
 
-Fill in `docs/CONVENTIONS.md` with your project's standards. Commit the `memory/` scaffold.
+This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY-WRITING.md`, and the `memory/` scaffold into the project. Then fill in `docs/CONVENTIONS.md` with your project's standards and commit the result.
 
 ## Skills
 
@@ -84,6 +76,35 @@ Eleven slash-command entry points are included. Invoke them directly in Claude C
 | `/onboard` | Reads the codebase, memory, and conventions to produce a structured orientation: architecture, entry points, data flow, and known gotchas. |
 | `/conventions` | Scaffolds or updates `docs/CONVENTIONS.md` by reading actual code patterns and interviewing the user. |
 | `/memory-audit` | Reviews all active memory files and archives or supersedes stale entries |
+
+## Scripts
+
+Six utility scripts are included in `scripts/`. Each has a `.sh` (macOS) and `.ps1` (Windows) version.
+
+| Script | What it does |
+|---|---|
+| `setup-project` | Copies `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` scaffold into a project directory |
+| `check-readiness` | Verifies Claude Code is installed, all agents and skills are installed, and the target project has full scaffolding |
+| `check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated |
+| `query-memory` | Searches `memory/**/*.md` by pattern (case-insensitive regex); skips superseded and archived files |
+| `lint-agents` | Validates required frontmatter fields and body content in every agent and skill file |
+| `new-memory` | Scaffolds a new memory file with correct frontmatter and prints the `MEMORY.md` pointer |
+
+```powershell
+# Windows examples
+.\scripts\check-readiness.ps1 -ProjectDir <project>
+.\scripts\check-updates.ps1
+.\scripts\query-memory.ps1 -Pattern "auth" -MemoryDir <project>\memory
+.\scripts\new-memory.ps1 -Subdir decisions -Slug auth-token-storage -MemoryDir <project>\memory
+```
+
+```bash
+# macOS examples
+bash scripts/check-readiness.sh <project>
+bash scripts/check-updates.sh
+bash scripts/query-memory.sh "auth" <project>/memory
+bash scripts/new-memory.sh decisions auth-token-storage <project>/memory
+```
 
 ## Quick Start
 
@@ -142,16 +163,28 @@ Place an agent file in `.claude/agents/` in the project root to override the glo
 
 ## Updating
 
+To check whether your installed agents and skills are current before pulling:
+
+```powershell
+# Windows
+.\scripts\check-updates.ps1
+```
+
+```bash
+# macOS
+bash scripts/check-updates.sh
+```
+
+To pull and reinstall:
+
 ```powershell
 # Windows (PowerShell) -- from your clone directory
-cd <pack-dir>
 git pull
 & ".\install.ps1"
 ```
 
 ```bash
 # macOS -- from your clone directory
-cd <pack-dir>
 git pull
 bash install.sh
 ```

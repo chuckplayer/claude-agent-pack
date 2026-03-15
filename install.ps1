@@ -41,17 +41,12 @@ foreach ($dir in $skillDirs) {
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  1. Copy CLAUDE.md to your project root:"
-Write-Host '     Copy-Item "$PSScriptRoot\CLAUDE.md" ".\CLAUDE.md"'
+Write-Host "  1. Scaffold a project (copies CLAUDE.md, docs, and memory/ structure):"
+Write-Host '     .\scripts\setup-project.ps1 -Target <your-project-path>'
 Write-Host ""
-Write-Host "  2. Copy docs:"
-Write-Host '     New-Item -ItemType Directory -Force -Path ".\docs" | Out-Null'
-Write-Host '     Copy-Item "$PSScriptRoot\docs\CONVENTIONS.template.md" ".\docs\CONVENTIONS.md"'
-Write-Host '     Copy-Item "$PSScriptRoot\docs\MEMORY-WRITING.md" ".\docs\MEMORY-WRITING.md"'
+Write-Host "  2. Verify everything is ready:"
+Write-Host '     .\scripts\check-readiness.ps1 -ProjectDir <your-project-path>'
 Write-Host ""
-Write-Host "  3. Copy memory scaffold:"
-Write-Host '     Copy-Item -Recurse -Force "$PSScriptRoot\memory" "."'
-Write-Host ""
-Write-Host "  4. In Claude Code, try: /agent-plan add a payment processing feature"
+Write-Host "  3. In Claude Code, try: /agent-plan add a payment processing feature"
 Write-Host ""
 Write-Host "To verify: open Claude Code and run /agents -- your new agents should appear in the list." -ForegroundColor Cyan
