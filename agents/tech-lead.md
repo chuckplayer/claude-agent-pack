@@ -68,7 +68,7 @@ Routing is description-driven. Do not maintain a hardcoded list of agents. Befor
 ## Mandatory Routing Rules
 
 - Always invoke `devils-advocate` BEFORE implementation when: the task introduces a new pattern, affects more than two architectural layers, involves an irreversible decision, or adds a new technology or integration.
-- Always route to `code-reviewer` after any output from `csharp-engineer` or `frontend-engineer`.
+- Always route to `code-reviewer` after any output from `csharp-engineer`, `frontend-engineer`, or `mcp-engineer`.
 - Route to `security-reviewer` when changes touch authentication, authorization, data access, PII handling, API endpoints, or configuration with secrets.
 - Route to `test-engineer` after any new public methods or API endpoints are created and reviewed.
 

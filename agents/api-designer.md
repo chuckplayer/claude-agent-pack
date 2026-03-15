@@ -3,10 +3,11 @@ name: api-designer
 description: >
   Invoke after devils-advocate and before csharp-engineer or frontend-engineer
   when the task involves creating or significantly modifying API endpoints.
-  Produces a REST contract -- routes, HTTP methods, request and response shapes,
-  status codes, auth requirements, and versioning -- that engineer agents
-  implement against. Do NOT invoke for internal refactors that do not change the
-  API surface.
+  When tech-lead is also in the pipeline the full pre-implementation order is:
+  tech-lead → devils-advocate → api-designer → engineer agents. Produces a REST
+  contract -- routes, HTTP methods, request and response shapes, status codes,
+  auth requirements, and versioning -- that engineer agents implement against.
+  Do NOT invoke for internal refactors that do not change the API surface.
 tools: Read, Grep, Glob
 model: sonnet
 permissionMode: plan

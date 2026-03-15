@@ -18,6 +18,11 @@ be invoked. The tech-lead will route to it automatically.
 - You are unsure which agents to invoke or in what order
 - The work touches more than three files across different layers
 
+### When both tech-lead and devils-advocate are warranted:
+Run tech-lead first to decompose the task into a plan. Then run devils-advocate
+to challenge that plan. Only after devils-advocate completes should api-designer
+(if needed) and engineer agents be invoked.
+
 ### Parallel dispatch (run simultaneously):
 - Tasks with no shared files and no output dependencies
 - Independent reviews of separate files or modules
@@ -43,11 +48,15 @@ be invoked. The tech-lead will route to it automatically.
 - **ts-linter** immediately after frontend-engineer or mcp-engineer, before code-reviewer.
   Pass the list of modified `.ts` files. Block on FAIL -- route
   back to the originating engineer before proceeding.
+  If both frontend-engineer and mcp-engineer ran in parallel, invoke ts-linter
+  once after both complete, passing all modified `.ts` and `.vue` files together.
 - **code-reviewer** after any output from csharp-engineer, frontend-engineer, or mcp-engineer
 - **security-reviewer** when changes touch authentication, authorization,
   data access, PII handling, API endpoints, or configuration with secrets
 - **performance-reviewer** when changes include database queries, API endpoints,
   loops over collections, or caching logic
+- When both security-reviewer and performance-reviewer are required, run them
+  in parallel after code-reviewer completes -- they have no dependency on each other.
 - **test-engineer** after any new public methods or API endpoints are created, or
   when existing methods are modified -- engineer agents must verify test coverage
   and assess test impact (which existing tests are affected) before handoff

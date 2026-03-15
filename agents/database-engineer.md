@@ -4,9 +4,12 @@ description: >
   Invoke when a task requires database schema changes, migrations, index
   additions, stored procedures, or raw SQL scripts. csharp-engineer explicitly
   does not handle these -- database-engineer owns all schema and migration work.
-  Invoke before csharp-engineer when entity model changes require corresponding
-  schema changes. Supports EF Core migrations and Flyway -- detects which tool
-  the project uses before acting.
+  Invoke before csharp-engineer when entity model changes produce a schema diff
+  (new or modified tables, columns, indexes, or constraints). Changes that do
+  not affect the schema -- such as adding [NotMapped] properties or renaming C#
+  members without a corresponding column rename -- do not require this agent.
+  Supports EF Core migrations and Flyway -- detects which tool the project uses
+  before acting.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 permissionMode: acceptEdits

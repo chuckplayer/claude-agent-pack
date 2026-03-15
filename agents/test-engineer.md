@@ -5,7 +5,10 @@ description: >
   Generates xUnit tests for C# and Vitest tests for TypeScript. Reads existing
   tests before writing new ones to match established patterns. Do NOT invoke
   before code-reviewer has run -- tests must match the reviewed, final
-  implementation, not assumed interfaces.
+  implementation, not assumed interfaces. Note: engineer agents are responsible
+  for flagging coverage gaps in their handoff summary before code-reviewer runs;
+  this agent creates the actual tests once the implementation is reviewed and
+  confirmed.
 tools: Read, Write, Edit, Glob, Grep
 model: sonnet
 permissionMode: acceptEdits

@@ -1,11 +1,11 @@
 ---
 name: code-reviewer
 description: >
-  Invoke after any code generation or modification by csharp-engineer or
-  frontend-engineer. Reviews for quality, readability, maintainability,
-  and convention compliance. Can target a file, directory, or recent changes.
-  Read-only -- never modifies files. For security concerns, invoke
-  security-reviewer separately.
+  Invoke after any code generation or modification by csharp-engineer,
+  frontend-engineer, or mcp-engineer. Reviews for quality, readability,
+  maintainability, and convention compliance. Can target a file, directory,
+  or recent changes. Read-only -- never modifies files. For security concerns,
+  invoke security-reviewer separately.
 tools: Read, Grep, Glob
 model: haiku
 permissionMode: plan

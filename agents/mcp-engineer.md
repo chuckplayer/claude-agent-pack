@@ -5,7 +5,10 @@ description: >
   resource handlers, prompt registration, Zod parameter schemas, and transport
   setup. Invoke only when the .ts file being modified lives inside an MCP server
   directory (e.g., a project whose entry point registers MCP tools/resources via
-  @modelcontextprotocol/sdk). Do NOT invoke for frontend UI code (.vue components,
+  @modelcontextprotocol/sdk). Directory location is the deciding factor: any .ts
+  file inside an MCP server project is owned by this agent regardless of its
+  apparent function (e.g., a helper or client file that lives inside the MCP
+  server directory). Do NOT invoke for frontend UI code (.vue components,
   Pinia stores, API clients), C# backend code, or SQL.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet

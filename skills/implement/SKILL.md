@@ -44,11 +44,15 @@ Run the full agent pipeline for the task the user described:
 
 5a. **ts-linter** — invoke immediately after **frontend-engineer** or **mcp-engineer** completes, before code-reviewer. Pass the list of modified `.ts` and `.vue` files. If ts-linter returns FAIL, route back to the originating engineer for fixes before continuing. Do not proceed to code-reviewer until ts-linter returns PASS or SKIP.
 
+   If both frontend-engineer and mcp-engineer ran in parallel, invoke ts-linter **once** after both complete, passing all modified `.ts` and `.vue` files from both engineers combined.
+
 6. **code-reviewer** — always after any engineer agent output.
 
 7. **security-reviewer** — invoke if changes touch authentication, authorization, data access, PII, external endpoints, or secrets.
 
 8. **performance-reviewer** — invoke if changes include database queries, API endpoints, loops over collections, or caching logic.
+
+   If both security-reviewer and performance-reviewer are required, invoke them in parallel — they are independent and have no dependency on each other.
 
 9. **test-engineer** — always last among reviewers, after code-reviewer completes. Never invoke before code-reviewer has finished.
 

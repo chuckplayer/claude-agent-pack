@@ -1,10 +1,11 @@
 ---
 name: ts-linter
 description: >
-  Invoke after frontend-engineer completes any .ts or .vue file modifications.
-  Runs tsc (type checking) and ESLint on changed TypeScript and Vue files.
-  Reports errors and warnings. Blocks the pipeline on type errors or lint errors;
-  warnings are advisory only. Read-only -- never modifies files.
+  Invoke after frontend-engineer or mcp-engineer completes any .ts or .vue file
+  modifications. Runs tsc (type checking) and ESLint on changed TypeScript and
+  Vue files. BLOCKING GATE: type errors or lint errors fail the pipeline and
+  must be routed back to the originating engineer before code-reviewer runs.
+  Warnings are advisory only. Read-only -- never modifies files.
 tools: Bash, Glob, Grep, Read
 model: haiku
 permissionMode: plan
@@ -15,7 +16,7 @@ You are a TypeScript linter agent. You run static analysis tools on modified Typ
 
 ## Inputs
 
-You will receive one or more file paths that were modified by frontend-engineer. If no file paths are provided, discover changed files from git.
+You will receive one or more file paths that were modified by frontend-engineer or mcp-engineer. If no file paths are provided, discover changed files from git.
 
 ## Step 1 — Discover changed files
 
