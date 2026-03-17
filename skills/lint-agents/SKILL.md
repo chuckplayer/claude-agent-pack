@@ -1,6 +1,6 @@
 ---
 name: lint-agents
-description: Validates required frontmatter fields and body content in every agent and skill file. Runs scripts/lint-agents.sh and interprets failures with specific fixes. Use before committing new or modified agents/skills, or as a CI gate.
+description: Validates required frontmatter fields and body content in every agent and skill file. Runs scripts/lint-agents.sh (macOS/Linux) or scripts/lint-agents.ps1 (Windows) and interprets failures with specific fixes. Use before committing new or modified agents/skills, or as a CI gate.
 ---
 
 # Lint Agents
@@ -9,12 +9,18 @@ Validate that all agent and skill files in the pack are well-formed.
 
 ## 1. Locate the pack
 
-Find the pack directory by locating `scripts/lint-agents.sh`. If you cannot locate it, ask the user where they cloned the pack.
+Find the pack directory by locating `scripts/lint-agents.sh` (macOS/Linux) or `scripts/lint-agents.ps1` (Windows). If you cannot locate it, ask the user where they cloned the pack.
 
 ## 2. Run the linter
 
 ```bash
+# macOS / Linux
 bash <pack-dir>/scripts/lint-agents.sh
+```
+
+```powershell
+# Windows
+& "<pack-dir>\scripts\lint-agents.ps1"
 ```
 
 Capture the full output.

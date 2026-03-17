@@ -1,6 +1,6 @@
 ---
 name: check-updates
-description: Checks whether installed agents and skills are current with the pack source. Runs scripts/check-updates.sh and reports what is outdated or missing. Use before pulling updates or when something seems off after a git pull.
+description: Checks whether installed agents and skills are current with the pack source. Runs scripts/check-updates.sh (macOS/Linux) or scripts/check-updates.ps1 (Windows) and reports what is outdated or missing. Use before pulling updates or when something seems off after a git pull.
 ---
 
 # Check Updates
@@ -9,12 +9,18 @@ Compare installed agents and skills against the pack source to identify anything
 
 ## 1. Locate the pack
 
-Find the pack directory by locating `scripts/check-updates.sh`. If you cannot locate it, ask the user where they cloned the pack.
+Find the pack directory by locating `scripts/check-updates.sh` (macOS/Linux) or `scripts/check-updates.ps1` (Windows). If you cannot locate it, ask the user where they cloned the pack.
 
 ## 2. Run the update check
 
 ```bash
+# macOS / Linux
 bash <pack-dir>/scripts/check-updates.sh
+```
+
+```powershell
+# Windows
+& "<pack-dir>\scripts\check-updates.ps1"
 ```
 
 Capture the full output.

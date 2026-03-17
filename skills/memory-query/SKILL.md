@@ -1,6 +1,6 @@
 ---
 name: memory-query
-description: Searches the project's memory/ directory by keyword or regex pattern. Runs scripts/query-memory.sh, then summarizes matching files and their relevance. Use when looking for prior decisions, known issues, or architectural context on a topic.
+description: Searches the project's memory/ directory by keyword or regex pattern. Runs scripts/query-memory.sh (macOS/Linux) or scripts/query-memory.ps1 (Windows), then summarizes matching files and their relevance. Use when looking for prior decisions, known issues, or architectural context on a topic.
 ---
 
 # Memory Query
@@ -13,13 +13,19 @@ If the user provided a search term or topic, use it as the pattern. If not, ask 
 
 ## 2. Locate the pack and memory directory
 
-- Find the pack directory (contains `scripts/query-memory.sh`).
+- Find the pack directory (contains `scripts/query-memory.sh` on macOS/Linux or `scripts/query-memory.ps1` on Windows).
 - The memory directory defaults to `./memory` in the current project. If the user specifies a different path, use that.
 
 ## 3. Run the query
 
 ```bash
+# macOS / Linux
 bash <pack-dir>/scripts/query-memory.sh "<pattern>" <memory-dir>
+```
+
+```powershell
+# Windows
+& "<pack-dir>\scripts\query-memory.ps1" "<pattern>" <memory-dir>
 ```
 
 The script skips files with `status: superseded` or `status: archived`. Capture the full output.

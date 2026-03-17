@@ -1,6 +1,6 @@
 ---
 name: setup-project
-description: Scaffolds a project with the Claude Agent Pack structure: copies CLAUDE.md, docs/CONVENTIONS.md (from template), docs/MEMORY-WRITING.md, and creates the memory/ subdirectories. Runs scripts/setup-project.sh and guides the user through next steps.
+description: Scaffolds a project with the Claude Agent Pack structure: copies CLAUDE.md, docs/CONVENTIONS.md (from template), docs/MEMORY-WRITING.md, and creates the memory/ subdirectories. Runs scripts/setup-project.sh (macOS/Linux) or scripts/setup-project.ps1 (Windows) and guides the user through next steps.
 ---
 
 # Setup Project
@@ -13,12 +13,18 @@ The target defaults to the current working directory. If the user specified a di
 
 ## 2. Locate the pack
 
-Find the pack directory by locating `scripts/setup-project.sh`. If you cannot locate it, ask the user where they cloned the pack.
+Find the pack directory by locating `scripts/setup-project.sh` (macOS/Linux) or `scripts/setup-project.ps1` (Windows). If you cannot locate it, ask the user where they cloned the pack.
 
 ## 3. Run the setup script
 
 ```bash
+# macOS / Linux
 bash <pack-dir>/scripts/setup-project.sh <target-dir>
+```
+
+```powershell
+# Windows
+& "<pack-dir>\scripts\setup-project.ps1" <target-dir>
 ```
 
 Capture the full output.
