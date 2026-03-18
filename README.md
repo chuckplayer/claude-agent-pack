@@ -33,27 +33,14 @@ Without orchestration, a single session planning an architecture change, writing
 
 Clone the repo anywhere, then run the installer:
 
-```powershell
-# Windows (PowerShell)
-git clone https://github.com/chuckplayer/claude-agent-pack.git
-& ".\claude-agent-pack\install.ps1"
-```
-
 ```bash
-# macOS
 git clone https://github.com/chuckplayer/claude-agent-pack.git
 bash ./claude-agent-pack/install.sh
 ```
 
 After the installer runs, scaffold each project using the setup script. Replace `<pack-dir>` with the path to your clone and `<project>` with your project root:
 
-```powershell
-# Windows
-& "<pack-dir>\scripts\setup-project.ps1" -Target <project>
-```
-
 ```bash
-# macOS
 bash <pack-dir>/scripts/setup-project.sh <project>
 ```
 
@@ -61,7 +48,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Sixteen slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Fourteen slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -79,36 +66,21 @@ Sixteen slash-command entry points are included. Invoke them directly in Claude 
 | `/setup-project` | Scaffolds a project with `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` structure, then guides through next steps |
 | `/check-readiness` | Verifies Claude Code, all agents, all skills, and the current project's scaffolding are fully installed; reports specific remediation steps for any failures |
 | `/check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated or missing and offers to run the installer |
-| `/lint-agents` | Validates required frontmatter fields and body content in every agent and skill file; reports specific fixes for any failures |
-| `/memory-query` | Searches `memory/` by keyword or regex, then summarizes matching files and their relevance to the query |
 
 ## Scripts
 
-Six utility scripts are included in `scripts/`. Each has a `.sh` (macOS) and `.ps1` (Windows) version.
+Three utility scripts are included in `scripts/`.
 
 | Script | What it does |
 |---|---|
 | `setup-project` | Copies `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` scaffold into a project directory |
 | `check-readiness` | Verifies Claude Code is installed, all agents and skills are installed, and the target project has full scaffolding |
 | `check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated |
-| `query-memory` | Searches `memory/**/*.md` by pattern (case-insensitive regex); skips superseded and archived files |
-| `lint-agents` | Validates required frontmatter fields and body content in every agent and skill file |
-| `new-memory` | Scaffolds a new memory file with correct frontmatter and prints the `MEMORY.md` pointer |
-
-```powershell
-# Windows examples
-.\scripts\check-readiness.ps1 -ProjectDir <project>
-.\scripts\check-updates.ps1
-.\scripts\query-memory.ps1 -Pattern "auth" -MemoryDir <project>\memory
-.\scripts\new-memory.ps1 -Subdir decisions -Slug auth-token-storage -MemoryDir <project>\memory
-```
 
 ```bash
-# macOS examples
+bash scripts/setup-project.sh <project>
 bash scripts/check-readiness.sh <project>
 bash scripts/check-updates.sh
-bash scripts/query-memory.sh "auth" <project>/memory
-bash scripts/new-memory.sh decisions auth-token-storage <project>/memory
 ```
 
 ## Quick Start
@@ -127,11 +99,9 @@ Use skills as entry points:
 /conventions
 /challenge we're considering migrating from REST to GraphQL
 /memory-audit
-/memory-query auth token storage
 /setup-project
 /check-readiness
 /check-updates
-/lint-agents
 ```
 
 Or invoke agents directly in natural language:
@@ -175,26 +145,14 @@ Place an agent file in `.claude/agents/` in the project root to override the glo
 
 To check whether your installed agents and skills are current before pulling:
 
-```powershell
-# Windows
-.\scripts\check-updates.ps1
-```
-
 ```bash
-# macOS
 bash scripts/check-updates.sh
 ```
 
 To pull and reinstall:
 
-```powershell
-# Windows (PowerShell) -- from your clone directory
-git pull
-& ".\install.ps1"
-```
-
 ```bash
-# macOS -- from your clone directory
+# from your clone directory
 git pull
 bash install.sh
 ```
@@ -203,13 +161,7 @@ Agents are updated in-place. Re-running the installer is safe -- it is idempoten
 
 ## Uninstalling
 
-```powershell
-# Windows (PowerShell) -- from your clone directory
-& "<pack-dir>\uninstall.ps1"
-```
-
 ```bash
-# macOS -- from your clone directory
 bash <pack-dir>/uninstall.sh
 ```
 
