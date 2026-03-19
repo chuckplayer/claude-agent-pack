@@ -48,7 +48,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Fourteen slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Thirteen slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -58,14 +58,13 @@ Fourteen slash-command entry points are included. Invoke them directly in Claude
 | `/refactor` | Refactor with impact analysis first: tech-lead → engineer(s) → mandatory test verification → code-reviewer. Enforces a no-behavior-delta constraint. |
 | `/debug` | Diagnose and fix a failing test or error. Reads the stack trace, forms a hypothesis, routes to the right engineer, then runs a lightweight code-reviewer pass. |
 | `/review-pr` | Runs code-reviewer, security-reviewer, and performance-reviewer against a PR or diff. Produces a consolidated findings report. |
-| `/agent-plan` | Routes to tech-lead for decomposition, then asks whether to proceed |
-| `/challenge` | Pressure-tests a proposal using devils-advocate |
+| `/plan` | Decompose a task with tech-lead and optionally pressure-test the plan with devils-advocate before implementation begins. |
 | `/onboard` | Reads the codebase, memory, and conventions to produce a structured orientation: architecture, entry points, data flow, and known gotchas. |
 | `/conventions` | Scaffolds or updates `docs/CONVENTIONS.md` by reading actual code patterns and interviewing the user. |
-| `/memory-audit` | Reviews all active memory files and archives or supersedes stale entries |
+| `/memory-audit` | Reviews all active memory files for staleness, archives stale entries, and checks for unrecorded decisions. |
 | `/setup-project` | Scaffolds a project with `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` structure, then guides through next steps |
-| `/check-readiness` | Verifies Claude Code, all agents, all skills, and the current project's scaffolding are fully installed; reports specific remediation steps for any failures |
-| `/check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated or missing and offers to run the installer |
+| `/skill-writer` | Scaffolds a new skill for the pack: interviews the user, writes `skills/<name>/SKILL.md`, updates the README, and validates with `/lint-agents` |
+| `/system-check` | Runs both readiness and update checks in one pass: verifies installation, project scaffolding, and whether agents/skills are current. |
 
 ## Scripts
 

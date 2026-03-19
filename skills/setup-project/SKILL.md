@@ -1,6 +1,6 @@
 ---
 name: setup-project
-description: Scaffolds a project with the Claude Agent Pack structure: copies CLAUDE.md, docs/CONVENTIONS.md (from template), docs/MEMORY-WRITING.md, and creates the memory/ subdirectories. Runs scripts/setup-project.sh (macOS/Linux) or scripts/setup-project.ps1 (Windows) and guides the user through next steps.
+description: Scaffolds a project with the Claude Agent Pack structure: copies CLAUDE.md, docs/CONVENTIONS.md (from template), docs/MEMORY-WRITING.md, and creates the memory/ subdirectories. Runs scripts/setup-project.sh and guides the user through next steps.
 ---
 
 # Setup Project
@@ -13,18 +13,12 @@ The target defaults to the current working directory. If the user specified a di
 
 ## 2. Locate the pack
 
-Find the pack directory by locating `scripts/setup-project.sh` (macOS/Linux) or `scripts/setup-project.ps1` (Windows). If you cannot locate it, ask the user where they cloned the pack.
+Find the pack directory by locating `scripts/setup-project.sh`. If you cannot locate it, ask the user where they cloned the pack.
 
 ## 3. Run the setup script
 
 ```bash
-# macOS / Linux
 bash <pack-dir>/scripts/setup-project.sh <target-dir>
-```
-
-```powershell
-# Windows
-& "<pack-dir>\scripts\setup-project.ps1" <target-dir>
 ```
 
 Capture the full output.
@@ -41,13 +35,17 @@ Capture the full output.
 
 ## 5. Guide next steps
 
-After the script completes, prompt the user through the recommended follow-up:
+After the script completes, work through these follow-up steps with the user:
 
-1. **Fill in `docs/CONVENTIONS.md`** — if it was created from the template, it needs to be populated with the project's naming conventions, architectural rules, error handling strategy, logging standards, and compliance requirements. Offer to run `/conventions` to do this interactively.
-
-2. **Commit the scaffolding** — suggest the commit command printed by the script:
+1. **Commit the scaffolding** — suggest the commit command printed by the script:
    ```bash
    git add CLAUDE.md docs/ memory/ && git commit -m 'chore: add Claude Agent Pack scaffolding'
    ```
 
-3. **Run `/onboard`** — once committed, offer to run `/onboard` to generate a structured orientation for the project.
+2. **Ask about conventions** — if `docs/CONVENTIONS.md` was created from the template, ask:
+   > "The conventions file was created from a template and needs to be filled in. Would you like me to run `/conventions` now to document your team's standards interactively?"
+
+3. **Ask about onboarding** — after the commit, ask:
+   > "Would you like me to run `/onboard` to generate a structured orientation for this codebase?"
+
+Both follow-up skills are optional. Neither blocks the other.

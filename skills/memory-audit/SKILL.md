@@ -9,7 +9,8 @@ Run a memory hygiene pass on the project's `memory/` directory.
 
 If `memory/` does not exist in the current project, report that and stop.
 
-Steps:
+## 1. Review active files for staleness
+
 1. Use `Glob("memory/**/*.md")` to discover all memory files.
 2. Skip files with `status: superseded` or `status: archived` — these are history only.
 3. For each **active** file, check whether it still accurately describes the codebase as it exists today:
@@ -20,4 +21,20 @@ Steps:
    - Context no longer applies → update `**Status:** archived`
    - Superseded by a newer decision → update `**Status:** superseded` and populate `**Superseded-by:**`
 5. Do not delete files — history is preserved by archiving, not deletion.
-6. Output a summary: total active files reviewed, files archived, files superseded, and a brief reason for each change. If no changes were needed, say so.
+
+## 2. Check for gaps in decision coverage
+
+After reviewing active files, look for unrecorded decisions. Ask the user:
+
+> "Are there major architectural decisions, known issues, or pattern choices that have been made but aren't recorded in memory? For example: a technology that was evaluated and rejected, a workaround for a platform constraint, or a deliberate deviation from the conventions."
+
+If the user identifies gaps, offer to create new memory entries for them using the templates in `docs/MEMORY-WRITING.md`.
+
+## 3. Report
+
+Output a summary:
+- Total active files reviewed
+- Files archived (with reason)
+- Files superseded (with reason and superseded-by)
+- Gaps identified and whether new entries were created
+- If no changes were needed, say so

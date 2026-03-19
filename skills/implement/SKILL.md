@@ -21,26 +21,16 @@ Run the full agent pipeline for the task the user described:
 
 4. **api-designer** — invoke before engineer agents if the task creates or significantly modifies API endpoints. Skip for internal refactors that do not change the API surface.
 
-5. **Engineer agents** — before dispatching any engineer, create a dedicated worktree branch for each one. This guarantees the worktree is never on `main` or directly on the feature branch, even if an earlier check was bypassed.
-
-   **For each engineer to be dispatched**, run in sequence:
-   ```bash
-   git checkout -b worktree/<engineer-type>/$(date +%Y%m%d-%H%M%S)
-   ```
-   Then immediately switch back to the feature branch:
-   ```bash
-   git checkout <feature-branch>
-   ```
-   Record the generated branch name. For parallel dispatch (csharp + typescript), create both branches sequentially before starting either agent.
-
-   Then invoke each engineer with `isolation: "worktree"` so it works on the branch you just created. Invoke based on the file types being changed:
+5. **Engineer agents** — invoke based on the file types being changed, always with `isolation: "worktree"`:
    - C# / .NET changes: **csharp-engineer**
    - TypeScript / Vue 3 changes: **frontend-engineer**
    - MCP server changes: **mcp-engineer**
    - Schema, migrations, SQL: **database-engineer**
    - Run csharp-engineer and frontend-engineer in parallel if both are needed and there are no shared files between them.
 
-   When each agent completes, the worktree path and branch are returned. Collect all worktree branch names — you will pass them to merge-reviewer.
+   When each agent completes, the worktree path and branch are returned. Collect all worktree branch names — pass them to merge-reviewer in step 10.
+
+   > **Test requirement:** Per CLAUDE.md, every engineer must verify existing tests pass and flag coverage gaps before handing off. Do not proceed to code-reviewer if an engineer reports failing tests.
 
 5a. **ts-linter** — invoke immediately after **frontend-engineer** or **mcp-engineer** completes, before code-reviewer. Pass the list of modified `.ts` and `.vue` files. If ts-linter returns FAIL, route back to the originating engineer for fixes before continuing. Do not proceed to code-reviewer until ts-linter returns PASS or SKIP.
 
@@ -56,7 +46,7 @@ Run the full agent pipeline for the task the user described:
 
 9. **test-engineer** — always last among reviewers, after code-reviewer completes. Never invoke before code-reviewer has finished.
 
-10. **merge-reviewer** — always last. Pass a summary of: the task description, which pipeline stages ran, all findings from code-reviewer / security-reviewer / performance-reviewer, whether test-engineer produced tests, and **the list of worktree branch names** collected in step 5. merge-reviewer will merge those branches into the feature branch before running gate checks.
+10. **merge-reviewer** — always last. Pass a summary of: the task description, which pipeline stages ran, all findings from code-reviewer / security-reviewer / performance-reviewer, whether test-engineer produced tests, and **the list of worktree branch names** collected in step 5. merge-reviewer will verify all required stages passed and commit the changes to the feature branch.
 
     **If merge-reviewer returns PASS:** the changes are committed to the feature branch. Proceed to step 11.
 

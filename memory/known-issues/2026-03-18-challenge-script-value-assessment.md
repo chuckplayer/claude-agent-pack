@@ -22,8 +22,8 @@ The scripts/ directory contains 12 files (6 .sh + 6 .ps1). Five of the six are w
 ### new-memory.sh has no skill and limited audience
 - **Unresolved:** This is the only script with no corresponding skill -- Claude never invokes it. It scaffolds a memory file with a template, but the devils-advocate and tech-lead agents already write memory files directly using Write. The human CLI audience could be served by a copy-pasteable template in docs/MEMORY-WRITING.md without maintaining a script in two languages.
 
-### sh/ps1 duplication may be unnecessary on Windows
-- **Unresolved:** Every script exists in both Bash and PowerShell. Git Bash ships with Git for Windows (which Claude Code requires), so the .sh versions likely work on Windows without the .ps1 counterparts. If the .ps1 files are not needed, that is 6 files of duplicated logic with no automated parity testing.
+### sh/ps1 duplication — resolved
+- **Resolved (2026-03-19):** The .ps1 files were removed. Git Bash (which ships with Git for Windows) runs .sh scripts on Windows without issue. All skills and the README now reference only the .sh versions.
 
 ### check-readiness.sh and check-updates.sh serve a human audience Claude cannot replace
 - **Accepted risk:** These scripts check installed agent/skill state against the pack source using filesystem traversal and diff. They provide diagnostic output for humans at the terminal independent of Claude. This is a genuinely different audience. However, the skill-wrapped versions (where Claude shells out to the script) could still be replaced with inline tool usage.
@@ -36,7 +36,7 @@ The scripts/ directory contains 12 files (6 .sh + 6 .ps1). Five of the six are w
 
 ## Implications
 
-- If query-memory.sh and new-memory.sh are removed (4 files total counting .ps1), the script surface shrinks by a third with no loss of capability.
+- If query-memory.sh and new-memory.sh are removed (2 files), the script surface shrinks by a third with no loss of capability.
 - The memory-query skill would need to be rewritten to use Grep/Glob/Read directly instead of shelling out, which would likely make it more reliable.
-- If .ps1 files are determined to be unnecessary, another 6 files can be removed, leaving only 4 shell scripts.
+- .ps1 files have been removed — only .sh scripts remain.
 - The remaining scripts (check-readiness, check-updates, lint-agents, setup-project) should be evaluated for whether their skill wrappers should shell out or replicate the logic inline.

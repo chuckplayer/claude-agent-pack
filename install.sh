@@ -34,6 +34,19 @@ for skill_dir in "$SCRIPT_DIR/skills/"*/; do
     echo "  [ok] skill:  $skill_name"
 done
 
+# Remove skills that were deprecated or merged in a previous version
+deprecated_skills=("agent-plan" "challenge" "check-readiness" "check-updates")
+deprecated_removed=0
+for name in "${deprecated_skills[@]}"; do
+    target="$SKILLS_DIR/$name"
+    if [ -d "$target" ]; then
+        rm -rf "$target"
+        echo "  [rm] skill:  $name (deprecated)"
+        deprecated_removed=$((deprecated_removed + 1))
+    fi
+done
+[ "$deprecated_removed" -gt 0 ] && echo ""
+
 echo ""
 echo "Next steps:"
 echo ""
@@ -43,6 +56,6 @@ echo ""
 echo "  2. Verify everything is ready:"
 echo "     $SCRIPT_DIR/scripts/check-readiness.sh <your-project-path>"
 echo ""
-echo "  3. In Claude Code, try: /agent-plan add a payment processing feature"
+echo "  3. In Claude Code, try: /plan add a payment processing feature"
 echo ""
 echo "To verify: open Claude Code and run /agents -- your new agents should appear in the list."
