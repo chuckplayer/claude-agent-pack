@@ -9,14 +9,16 @@ Apply a targeted fix with minimal ceremony. This pipeline is intentionally abbre
 
 > **When to use `/debug` instead:** If you don't yet know the root cause, use `/debug` to diagnose first, then return here to apply the fix.
 
-## 1. Confirm the fix is understood
+## 1. Confirm the fix is in scope for hotfix
 
-Before starting, confirm:
+Before starting, confirm all of the following are true:
 - The **root cause** is known
-- The **change** is small and scoped (a few lines; no new dependencies; no schema changes)
+- The fix touches **3 or fewer files** and fewer than **50 lines of logic**
+- **No new dependencies** are introduced
+- **No schema changes** are required
 - The fix does not introduce a new architectural pattern
 
-If any of these are false, use `/implement` instead and state why.
+If any of these are false, use `/implement` instead — state which condition failed and why.
 
 ## 2. Branch setup
 
@@ -69,4 +71,4 @@ If FAIL: fix the blocking issue and re-run steps 5–6. Allow **1 retry only** �
 
 After merge-reviewer returns PASS, push the hotfix branch immediately. Ask the user whether to open a pull request targeting `main` and whether to request an expedited review.
 
-Do not run test-engineer by default. If the user wants test coverage added, note it as a follow-up task rather than blocking the hotfix.
+> **test-engineer is skipped** in the hotfix pipeline — speed is the priority and the change scope is intentionally narrow. If test coverage for the fix is needed, flag it as a follow-up task in the PR description rather than blocking the hotfix.

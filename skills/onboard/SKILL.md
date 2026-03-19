@@ -51,6 +51,8 @@ From what you've read, identify:
 
 ## 4. Produce the orientation document
 
+> **Depth target:** Aim for the level of detail a developer new to this project could use to make their first commit within two hours. If a section would require deep explanation to be useful, flag it in step 5 instead of expanding it here — a pointer to the right file is more useful than an incomplete explanation.
+
 Output a structured orientation using this format:
 
 ```

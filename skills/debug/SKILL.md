@@ -31,7 +31,7 @@ Before routing to an engineer:
 
 ## 4. Route to the appropriate engineer
 
-Select based on the file types involved:
+If the error is localized to one layer, select based on file type:
 
 | File type | Engineer |
 |-----------|----------|
@@ -39,6 +39,8 @@ Select based on the file types involved:
 | `.ts` / `.vue` | **frontend-engineer** |
 | `.ts` in an MCP server | **mcp-engineer** |
 | SQL / migration | **database-engineer** |
+
+**Multi-layer errors:** If the error spans layers (e.g., a frontend test failing because a backend API is broken), route to the layer containing the root cause first. Fix that layer, verify the downstream symptom resolves, then return here if the downstream layer also needs changes.
 
 Pass the engineer:
 - The error message and stack trace
@@ -54,7 +56,15 @@ After the engineer returns:
 
 ## 6. Lightweight review
 
-Run **code-reviewer** on the changed files only. Skip security-reviewer and performance-reviewer unless the fix touches auth, data access, or a hot path — state your reasoning either way.
+Run **code-reviewer** on the changed files only.
+
+Skip security-reviewer and performance-reviewer unless:
+- The fix touches auth, authorization, data access, or secrets → invoke **security-reviewer**
+- The fix touches a hot path → invoke **performance-reviewer**
+
+> **Hot-path examples:** tight loops over large collections, API endpoints handling high traffic, database queries in critical flows (login, checkout, search). If uncertain, include performance-reviewer.
+
+State your reasoning either way.
 
 ## 7. Wrap up
 

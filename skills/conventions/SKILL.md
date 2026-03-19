@@ -53,12 +53,12 @@ Use Glob and Grep to observe what the code actually does — conventions should 
 
 ## 3. Interview the user
 
-For each category where you found ambiguity, inconsistency, or nothing at all, ask the user one focused question. Do not ask all questions at once — work through them conversationally, grouping related topics.
+For each category where you found ambiguity, inconsistency, or nothing at all, ask the user one focused question at a time. Do not ask all questions at once — work through them conversationally.
 
-Examples:
-- "I see both `IFooService` and `FooService` interfaces in the codebase. Which should be the standard going forward?"
-- "Tests appear to use both mocks and real database connections. Is there a preferred approach?"
-- "There's no explicit error-handling pattern. What's your preferred approach — exceptions, Result types, or something else?"
+Examples (each asked separately, not together):
+- "I see interface files in the codebase — should they be named `IFooService` or `FooService`?"
+- "What's your preferred approach for error handling — exceptions, Result types, or something else?"
+- "Should tests use mocks, real dependencies, or does it depend on the test type?"
 
 ## 4. Write or update CONVENTIONS.md
 

@@ -32,7 +32,7 @@ The tech-lead will:
 - Determine whether the change is safe to parallelize or must be sequential
 - Produce a sequenced plan
 
-Present the plan to the user. If the tech-lead flags the refactor as high-blast-radius or pattern-changing, recommend running `/challenge` on the plan before proceeding.
+Present the plan to the user. If the tech-lead flags the refactor as high-blast-radius or pattern-changing, or if the plan introduces a new pattern (even one extracted from existing code), recommend running devils-advocate on the plan before proceeding.
 
 ## 4. devils-advocate (conditional)
 
@@ -54,27 +54,21 @@ Pass each engineer:
 
 Run **ts-linter** immediately after frontend-engineer or mcp-engineer. Block on FAIL.
 
-## 6. Test verification — priority gate
+> **Test requirement (same as all pipelines):** Every engineer must confirm all pre-existing tests still pass and that test coverage has not decreased before handing off. If any pre-existing test fails after the refactor, the engineer must fix it before proceeding to code-reviewer. This is not unique to refactor — it is the standard requirement for all engineer agents per CLAUDE.md.
 
-**Before code-reviewer**, the engineer must confirm:
-- All pre-existing tests still pass
-- Test coverage has not decreased
-
-If any pre-existing test fails after the refactor, route back to the engineer immediately. Do not proceed to code-reviewer with failing tests.
-
-## 7. code-reviewer
+## 6. code-reviewer
 
 Invoke with the explicit note that this is a refactor — reviewer should flag any unintended behavior changes, not just style issues.
 
 Run security-reviewer and performance-reviewer only if the refactor touches auth, data access, or hot-path code. State your reasoning.
 
-## 8. test-engineer
+## 7. test-engineer
 
 After code-reviewer. Focus on:
 - Any new abstractions or extracted functions that lack direct test coverage
 - Ensuring the refactor did not reduce meaningful coverage
 
-## 9. merge-reviewer
+## 8. merge-reviewer
 
 Final gate. Pass the worktree branch names and a summary of all stages.
 

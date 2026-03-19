@@ -13,7 +13,8 @@
       "Bash(for f:*)",
       "Bash(do echo:*)",
       "Read(//Users/chuck/Repos/claude-agent-pack/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(powershell.exe -File \"C:\\\\Users\\\\playechu\\\\source\\\\repos\\\\claude-agent-pack\\\\scripts\\\\check-readiness.ps1\" \"C:\\\\Users\\\\playechu\\\\source\\\\repos\\\\claude-agent-pack\" 2>&1)"
     ]
   }
 }
