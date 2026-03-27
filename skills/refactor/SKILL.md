@@ -45,7 +45,7 @@ Skip for straightforward extractions, renames, or formatting changes.
 
 ## 5. Engineer agents
 
-Dispatch based on file types, following the plan from tech-lead. Use `isolation: "worktree"` for each engineer.
+Dispatch based on file types, following the plan from tech-lead. Use `isolation: "worktree"` for each engineer. Worktrees are created from the current refactor branch's HEAD — never from `main` or `master`. Collect both the worktree path and branch name returned by each agent for cleanup after merge-reviewer.
 
 Pass each engineer:
 - The refactor goal and constraints
@@ -70,7 +70,7 @@ After code-reviewer. Focus on:
 
 ## 8. merge-reviewer
 
-Final gate. Pass the worktree branch names and a summary of all stages.
+Final gate. Pass the worktree branch names and a summary of all stages. merge-reviewer will merge worktree branches into the refactor branch, clean up worktrees and temporary branches, then run the gate checklist.
 
 If PASS: push and optionally open a PR. Note in the PR description that this is a pure refactor with no behavior change.
-If FAIL: retry up to 2 cycles.
+If FAIL: retry up to 2 cycles. New worktrees on retry are also created from the refactor branch. Collect new paths/branches and pass them to the next merge-reviewer invocation.
