@@ -28,7 +28,9 @@ Run the full agent pipeline for the task the user described:
    - Schema, migrations, SQL: **database-engineer**
    - Run csharp-engineer and frontend-engineer in parallel if both are needed and there are no shared files between them.
 
-   When each agent completes, the worktree path and branch are returned. Collect all worktree branch names — pass them to merge-reviewer in step 10.
+   **Worktree base:** The `isolation: "worktree"` parameter creates each worktree from the current feature branch's HEAD — NOT from `main` or `master`. This ensures the engineer starts from the same commits the developer is working on. Never pass a base branch of `main` to engineer agents.
+
+   When each agent completes, the worktree path and branch name are both returned. Collect both — pass the **branch names** to merge-reviewer in step 10 and retain the **worktree paths** for cleanup in step 10a.
 
    > **Test requirement:** Per CLAUDE.md, every engineer must verify existing tests pass and flag coverage gaps before handing off. Do not proceed to code-reviewer if an engineer reports failing tests.
 
@@ -48,14 +50,37 @@ Run the full agent pipeline for the task the user described:
 
 10. **merge-reviewer** — always last. Pass a summary of: the task description, which pipeline stages ran, all findings from code-reviewer / security-reviewer / performance-reviewer, whether test-engineer produced tests, and **the list of worktree branch names** collected in step 5. merge-reviewer will verify all required stages passed and commit the changes to the feature branch.
 
-    **If merge-reviewer returns PASS:** the changes are committed to the feature branch. Proceed to step 11.
+    **If merge-reviewer returns PASS:** the changes are committed to the feature branch. Proceed to step 10a.
+
+10a. **Worktree cleanup** — after merge-reviewer returns PASS, clean up all worktrees created in step 5.
+
+    For each worktree path collected in step 5, verify it still exists and remove it:
+    ```bash
+    git worktree remove <worktree-path> --force
+    ```
+
+    Then delete each temporary worktree branch:
+    ```bash
+    git branch -d <worktree-branch>
+    ```
+
+    Finally, prune any stale worktree references:
+    ```bash
+    git worktree prune
+    ```
+
+    If a worktree path no longer exists (already cleaned up by the platform), skip the `git worktree remove` for that path and proceed to branch deletion.
+
+    Do not skip cleanup. Stale worktrees and branches accumulate in the repository and confuse future pipelines.
 
 11. **git-engineer (push/PR mode)** — invoke after merge-reviewer returns PASS. Ask the user whether to push the feature branch and optionally open a pull request. Pass the feature branch name and the commit SHA from merge-reviewer.
 
     **If merge-reviewer returns FAIL:** begin a retry cycle:
     - Route each failed item back to the agent responsible (e.g., Critical code finding → engineer agent, missing tests → test-engineer).
-    - Engineer agents on retry also use `isolation: "worktree"`.
+    - Engineer agents on retry also use `isolation: "worktree"` and must be created from the feature branch, not main.
+    - Add any new worktree paths and branch names to the collected lists.
     - After fixes, re-run steps 6–10 (code-reviewer through merge-reviewer).
     - Allow up to **2 retry cycles** total. If merge-reviewer still returns FAIL after 2 retries, stop and surface the unresolved FAIL report to the user for manual resolution.
+    - On final failure, still run step 10a cleanup — do not leave retry worktrees behind.
 
 Do not skip steps without stating a reason. State which agents you are skipping and why before beginning.

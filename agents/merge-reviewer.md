@@ -56,6 +56,36 @@ Required actions:
 
 Do not proceed to the checklist until all worktree branches are cleanly merged.
 
+**Important:** Worktrees must have been created from the feature branch's HEAD, not from `main` or `master`. If you observe that the worktree branch diverged from main rather than from the current feature branch, note this as a process violation in your output — the implement pipeline will need to be re-run from the correct base. Do not merge worktree branches that are based on `main` into a feature branch that has diverged from main, as this can introduce unintended commits.
+
+## Step 0a — Clean up worktree branches
+
+After all worktree branches are cleanly merged, remove each worktree and its branch before proceeding to the gate checklist. This prevents stale worktrees and branches from accumulating.
+
+For each worktree branch name provided:
+
+```bash
+# Find the worktree path for this branch
+git worktree list --porcelain | grep -B5 "branch refs/heads/<worktree-branch>" | grep "^worktree" | awk '{print $2}'
+```
+
+If a path is found, remove the worktree:
+```bash
+git worktree remove <path> --force
+```
+
+Delete the branch:
+```bash
+git branch -d <worktree-branch>
+```
+
+After all worktree branches are processed, prune stale entries:
+```bash
+git worktree prune
+```
+
+If `git branch -d` fails because the branch is not fully merged (this should not happen after a successful `--no-ff` merge), use `git branch -D` and note it in the output.
+
 ## Checklist
 
 Work through each check in order. Record PASS or FAIL for each.

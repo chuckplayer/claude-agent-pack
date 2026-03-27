@@ -48,6 +48,8 @@ If the worktree branch is `main` or `master`, **stop immediately**:
 If the worktree branch is NOT `main` or `master`:
 
 > Running inside worktree on branch `<branch>` -- no action needed.
+>
+> **Note:** This worktree was created from the parent working tree's current branch. All changes made here will be isolated to this worktree and merged back into the parent branch by merge-reviewer.
 
 Then stop. Branch creation and pull are handled by the parent working tree.
 
@@ -96,7 +98,9 @@ If `git pull` fails, report the error verbatim and stop. Do not force or rebase 
 
 Confirm success:
 
-> Branch `<type>/<slug>` created from latest `main`. You are now on that branch.
+> Branch `<type>/<slug>` created. You are now on that branch.
+>
+> **Worktree note:** Engineer agents that run with `isolation: "worktree"` will create their worktrees from this branch's current HEAD. If you have commits on another branch that should be included, merge or rebase them onto this branch before running any engineer agents.
 
 ### 6. If the developer declines
 
