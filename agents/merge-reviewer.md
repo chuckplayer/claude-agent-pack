@@ -98,7 +98,16 @@ Search the conversation context or recent output for code-reviewer findings.
 - PASS if no Critical findings exist, or if all Criticals were resolved in a subsequent engineer pass.
 - Warnings and Suggestions do not block.
 
-### 2. Security review gate
+### 2. TypeScript lint gate
+
+Check whether TypeScript or Vue files were changed in this task.
+
+- If TypeScript or Vue files were changed: verify ts-linter returned PASS. FAIL if ts-linter returned FAIL or was not invoked.
+- If no TypeScript or Vue files were changed: PASS (skip).
+
+> Why ts-linter is a gate: type errors invalidate code-reviewer's analysis. A code-reviewer PASS on type-invalid code is not meaningful.
+
+### 3. Security review gate
 
 Check whether security-reviewer was required for this task (changes touched authentication, authorization, data access, PII, external endpoints, or secrets).
 
@@ -106,7 +115,17 @@ Check whether security-reviewer was required for this task (changes touched auth
 - If security-reviewer ran: FAIL if any **Critical** or **High** findings remain unresolved.
 - If security-reviewer was not required: PASS (skip).
 
-### 3. Test coverage gate
+> Why High blocks here but not in code-reviewer: security High findings represent exploitable vulnerabilities or compliance violations. Code-reviewer High (Warning) represents quality issues. The risk profiles differ -- a security High left in production can cause immediate harm; a code quality Warning cannot.
+
+### 3a. Performance review advisory
+
+Check whether performance-reviewer ran. This is advisory only -- findings do not block the gate.
+
+- If performance-reviewer ran: list any High findings in the output so the developer is aware.
+- If performance-reviewer did not run and was warranted (changes include DB queries, API endpoints, loops, or caching): note it as a recommendation, not a FAIL.
+- Performance findings are the developer's decision to accept or escalate.
+
+### 4. Test coverage gate
 
 Verify that test-engineer ran and produced at least one test file.
 

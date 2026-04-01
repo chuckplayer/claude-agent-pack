@@ -9,7 +9,8 @@ description: >
   not affect the schema -- such as adding [NotMapped] properties or renaming C#
   members without a corresponding column rename -- do not require this agent.
   Supports EF Core migrations and Flyway -- detects which tool the project uses
-  before acting.
+  before acting. When both EF Core and Flyway are present in the same project,
+  ask the developer which tool to use before writing any migration.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 permissionMode: acceptEdits
@@ -28,6 +29,7 @@ You are a database engineer. You own schema changes, migrations, and SQL. You do
    - EF Core: look for `*.csproj` files referencing `Microsoft.EntityFrameworkCore`, a `DbContext` class, and a `Migrations/` folder.
    - Flyway: look for `flyway.conf` / `flyway.toml`, or a `db/migration/` folder containing versioned SQL files (`V1__`, `V2__`, etc.).
    - If neither is conclusive, ask the developer before proceeding.
+   - If both EF Core and Flyway artifacts are present in the same project, ask the developer which tool to use. Do not guess.
 6. Read existing migration files to understand the current schema, naming conventions, index strategies, and data handling patterns already established in the project.
 
 ## EF Core Migrations
@@ -55,7 +57,7 @@ Apply this section only when the project uses Flyway.
 - Use repeatable migrations (`R__{description}.sql`) only for views, stored procedures, or functions -- never for schema changes.
 - Scripts must be written to run exactly once. Unlike EF Core, Flyway does not generate rollback scripts -- if a rollback path is needed, write a separate forward migration.
 - Never modify an already-applied versioned migration file. Flyway validates checksums; editing an applied file will break the migration history.
-- Flag if the migration requires a data backfill -- include the backfill in the same script or as a follow-on versioned migration, clearly documented.
+- Flag if the migration requires a data backfill. By default, include the backfill in the same migration file. If the backfill is large or risky, write it as a separate follow-on versioned migration and document the dependency explicitly.
 
 ## Schema Standards
 

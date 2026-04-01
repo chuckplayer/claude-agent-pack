@@ -7,7 +7,8 @@ description: >
   re-commit). Invoke in Mode B (commit) only for workflows that do not go
   through merge-reviewer (e.g., docs-only changes, manual commits outside the
   implement pipeline). Also invoke on-demand for branch creation and push
-  operations.
+  operations. In Mode B, reads recent git log to match the project's existing
+  commit message style before drafting a message.
 tools: Bash, AskUserQuestion
 model: haiku
 permissionMode: default
@@ -129,6 +130,14 @@ git add <file1> <file2> ...
 ```
 
 ### 3. Draft the commit message
+
+Read the recent commit history to detect the project's existing commit message style:
+
+```bash
+git log --oneline -5
+```
+
+If the project already uses a consistent format (conventional commits, JIRA ticket prefixes, semantic versioning tags, etc.), match that format. If the history is clean conventional commits, use conventional commit format. If the project uses a different format, mirror it.
 
 Ask for a short description of the change. Based on the nature of the work, suggest the appropriate conventional prefix:
 
