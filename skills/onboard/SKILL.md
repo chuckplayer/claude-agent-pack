@@ -1,6 +1,6 @@
 ---
 name: onboard
-description: Generate a structured orientation for a codebase. Reads the project, memory, and conventions to produce a mental model: architecture, key entry points, data flow, and known gotchas. Use when joining a project, returning after time away, or onboarding a new contributor. Trigger this when someone says: orient me, explain this codebase, how does this project work, I am new here, give me an overview, help me understand the architecture, catch me up. Do NOT use to document conventions — use /conventions instead. Do NOT use to plan a task — use /plan instead.
+description: "Generate a structured orientation for a codebase. Reads the project, memory, and conventions to produce a mental model: architecture, key entry points, data flow, and known gotchas. Use when joining a project, returning after time away, or onboarding a new contributor. Trigger this when someone says: orient me, explain this codebase, how does this project work, I am new here, give me an overview, help me understand the architecture, catch me up. Do NOT use to document conventions — use /conventions instead. Do NOT use to plan a task — use /plan instead."
 ---
 
 # Onboard

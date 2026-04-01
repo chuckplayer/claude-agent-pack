@@ -1,6 +1,6 @@
 ---
 name: system-check
-description: Verify the Claude Agent Pack installation and current project scaffolding in one pass. Runs check-readiness.sh and check-updates.sh, reports all failures and outdated items together, and offers to run remediation. Use before starting work on a project or when something seems off after a git pull. Trigger this when someone says: check my setup, is everything installed, something is not working, verify the pack, is my installation up to date, check if Claude Agent Pack is ready, run a health check. Do NOT use to initialize a new project — use /setup-project instead.
+description: "Verify the Claude Agent Pack installation and current project scaffolding in one pass. Runs check-readiness.sh and check-updates.sh, reports all failures and outdated items together, and offers to run remediation. Use before starting work on a project or when something seems off after a git pull. Trigger this when someone says: check my setup, is everything installed, something is not working, verify the pack, is my installation up to date, check if Claude Agent Pack is ready, run a health check. Do NOT use to initialize a new project — use /setup-project instead."
 ---
 
 # System Check

@@ -1,6 +1,6 @@
 ---
 name: memory-audit
-description: Runs a memory hygiene pass on the project memory/ directory. Reviews all active memory files against the current codebase and archives or supersedes stale entries. Use before major feature work or when memory files feel out of date. Trigger this when someone says: clean up memory, audit memory files, memory is out of date, stale decisions, memory hygiene, are our memory files current, check if decisions are still valid. Do NOT use when searching for a specific memory entry — use /memory-query instead.
+description: "Runs a memory hygiene pass on the project memory/ directory. Reviews all active memory files against the current codebase and archives or supersedes stale entries. Use before major feature work or when memory files feel out of date. Trigger this when someone says: clean up memory, audit memory files, memory is out of date, stale decisions, memory hygiene, are our memory files current, check if decisions are still valid. Do NOT use when searching for a specific memory entry — use /memory-query instead."
 ---
 
 # Memory Audit

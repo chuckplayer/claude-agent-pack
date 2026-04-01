@@ -1,6 +1,6 @@
 ---
 name: review-pr
-description: Review changed files or an open PR with code-reviewer, security-reviewer, and performance-reviewer. Use when the user wants a quality check on a diff, a PR number, or the current working-tree changes without running the full implement pipeline. Trigger this when someone says: review my PR, check my code, look at this diff, quality check, code review, does this look good, review PR #123, give me feedback on these changes. Do NOT use when the user wants to implement new changes — use /implement instead.
+description: "Review changed files or an open PR with code-reviewer, security-reviewer, and performance-reviewer. Use when the user wants a quality check on a diff, a PR number, or the current working-tree changes without running the full implement pipeline. Trigger this when someone says: review my PR, check my code, look at this diff, quality check, code review, does this look good, review PR #123, give me feedback on these changes. Do NOT use when the user wants to implement new changes — use /implement instead."
 ---
 
 # Review PR / Changed Files

@@ -1,6 +1,6 @@
 ---
 name: skill-writer
-description: Scaffold a new skill for the Claude Agent Pack. Interviews the user about the skill's purpose and behavior, reads existing skills as examples, writes the SKILL.md, and validates it with /lint-agents. Use when the user wants to create a new slash command entry point. Trigger this when someone says: create a new skill, build a slash command, add a skill, I want a new /command, write a skill for the pack, make a new skill. Do NOT use to update an existing skill — read the existing SKILL.md and edit it directly. Do NOT use to create agents — agents use AGENT.md files with different conventions.
+description: "Scaffold a new skill for the Claude Agent Pack. Interviews the user about the skill's purpose and behavior, reads existing skills as examples, writes the SKILL.md, and validates it with /lint-agents. Use when the user wants to create a new slash command entry point. Trigger this when someone says: create a new skill, build a slash command, add a skill, I want a new /command, write a skill for the pack, make a new skill. Do NOT use to update an existing skill — read the existing SKILL.md and edit it directly. Do NOT use to create agents — agents use AGENT.md files with different conventions."
 ---
 
 # Skill Writer

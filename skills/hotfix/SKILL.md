@@ -1,6 +1,6 @@
 ---
 name: hotfix
-description: Fast-track fix pipeline for production incidents. Skips worktree isolation and planning ceremony. Still requires code-reviewer and merge-reviewer as a safety gate. Use only when the root cause is already known and the fix is well-understood. Trigger this when someone says: emergency fix, production is broken, quick patch, urgent fix, hotfix, critical bug in prod, I know the fix I just need to apply it. Do NOT use when diagnosis is still needed — use /debug first. Do NOT use when the fix touches more than 3 files, adds dependencies, or changes the schema — use /implement instead.
+description: "Fast-track fix pipeline for production incidents. Skips worktree isolation and planning ceremony. Still requires code-reviewer and merge-reviewer as a safety gate. Use only when the root cause is already known and the fix is well-understood. Trigger this when someone says: emergency fix, production is broken, quick patch, urgent fix, hotfix, critical bug in prod, I know the fix I just need to apply it. Do NOT use when diagnosis is still needed — use /debug first. Do NOT use when the fix touches more than 3 files, adds dependencies, or changes the schema — use /implement instead."
 ---
 
 # Hotfix

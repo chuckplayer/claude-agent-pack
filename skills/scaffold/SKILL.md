@@ -1,6 +1,6 @@
 ---
 name: scaffold
-description: Scaffold a new feature end-to-end: API contract → database schema → backend service/controller → frontend. Use when building something new from scratch across multiple layers. More opinionated than /implement — always runs the full vertical slice in the correct dependency order. Trigger this when someone says: build this feature from scratch, scaffold a new endpoint, I need a full-stack feature, new feature end-to-end, build the whole thing. Do NOT use when the task is already partially built or only one layer needs changes — use /implement instead.
+description: "Scaffold a new feature end-to-end: API contract → database schema → backend service/controller → frontend. Use when building something new from scratch across multiple layers. More opinionated than /implement — always runs the full vertical slice in the correct dependency order. Trigger this when someone says: build this feature from scratch, scaffold a new endpoint, I need a full-stack feature, new feature end-to-end, build the whole thing. Do NOT use when the task is already partially built or only one layer needs changes — use /implement instead."
 ---
 
 # Scaffold New Feature

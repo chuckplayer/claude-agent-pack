@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: Refactor existing code with impact analysis first. Routes to tech-lead for blast-radius assessment, then engineers, with heavy emphasis on test coverage. Use when restructuring code with no intended behavior change. Trigger this when someone says: refactor this, clean up this code, extract this pattern, restructure this, this code is messy, improve the code structure, rename this across the codebase, remove duplication. Do NOT use when the change modifies behavior — use /implement instead. Do NOT use for single-file cleanup — just edit the file directly.
+description: "Refactor existing code with impact analysis first. Routes to tech-lead for blast-radius assessment, then engineers, with heavy emphasis on test coverage. Use when restructuring code with no intended behavior change. Trigger this when someone says: refactor this, clean up this code, extract this pattern, restructure this, this code is messy, improve the code structure, rename this across the codebase, remove duplication. Do NOT use when the change modifies behavior — use /implement instead. Do NOT use for single-file cleanup — just edit the file directly."
 ---
 
 # Refactor

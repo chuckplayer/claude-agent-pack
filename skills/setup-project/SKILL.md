@@ -1,6 +1,6 @@
 ---
 name: setup-project
-description: Scaffolds a project with the Claude Agent Pack structure: copies CLAUDE.md, docs/CONVENTIONS.md (from template), docs/MEMORY-WRITING.md, and creates the memory/ subdirectories. Runs scripts/setup-project.sh and guides the user through next steps. Trigger this when someone says: set up this project, initialize the agent pack, scaffold the project structure, add Claude Agent Pack to this repo, new project setup, onboard this repo. Do NOT use to verify an existing installation — use /system-check instead.
+description: "Scaffolds a project with the Claude Agent Pack structure: copies CLAUDE.md, docs/CONVENTIONS.md (from template), docs/MEMORY-WRITING.md, and creates the memory/ subdirectories. Runs scripts/setup-project.sh and guides the user through next steps. Trigger this when someone says: set up this project, initialize the agent pack, scaffold the project structure, add Claude Agent Pack to this repo, new project setup, onboard this repo. Do NOT use to verify an existing installation — use /system-check instead."
 ---
 
 # Setup Project
