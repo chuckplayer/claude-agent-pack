@@ -1,6 +1,6 @@
 ---
 name: conventions
-description: Scaffold or update docs/CONVENTIONS.md by reading the actual codebase and interviewing the user. Use when setting up a new project or when conventions have drifted and need to be documented.
+description: Scaffold or update docs/CONVENTIONS.md by reading the actual codebase and interviewing the user. Use when setting up a new project or when conventions have drifted and need to be documented. Trigger this when someone says: document our team standards, set up conventions, what are our coding standards, conventions are out of date, update our style guide, write our CONVENTIONS.md. Do NOT use to read or apply existing conventions — those are loaded automatically. Do NOT use for architectural decisions — use /memory-audit instead.
 ---
 
 # Conventions
@@ -80,3 +80,11 @@ Present a summary of what was written or changed. Ask: "Does this accurately ref
 ## 6. Suggest memory updates
 
 If the conventions session revealed significant architectural decisions that aren't already in `memory/decisions/`, note them and ask the user whether to create memory entries for them. Do not write memory files directly — this skill is read/write only for `docs/CONVENTIONS.md`.
+
+## Gotchas
+
+- **Documenting aspirations as facts:** The most common failure mode is writing conventions that describe how the team wants to work rather than how it actually works. If the codebase contradicts a stated convention, flag the inconsistency — do not silently adopt the aspirational version. Mark aspirational items explicitly with the blockquote template in step 4.
+- **Asking all questions at once:** Step 3 says one question at a time. Dumping a list of questions causes the user to give shallow answers. Work through them conversationally.
+- **Rewriting user-written content:** On an update run, only touch sections that are incorrect or incomplete. Preserve any user-written prose verbatim unless explicitly asked to change it.
+- **No template found:** If `docs/CONVENTIONS.template.md` doesn't exist during a fresh scaffold, fall back to the structure used in step 2 (Naming, Architecture, Error handling, Testing, Frontend, Other) rather than inventing a format.
+- **Conventions file already exists but is empty:** Treat an empty file the same as a missing template — run a fresh scaffold, not an update.

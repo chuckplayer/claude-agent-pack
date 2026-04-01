@@ -1,6 +1,6 @@
 ---
 name: hotfix
-description: Fast-track fix pipeline for production incidents. Skips worktree isolation and planning ceremony. Still requires code-reviewer and merge-reviewer as a safety gate. Use only when the root cause is already known and the fix is well-understood. If diagnosis is still needed, use /debug first, then return here to apply the fix.
+description: Fast-track fix pipeline for production incidents. Skips worktree isolation and planning ceremony. Still requires code-reviewer and merge-reviewer as a safety gate. Use only when the root cause is already known and the fix is well-understood. Trigger this when someone says: emergency fix, production is broken, quick patch, urgent fix, hotfix, critical bug in prod, I know the fix I just need to apply it. Do NOT use when diagnosis is still needed — use /debug first. Do NOT use when the fix touches more than 3 files, adds dependencies, or changes the schema — use /implement instead.
 ---
 
 # Hotfix
@@ -72,3 +72,11 @@ If FAIL: fix the blocking issue and re-run steps 5–6. Allow **1 retry only** �
 After merge-reviewer returns PASS, push the hotfix branch immediately. Ask the user whether to open a pull request targeting `main` and whether to request an expedited review.
 
 > **test-engineer is skipped** in the hotfix pipeline — speed is the priority and the change scope is intentionally narrow. If test coverage for the fix is needed, flag it as a follow-up task in the PR description rather than blocking the hotfix.
+
+## Gotchas
+
+- **Scope creep during the fix:** If the engineer discovers that the fix requires touching a 4th file, adding a dependency, or changing a schema, stop and escalate to /implement. Do not quietly expand scope — the scope gate in step 1 exists for a reason.
+- **Skipping code-reviewer:** Even under time pressure, code-reviewer is non-negotiable. A hotfix that introduces a new bug or security gap is worse than the original incident. It takes minutes and can catch critical mistakes.
+- **merge-reviewer FAIL with no more retries:** If merge-reviewer still returns FAIL after 1 retry, do not loop further. Surface the unresolved report to the user and let them decide whether to convert this to a full /implement pipeline.
+- **Applying a hotfix to main directly:** Step 2 requires a `hotfix/<slug>` branch even for emergencies. Working directly on main risks losing the change if anything goes wrong. The branch is fast to create and provides an obvious audit trail.
+- **Diagnosis not yet complete:** If you are not certain of the root cause, use /debug first. A hotfix applied to the wrong place will need to be reverted under pressure — more costly than taking 10 extra minutes to diagnose properly.

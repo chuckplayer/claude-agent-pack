@@ -1,6 +1,6 @@
 ---
 name: onboard
-description: Generate a structured orientation for a codebase. Reads the project, memory, and conventions to produce a mental model: architecture, key entry points, data flow, and known gotchas. Use when joining a project, returning after time away, or onboarding a new contributor.
+description: Generate a structured orientation for a codebase. Reads the project, memory, and conventions to produce a mental model: architecture, key entry points, data flow, and known gotchas. Use when joining a project, returning after time away, or onboarding a new contributor. Trigger this when someone says: orient me, explain this codebase, how does this project work, I am new here, give me an overview, help me understand the architecture, catch me up. Do NOT use to document conventions — use /conventions instead. Do NOT use to plan a task — use /plan instead.
 ---
 
 # Onboard
@@ -95,3 +95,10 @@ After the orientation, note:
 - What you could not determine from reading (e.g., no README, no CONVENTIONS.md, no memory files)
 - Any apparent inconsistencies between documentation and actual code
 - Areas where a human familiar with the project should fill in missing context
+
+## Gotchas
+
+- **No README or CONVENTIONS.md:** Do not invent documentation. If these files are missing, say so clearly in step 5 and suggest running /setup-project and /conventions to create them. The orientation should reflect what actually exists.
+- **Memory files out of sync with code:** Memory records what was true at the time they were written. Always verify a memory claim against the current code before stating it as fact. If a memory file says "we use X" but the code uses Y, report the discrepancy rather than picking one.
+- **Depth target mismatch:** The goal is "first commit in two hours," not a comprehensive architecture document. If you find yourself writing three paragraphs about a single module, that's a pointer to a reference file, not inline content. Keep it navigable.
+- **This skill is read-only:** Do not create, modify, or delete any files during onboarding. If you identify something that should be documented, recommend /conventions or /memory-audit — do not write it yourself.

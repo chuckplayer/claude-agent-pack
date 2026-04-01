@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Orchestrates the full agent-pack pipeline for a task: git-engineer → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer → git-engineer (push/PR). Use when implementing a feature, fix, or change end-to-end.
+description: Orchestrates the full agent-pack pipeline for a task: git-engineer → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer → git-engineer (push/PR). Use when implementing a feature, fix, or change end-to-end. Trigger this when someone says: implement this, build this feature, make this change, add this functionality, code this up, I need this feature built, ship this. Do NOT use for targeted bug fixes with a known root cause — use /hotfix or /debug instead. Do NOT use for pure restructuring with no behavior change — use /refactor instead.
 ---
 
 # Implement Task
@@ -84,3 +84,11 @@ Run the full agent pipeline for the task the user described:
     - On final failure, still run step 10a cleanup — do not leave retry worktrees behind.
 
 Do not skip steps without stating a reason. State which agents you are skipping and why before beginning.
+
+## Gotchas
+
+- **Starting on main/master:** The worktree check in step 1 is critical. Engineer agents create worktrees from the current branch — if that branch is main, the worktree is based on main and the merge-reviewer cannot safely commit without polluting the main history. Stop hard if the branch is main.
+- **Worktrees left behind after failure:** If the pipeline fails or is abandoned mid-run, still execute step 10a cleanup. Stale worktrees are invisible to the user but accumulate in `.git/worktrees` and cause confusing failures on future runs.
+- **Retry cycle confusion:** A retry cycle means routing a specific finding back to the responsible engineer, fixing it, and re-running from code-reviewer (step 6) through merge-reviewer (step 10). Do not re-run the full pipeline from step 1 — git-engineer, tech-lead, and api-designer do not need to re-run.
+- **Parallel engineer agents writing to the same file:** If csharp-engineer and frontend-engineer both need to touch a shared file (e.g., a config file), run them sequentially, not in parallel. Parallel writes to the same file cause merge conflicts in the worktree branches.
+- **Skipping ts-linter before code-reviewer:** Type errors caught by ts-linter are blocking — they invalidate the code-reviewer's analysis. Always run ts-linter immediately after any frontend-engineer or mcp-engineer output, before code-reviewer sees the code.

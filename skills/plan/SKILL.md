@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Decompose a complex task using tech-lead and optionally pressure-test the plan using devils-advocate before implementation begins. Use when the task is ambiguous, spans multiple concerns, or when the user wants to stress-test an existing proposal before committing.
+description: Decompose a complex task using tech-lead and optionally pressure-test the plan using devils-advocate before implementation begins. Use when the task is ambiguous, spans multiple concerns, or when the user wants to stress-test an existing proposal before committing. Trigger this when someone says: how should I approach this, plan this out, I am not sure how to do this, think through this with me, is this a good approach, pressure-test my plan, help me design this. Do NOT use when the task is already well-scoped — go straight to /implement instead.
 ---
 
 # Plan
@@ -46,3 +46,10 @@ After it completes:
 If the user is ready to implement:
 - Invoke `/implement` and pass the finalized plan plus any risk notes from step 3.
 - If the user wants to revise the plan first, loop back to step 2 or 3 as needed.
+
+## Gotchas
+
+- **Over-planning paralysis:** If the user keeps asking for "one more round" of devils-advocate without moving toward implementation, surface the pattern and ask directly: "Are there unresolved concerns keeping you from proceeding, or is this ready to implement?" Planning is a means, not an end.
+- **tech-lead and devils-advocate disagree:** When this happens, present both positions clearly and ask the user to decide. Do not pick one silently. The user owns the architectural decision.
+- **Skipping plan when the task is genuinely ambiguous:** If a task description is vague and the user says "just implement it," recommend a quick tech-lead decomposition first. A few minutes of planning prevents hours of rework from misunderstood requirements.
+- **Plan becomes stale mid-implementation:** If the user pauses mid-/implement and comes back with changed requirements, return to /plan to re-decompose rather than patching the original plan. Stale plans cause the pipeline to route incorrectly.

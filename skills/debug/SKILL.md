@@ -1,6 +1,6 @@
 ---
 name: debug
-description: Diagnose and fix a failing test, error, or unexpected behavior. Routes to the appropriate engineer based on the error context. Lighter than /implement — no worktree isolation, no full pipeline ceremony.
+description: Diagnose and fix a failing test, error, or unexpected behavior. Routes to the appropriate engineer based on the error context. Lighter than /implement — no worktree isolation, no full pipeline ceremony. Trigger this when someone says: something is broken, fix this error, my test is failing, why is this not working, I'm getting an exception, this is throwing an error, debug this, why does this crash. Do NOT use when the root cause is already known and the fix is small — use /hotfix instead. Do NOT use for architectural changes — use /implement instead.
 ---
 
 # Debug
@@ -74,3 +74,11 @@ Report:
 - Whether any follow-up work is needed (e.g., the fix revealed a broader pattern issue)
 
 Do not run test-engineer, merge-reviewer, or git-engineer unless the user asks. This skill is diagnosis-and-fix, not full pipeline delivery.
+
+## Gotchas
+
+- **Fixing the symptom, not the root cause:** Always state your root-cause hypothesis before routing to an engineer. If the hypothesis turns out to be wrong after the fix, loop back — do not close out just because the immediate error is gone.
+- **Multi-layer errors:** A frontend error that says "404 Not Found" is often a backend routing bug, not a frontend bug. Read the network request and the backend logs before deciding which layer to fix. Route to the root-cause layer first.
+- **Fix breaks other tests:** After the engineer returns, run the full test suite (or at minimum the suite for the changed module), not just the originally failing test. A fix that breaks three other tests is not a fix.
+- **Hypothesis not passed to the engineer:** If you route to an engineer without a clear hypothesis, the engineer will re-investigate from scratch. Save time by passing the exact error, the files involved, and your best theory.
+- **Escalating too quickly to /implement:** Debug is the right skill for most errors. Only escalate to /implement if the fix requires new files, new dependencies, or an architectural change that is out of scope for a targeted patch.

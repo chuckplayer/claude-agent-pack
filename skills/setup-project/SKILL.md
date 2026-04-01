@@ -1,6 +1,6 @@
 ---
 name: setup-project
-description: Scaffolds a project with the Claude Agent Pack structure: copies CLAUDE.md, docs/CONVENTIONS.md (from template), docs/MEMORY-WRITING.md, and creates the memory/ subdirectories. Runs scripts/setup-project.sh and guides the user through next steps.
+description: Scaffolds a project with the Claude Agent Pack structure: copies CLAUDE.md, docs/CONVENTIONS.md (from template), docs/MEMORY-WRITING.md, and creates the memory/ subdirectories. Runs scripts/setup-project.sh and guides the user through next steps. Trigger this when someone says: set up this project, initialize the agent pack, scaffold the project structure, add Claude Agent Pack to this repo, new project setup, onboard this repo. Do NOT use to verify an existing installation — use /system-check instead.
 ---
 
 # Setup Project
@@ -49,3 +49,10 @@ After the script completes, work through these follow-up steps with the user:
    > "Would you like me to run `/onboard` to generate a structured orientation for this codebase?"
 
 Both follow-up skills are optional. Neither blocks the other.
+
+## Gotchas
+
+- **Script not found:** If `scripts/setup-project.sh` cannot be located, ask the user where they cloned the agent pack. Do not attempt to recreate the script manually — the script has specific file content and permissions that are not reproducible from memory.
+- **Running setup on a non-empty project:** The script preserves existing files (e.g., `docs/CONVENTIONS.md already exists, skipped`). This is intentional — existing content is not overwritten. Confirm with the user if they expected a file to be replaced.
+- **Forgetting to commit the scaffolding:** The scaffolded files (CLAUDE.md, docs/, memory/) are meaningless until committed. Always suggest the commit command in step 5.1 before moving to follow-up skills.
+- **Target directory confusion:** If the user's working directory and the target project directory differ (e.g., they want to set up a sibling repo), confirm the target path explicitly before running the script.
