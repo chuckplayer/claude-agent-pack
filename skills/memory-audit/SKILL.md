@@ -1,6 +1,6 @@
 ---
 name: memory-audit
-description: Runs a memory hygiene pass on the project's memory/ directory. Reviews all active memory files against the current codebase and archives or supersedes stale entries. Use before major feature work or when memory files feel out of date.
+description: Runs a memory hygiene pass on the project memory/ directory. Reviews all active memory files against the current codebase and archives or supersedes stale entries. Use before major feature work or when memory files feel out of date. Trigger this when someone says: clean up memory, audit memory files, memory is out of date, stale decisions, memory hygiene, are our memory files current, check if decisions are still valid. Do NOT use when searching for a specific memory entry — use /memory-query instead.
 ---
 
 # Memory Audit
@@ -38,3 +38,10 @@ Output a summary:
 - Files superseded (with reason and superseded-by)
 - Gaps identified and whether new entries were created
 - If no changes were needed, say so
+
+## Gotchas
+
+- **Archiving too aggressively:** A memory file that references a pattern no longer in use may still be valid if it explains *why* that pattern was abandoned. Read for intent before archiving — "we removed X because Y" is still useful context even if X is gone.
+- **Missing the memory/ directory entirely:** If `memory/` does not exist, report that clearly and stop. Do not create the directory — use /setup-project to scaffold the full project structure.
+- **Confusing superseded with archived:** Superseded means a newer decision replaced this one — the newer file must be cited in `Superseded-by:`. Archived means the content no longer applies at all (e.g., references a removed module). These are different statuses with different meanings.
+- **Inviting the user to create too many new entries at once:** Step 2 asks about gaps, but memory files are only useful when they capture non-obvious decisions. Do not turn this into a documentation sprint. Focus on decisions that would surprise a new contributor.

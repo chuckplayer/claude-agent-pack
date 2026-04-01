@@ -1,6 +1,6 @@
 ---
 name: skill-writer
-description: Scaffold a new skill for the Claude Agent Pack. Interviews the user about the skill's purpose and behavior, reads existing skills as examples, writes the SKILL.md, and validates it with /lint-agents. Use when the user wants to create a new slash command entry point.
+description: Scaffold a new skill for the Claude Agent Pack. Interviews the user about the skill's purpose and behavior, reads existing skills as examples, writes the SKILL.md, and validates it with /lint-agents. Use when the user wants to create a new slash command entry point. Trigger this when someone says: create a new skill, build a slash command, add a skill, I want a new /command, write a skill for the pack, make a new skill. Do NOT use to update an existing skill — read the existing SKILL.md and edit it directly. Do NOT use to create agents — agents use AGENT.md files with different conventions.
 ---
 
 # Skill Writer
@@ -87,3 +87,11 @@ Report back:
 - The file written (`skills/<name>/SKILL.md`)
 - The README row added
 - Whether lint passed or any issues were found
+
+## Gotchas
+
+- **Description over 1024 characters:** The lint check will catch this, but write the description tightly from the start. Include what, when, and trigger phrases — but do not repeat the same information twice.
+- **Vague trigger phrases in the description:** "Use when helpful" is not a trigger phrase. Trigger phrases must be specific phrases a real user would actually type. Ask the user for examples of how they would invoke the skill.
+- **Skill name conflicts with an existing skill:** Check the skills/ directory before writing. If a name collision exists, ask the user whether to update the existing skill or choose a different name.
+- **lint-agents fails on frontmatter:** The only allowed frontmatter fields are `name` and `description`. Do not add `category`, `version`, `author`, or any other fields — the linter will reject them.
+- **Skipping the user approval step:** Step 4 requires showing the draft and getting explicit approval before writing. Do not skip this to save time — it avoids a write-fix-rewrite cycle if the intent was misunderstood.

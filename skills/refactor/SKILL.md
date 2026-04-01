@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: Refactor existing code with impact analysis first. Routes to tech-lead for blast-radius assessment, then engineers, with heavy emphasis on test coverage. Use when restructuring code with no intended behavior change.
+description: Refactor existing code with impact analysis first. Routes to tech-lead for blast-radius assessment, then engineers, with heavy emphasis on test coverage. Use when restructuring code with no intended behavior change. Trigger this when someone says: refactor this, clean up this code, extract this pattern, restructure this, this code is messy, improve the code structure, rename this across the codebase, remove duplication. Do NOT use when the change modifies behavior — use /implement instead. Do NOT use for single-file cleanup — just edit the file directly.
 ---
 
 # Refactor
@@ -74,3 +74,11 @@ Final gate. Pass the worktree branch names and a summary of all stages. merge-re
 
 If PASS: push and optionally open a PR. Note in the PR description that this is a pure refactor with no behavior change.
 If FAIL: retry up to 2 cycles. New worktrees on retry are also created from the refactor branch. Collect new paths/branches and pass them to the next merge-reviewer invocation.
+
+## Gotchas
+
+- **Refactor that discovers a bug:** If an engineer finds a bug while refactoring, do not fix it in the same PR. Note it, complete the refactor with no behavior change, and create a separate /debug or /implement task for the bug. Mixing bug fixes into a refactor obscures the change history and breaks the "no behavior delta" guarantee.
+- **Pre-existing failing tests:** Run the test suite before the refactor begins (step 1 or before step 5). If tests were already failing before your changes, document that baseline. Do not accept responsibility for pre-existing failures, but do not hide them either.
+- **The devils-advocate threshold is a guideline:** The "5+ files" and "shared abstraction" conditions are signals, not rules. Use judgment. A 2-file refactor that changes a foundational interface used everywhere warrants devils-advocate. A 10-file rename of a private module probably does not.
+- **Behavior change masquerading as refactor:** If the user's request includes any change to output format, API response shape, error messages, or business logic — even a "minor cleanup" — it is not a pure refactor. Use /implement instead and make the behavior change explicit.
+- **Test coverage decrease is a blocker:** If test-engineer finds that the refactor reduced meaningful coverage (not just line count), route back to the engineer before merge-reviewer. A refactor that deletes test coverage is not complete.

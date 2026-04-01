@@ -1,6 +1,6 @@
 ---
 name: scaffold
-description: Scaffold a new feature end-to-end: API contract → database schema → backend service/controller → frontend. Use when building something new from scratch across multiple layers. More opinionated than /implement — always runs the full vertical slice in order.
+description: Scaffold a new feature end-to-end: API contract → database schema → backend service/controller → frontend. Use when building something new from scratch across multiple layers. More opinionated than /implement — always runs the full vertical slice in the correct dependency order. Trigger this when someone says: build this feature from scratch, scaffold a new endpoint, I need a full-stack feature, new feature end-to-end, build the whole thing. Do NOT use when the task is already partially built or only one layer needs changes — use /implement instead.
 ---
 
 # Scaffold New Feature
@@ -78,3 +78,11 @@ If FAIL: retry up to 2 cycles, routing findings back to the responsible engineer
 ## 10. git-engineer — push and PR
 
 After merge-reviewer returns PASS. Ask the user whether to push and open a pull request. Include the API contract summary in the PR description.
+
+## Gotchas
+
+- **Frontend running before backend is ready:** The frontend depends on the API contract being finalized. Never run frontend-engineer in parallel with csharp-engineer — the endpoint shapes must be locked first.
+- **API contract not approved before engineers start:** If the user skips api-designer approval and an engineer implements against a wrong shape, you will need to redo both layers. Always get explicit approval on the contract before step 4.
+- **Mid-pipeline failure:** If a layer fails (e.g., database-engineer errors out), stop and surface the failure to the user before continuing. Do not skip a broken layer and proceed to the next — downstream layers depend on it.
+- **Worktree not cleaned up after FAIL:** If merge-reviewer returns FAIL and the user abandons the scaffold, still run the worktree cleanup commands from step 10a. Stale worktrees accumulate and confuse future pipelines.
+- **Schema changes not committed before backend:** The csharp-engineer must have access to the migration output from database-engineer. Pass the schema diff explicitly — the engineer cannot read an uncommitted migration from a different worktree.
