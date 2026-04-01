@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Orchestrates the full agent-pack pipeline for a task: git-engineer → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer → git-engineer (push/PR). Use when implementing a feature, fix, or change end-to-end. Trigger this when someone says: implement this, build this feature, make this change, add this functionality, code this up, I need this feature built, ship this. Do NOT use for targeted bug fixes with a known root cause — use /hotfix or /debug instead. Do NOT use for pure restructuring with no behavior change — use /refactor instead.
+description: "Orchestrates the full agent-pack pipeline for a task: git-engineer → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer → git-engineer (push/PR). Use when implementing a feature, fix, or change end-to-end. Trigger this when someone says: implement this, build this feature, make this change, add this functionality, code this up, I need this feature built, ship this. Do NOT use for targeted bug fixes with a known root cause — use /hotfix or /debug instead. Do NOT use for pure restructuring with no behavior change — use /refactor instead."
 ---
 
 # Implement Task

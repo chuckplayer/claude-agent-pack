@@ -1,6 +1,6 @@
 ---
 name: conventions
-description: Scaffold or update docs/CONVENTIONS.md by reading the actual codebase and interviewing the user. Use when setting up a new project or when conventions have drifted and need to be documented. Trigger this when someone says: document our team standards, set up conventions, what are our coding standards, conventions are out of date, update our style guide, write our CONVENTIONS.md. Do NOT use to read or apply existing conventions — those are loaded automatically. Do NOT use for architectural decisions — use /memory-audit instead.
+description: "Scaffold or update docs/CONVENTIONS.md by reading the actual codebase and interviewing the user. Use when setting up a new project or when conventions have drifted and need to be documented. Trigger this when someone says: document our team standards, set up conventions, what are our coding standards, conventions are out of date, update our style guide, write our CONVENTIONS.md. Do NOT use to read or apply existing conventions — those are loaded automatically. Do NOT use for architectural decisions — use /memory-audit instead."
 ---
 
 # Conventions

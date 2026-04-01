@@ -1,6 +1,6 @@
 ---
 name: debug
-description: Diagnose and fix a failing test, error, or unexpected behavior. Routes to the appropriate engineer based on the error context. Lighter than /implement — no worktree isolation, no full pipeline ceremony. Trigger this when someone says: something is broken, fix this error, my test is failing, why is this not working, I'm getting an exception, this is throwing an error, debug this, why does this crash. Do NOT use when the root cause is already known and the fix is small — use /hotfix instead. Do NOT use for architectural changes — use /implement instead.
+description: "Diagnose and fix a failing test, error, or unexpected behavior. Routes to the appropriate engineer based on the error context. Lighter than /implement — no worktree isolation, no full pipeline ceremony. Trigger this when someone says: something is broken, fix this error, my test is failing, why is this not working, I'm getting an exception, this is throwing an error, debug this, why does this crash. Do NOT use when the root cause is already known and the fix is small — use /hotfix instead. Do NOT use for architectural changes — use /implement instead."
 ---
 
 # Debug
