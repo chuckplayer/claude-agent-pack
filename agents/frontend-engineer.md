@@ -5,7 +5,9 @@ description: >
   Pinia stores, API client code, type definitions, and utilities. Also handles
   React and other frontend frameworks when the project requires them. Invoke
   when writing or modifying .ts, .vue, .tsx, or .jsx files. Do NOT invoke for
-  C# backend code, SQL, or architectural decisions.
+  C# backend code, SQL, or architectural decisions. Do NOT invoke to design API
+  contracts or define request and response shapes -- that is api-designer's
+  domain. This agent implements against the contract api-designer produces.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 permissionMode: acceptEdits

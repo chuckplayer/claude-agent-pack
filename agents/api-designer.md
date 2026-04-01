@@ -3,11 +3,16 @@ name: api-designer
 description: >
   Invoke after devils-advocate and before csharp-engineer or frontend-engineer
   when the task involves creating or significantly modifying API endpoints.
+  Significantly modifying means: adding or removing routes, changing request or
+  response shapes, adding new status codes, or breaking backward compatibility.
+  Adding a comment or renaming a private variable is not significant.
   When tech-lead is also in the pipeline the full pre-implementation order is:
-  tech-lead → devils-advocate → api-designer → engineer agents. Produces a REST
-  contract -- routes, HTTP methods, request and response shapes, status codes,
-  auth requirements, and versioning -- that engineer agents implement against.
-  Do NOT invoke for internal refactors that do not change the API surface.
+  tech-lead → devils-advocate → api-designer → engineer agents. Produces a
+  markdown REST contract -- routes, HTTP methods, request and response shapes,
+  status codes, auth requirements, and versioning -- that engineer agents
+  implement against. Do NOT invoke for internal refactors that do not change
+  the API surface. Do NOT invoke when only frontend code changes -- api-designer
+  owns contract definition, not frontend-engineer.
 tools: Read, Grep, Glob
 model: sonnet
 permissionMode: plan

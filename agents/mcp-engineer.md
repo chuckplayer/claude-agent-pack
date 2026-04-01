@@ -8,7 +8,9 @@ description: >
   @modelcontextprotocol/sdk). Directory location is the deciding factor: any .ts
   file inside an MCP server project is owned by this agent regardless of its
   apparent function (e.g., a helper or client file that lives inside the MCP
-  server directory). Do NOT invoke for frontend UI code (.vue components,
+  server directory). If a utility file is shared between an MCP server directory
+  and a non-MCP project, ask the developer which agent should own the change
+  before proceeding. Do NOT invoke for frontend UI code (.vue components,
   Pinia stores, API clients), C# backend code, or SQL.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
@@ -104,7 +106,7 @@ Never let an unhandled exception terminate the server process.
 Use resources to expose data sources agents can read (files, database records, API data):
 
 - Resource URIs should be stable and predictable: `users://list`, `config://current`.
-- Resources return static or slowly-changing data. For dynamic queries, use tools instead.
+- Resources return static or slowly-changing data (hours to days between updates). For data that changes per-request or per-user session, use tools instead.
 - MIME types must be accurate (`application/json`, `text/plain`, `text/markdown`).
 
 ## Prompts
