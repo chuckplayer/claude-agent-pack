@@ -8,6 +8,7 @@ description: >
   go directly to the appropriate specialist agent instead.
 tools: Read, Write, Edit, Grep, Glob
 model: opus
+effort: high
 permissionMode: default
 version: "1.0.0"
 ---

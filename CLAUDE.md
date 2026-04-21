@@ -86,6 +86,19 @@ Before handing off to code-reviewer, every engineer agent must:
 - **merge-reviewer** before the full pipeline (engineer → code-reviewer →
   test-engineer) has completed
 
+## Built-in agent disambiguation
+
+Claude Code ships two built-in agent types that overlap with pack agents. When both
+are available, always prefer the pack agent -- it carries the full pack conventions
+and memory integration that the built-in lacks.
+
+| Built-in agent | Pack equivalent | Notes |
+|---|---|---|
+| `branch-manager` | `git-engineer` | git-engineer handles all three modes: branch setup, commit, and push/PR |
+| `typescript-engineer` | `frontend-engineer` | frontend-engineer also covers Vue 3, Pinia, React, and other frameworks |
+
+Never route to `branch-manager` or `typescript-engineer` directly -- use the pack agents.
+
 ## Worktree policy
 See `skills/implement/SKILL.md` for the full worktree branching and isolation rules.
 

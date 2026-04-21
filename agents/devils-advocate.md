@@ -11,6 +11,7 @@ description: >
   already in the codebase.
 tools: Read, Write, Edit, Grep, Glob
 model: opus
+effort: high
 permissionMode: default
 version: "1.0.0"
 ---
