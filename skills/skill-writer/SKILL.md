@@ -13,11 +13,11 @@ Before asking the user anything, read 2–3 existing skills to understand struct
 
 ```
 skills/conventions/SKILL.md
-skills/check-readiness/SKILL.md
+skills/system-check/SKILL.md
 skills/implement/SKILL.md
 ```
 
-Note the frontmatter fields (`name`, `description`) and the section structure used in the body.
+Note the frontmatter fields (`name`, `description`, and optionally `model`, `effort`) and the section structure used in the body.
 
 ## 2. Interview the user
 
@@ -59,7 +59,8 @@ Rules:
 - Steps should be imperative and actionable, not vague.
 - If the skill invokes agents, name them explicitly and in order.
 - If the skill is interactive (asks the user questions), say so in step 1 and describe the questions.
-- Do not add frontmatter fields beyond `name` and `description` — these are the only supported fields.
+- Supported frontmatter fields: `name`, `description`, `model`, `effort`. Do not add any other fields — the linter will reject them.
+- Only add `model:` or `effort:` when the skill has a clear reason to override the session default (e.g., a fast triage skill might use `haiku`; a deep analysis skill might use `effort: high`).
 
 ## 4. Present the draft
 
@@ -90,8 +91,8 @@ Report back:
 
 ## Gotchas
 
-- **Description over 1024 characters:** The lint check will catch this, but write the description tightly from the start. Include what, when, and trigger phrases — but do not repeat the same information twice.
+- **Description over 1536 characters:** The lint check will catch this, but write the description tightly from the start. Include what, when, and trigger phrases — but do not repeat the same information twice.
 - **Vague trigger phrases in the description:** "Use when helpful" is not a trigger phrase. Trigger phrases must be specific phrases a real user would actually type. Ask the user for examples of how they would invoke the skill.
 - **Skill name conflicts with an existing skill:** Check the skills/ directory before writing. If a name collision exists, ask the user whether to update the existing skill or choose a different name.
-- **lint-agents fails on frontmatter:** The only allowed frontmatter fields are `name` and `description`. Do not add `category`, `version`, `author`, or any other fields — the linter will reject them.
+- **lint-agents fails on frontmatter:** The only allowed frontmatter fields are `name`, `description`, `model`, and `effort`. Do not add `category`, `version`, `author`, or any other fields — the linter will reject them.
 - **Skipping the user approval step:** Step 4 requires showing the draft and getting explicit approval before writing. Do not skip this to save time — it avoids a write-fix-rewrite cycle if the intent was misunderstood.
