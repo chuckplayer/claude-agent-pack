@@ -1,6 +1,6 @@
 # Claude Code Agent Pack
 
-Fourteen specialized Claude Code subagents for enterprise C# and TypeScript development teams.
+Seventeen specialized Claude Code subagents for enterprise C# and TypeScript development teams, plus a personal LLM wiki skill family for persistent knowledge management.
 
 ## Why
 
@@ -28,6 +28,9 @@ Without orchestration, a single session planning an architecture change, writing
 | performance-reviewer | Performance-focused review only | Changes with database queries, endpoints, or hot-path code |
 | test-engineer | Test generation matching established project patterns | After code-reviewer has completed its review |
 | merge-reviewer | Final pipeline gate -- verifies all stages passed and commits to the feature branch | After test-engineer completes; never merges to main |
+| wiki-ingestor | Reads a source from `raw/`, creates or updates `wiki/` pages, updates `index.md` | Dispatched by `/wiki-ingest`; never modifies `raw/` |
+| wiki-librarian | Answers queries against the wiki with citations; can file synthesis pages back | Dispatched by `/wiki-query`; read-only except for filed-back synthesis pages |
+| wiki-linter | Health checks the wiki for orphans, broken links, missing frontmatter, and schema violations | Dispatched by `/wiki-lint`; strictly read-only |
 
 ## Installation
 
@@ -48,7 +51,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Thirteen slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Eighteen slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -65,6 +68,11 @@ Thirteen slash-command entry points are included. Invoke them directly in Claude
 | `/setup-project` | Scaffolds a project with `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` structure, then guides through next steps |
 | `/skill-writer` | Scaffolds a new skill for the pack: interviews the user, writes `skills/<name>/SKILL.md`, updates the README, and validates with `/lint-agents` |
 | `/system-check` | Runs both readiness and update checks in one pass: verifies installation, project scaffolding, and whether agents/skills are current. |
+| `/wiki` | Help and discovery entry point for the wiki skill family — routes to the correct wiki skill based on intent. |
+| `/wiki-init` | Bootstraps a new wiki vault for a knowledge domain (`vacation`, `research`, etc.) with directory structure, domain schema, and git history. |
+| `/wiki-ingest` | Reads a source and integrates its knowledge into the wiki — creating/updating pages, refreshing the index, and logging the operation. |
+| `/wiki-query` | Asks a question against the wiki; synthesizes an answer with citations and offers to file valuable answers back as synthesis pages. |
+| `/wiki-lint` | Health-checks the wiki for orphaned pages, broken wikilinks, missing frontmatter, stale dates, and schema violations. |
 
 ## Scripts
 
