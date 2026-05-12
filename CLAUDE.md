@@ -96,6 +96,7 @@ and memory integration that the built-in lacks.
 |---|---|---|
 | `branch-manager` | `git-engineer` | git-engineer handles all three modes: branch setup, commit, and push/PR |
 | `typescript-engineer` | `frontend-engineer` | frontend-engineer also covers Vue 3, Pinia, React, and other frameworks |
+| `claude-code-guide` | N/A — use built-in directly | Use the built-in for Claude Code feature questions (how /X works, hooks, MCP, API). Do not answer inline with Opus — that wastes planning tokens. |
 
 Never route to `branch-manager` or `typescript-engineer` directly -- use the pack agents.
 
