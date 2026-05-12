@@ -9,7 +9,7 @@ description: >
   and High findings block the pipeline at merge-reviewer. Read-only -- never
   modifies files. Do NOT invoke for purely cosmetic changes (renaming variables,
   reformatting) with no logic changes.
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, WebSearch
 model: sonnet
 permissionMode: plan
 version: "1.0.0"
@@ -56,6 +56,19 @@ Cover all of these:
 - Critical and High findings block the pipeline at merge-reviewer and must be resolved before the change can be committed.
 - Medium and Low findings are advisory; surface them to the developer but do not block.
 - Close with a compliance summary if any SOX or PCI-DSS findings exist, listing which controls are affected. If compliance applicability is uncertain, flag the uncertainty rather than omitting the section.
+
+## CVE and Advisory Lookup
+
+Use WebSearch when you encounter a dependency version, package name, or vulnerability pattern that warrants external verification. Appropriate triggers:
+
+- A specific CVE ID is referenced in a comment or changelog
+- A package version appears outdated and may have known vulnerabilities
+- A pattern matches a known attack class (e.g., deserialization, SSRF, prototype pollution) and you need to confirm current OWASP or NVD guidance
+- A compliance requirement's current interpretation is uncertain
+
+Search targets: NVD (nvd.nist.gov), OWASP, GitHub Security Advisories, or the package's own security advisories.
+
+Do NOT use WebSearch on every review. Only invoke it when you have a specific reason to look up external data. Local code analysis comes first.
 
 ## Hard Constraints
 

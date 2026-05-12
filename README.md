@@ -1,6 +1,6 @@
 # Claude Code Agent Pack
 
-Seventeen specialized Claude Code subagents for enterprise C# and TypeScript development teams, plus a personal LLM wiki skill family for persistent knowledge management.
+Nineteen specialized Claude Code subagents for enterprise software development teams, plus a personal LLM wiki skill family for persistent knowledge management.
 
 ## Why
 
@@ -19,8 +19,10 @@ Without orchestration, a single session planning an architecture change, writing
 | api-designer | Designs REST contracts before implementation begins | Creating or significantly modifying API endpoints |
 | git-engineer | Git lifecycle specialist: branch setup, conventional commits, push, and PR | Before any engineer agent; after merge-reviewer for push/PR |
 | csharp-engineer | C# and .NET implementation | Writing or modifying .cs files |
+| python-engineer | Python implementation: FastAPI, Django, Flask, and plain Python | Writing or modifying .py files |
 | frontend-engineer | TypeScript and Vue 3 frontend implementation | Writing or modifying .ts or .vue files |
 | mcp-engineer | MCP server implementation: tools, resources, prompts, Zod schemas | Building or modifying MCP servers |
+| infrastructure-engineer | Infrastructure-as-code: Terraform, Docker, GitHub Actions, Kubernetes | Writing or modifying .tf, Dockerfiles, .yml in .github/, and K8s manifests |
 | ts-linter | Type checking (tsc) and ESLint on changed TS/Vue files | After frontend-engineer or mcp-engineer, before code-reviewer |
 | database-engineer | Schema changes, EF Core migrations, and SQL | Any task requiring schema changes or migrations |
 | code-reviewer | Code quality, readability, and convention compliance | After any engineer agent output |
@@ -51,7 +53,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Eighteen slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Twenty slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -65,6 +67,8 @@ Eighteen slash-command entry points are included. Invoke them directly in Claude
 | `/onboard` | Reads the codebase, memory, and conventions to produce a structured orientation: architecture, entry points, data flow, and known gotchas. |
 | `/conventions` | Scaffolds or updates `docs/CONVENTIONS.md` by reading actual code patterns and interviewing the user. |
 | `/memory-audit` | Reviews all active memory files for staleness, archives stale entries, and checks for unrecorded decisions. |
+| `/memory-query` | Searches project memory for a specific topic, decision, or constraint and returns matching entries with citations. |
+| `/lint-agents` | Validates all agent and skill files for required frontmatter fields and body content; interprets failures with specific fix instructions. |
 | `/setup-project` | Scaffolds a project with `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` structure, then guides through next steps |
 | `/skill-writer` | Scaffolds a new skill for the pack: interviews the user, writes `skills/<name>/SKILL.md`, updates the README, and validates with `/lint-agents` |
 | `/system-check` | Runs both readiness and update checks in one pass: verifies installation, project scaffolding, and whether agents/skills are current. |
@@ -76,18 +80,20 @@ Eighteen slash-command entry points are included. Invoke them directly in Claude
 
 ## Scripts
 
-Three utility scripts are included in `scripts/`.
+Four utility scripts are included in `scripts/`.
 
 | Script | What it does |
 |---|---|
 | `setup-project` | Copies `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` scaffold into a project directory |
 | `check-readiness` | Verifies Claude Code is installed, all agents and skills are installed, and the target project has full scaffolding |
 | `check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated |
+| `lint-agents` | Validates all agent and skill files for required frontmatter fields, description length, and body content |
 
 ```bash
 bash scripts/setup-project.sh <project>
 bash scripts/check-readiness.sh <project>
 bash scripts/check-updates.sh
+bash scripts/lint-agents.sh
 ```
 
 ## Quick Start
