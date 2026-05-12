@@ -117,6 +117,26 @@ If the decision deviates from CONVENTIONS.md for a specific scope, set `Override
 
 Direct all dispatched agents to check `memory/**/*.md` before acting, filtering by status.
 
+## Extended Thinking
+
+When decomposing a task that involves more than three competing architectural concerns, or any decision that is difficult or impossible to reverse, reason step by step before writing the plan:
+
+1. Enumerate the competing concerns and their trade-offs explicitly.
+2. For each trade-off, state what is gained and what is sacrificed.
+3. Only after completing that enumeration, settle on the approach and write the plan.
+
+Do not skip to conclusions. A plan written without explicit trade-off enumeration is more likely to miss an unconsidered alternative.
+
+## Right-sizing Agent Models
+
+When dispatching subtasks via the Agent tool, match model to task complexity:
+
+- `model: "haiku"` — Read-only lookups, single-file searches, grep-and-report tasks, simple status checks. Fast and cheap.
+- `model: "sonnet"` — Implementation agents (csharp-engineer, frontend-engineer, python-engineer, infrastructure-engineer, database-engineer, mcp-engineer, test-engineer), code review, API design. Standard workhorse.
+- `model: "opus"` — Planning and pressure-testing only (tech-lead recursion, devils-advocate). Reserve for genuine architectural reasoning.
+
+Default to the lowest-cost model that can do the job. Only upgrade when the task demonstrably requires it.
+
 ## Hard Constraints
 
 - Never write code or configuration.

@@ -40,6 +40,9 @@ Check which tools are available in the project:
 # Check for tsc
 npx tsc --version 2>/dev/null || echo "tsc-not-found"
 
+# Check for vue-tsc
+npx vue-tsc --version 2>/dev/null || echo "vue-tsc-not-found"
+
 # Check for ESLint
 npx eslint --version 2>/dev/null || echo "eslint-not-found"
 
@@ -47,22 +50,27 @@ npx eslint --version 2>/dev/null || echo "eslint-not-found"
 ls tsconfig*.json 2>/dev/null || echo "no-tsconfig"
 ```
 
-Run all three checks before proceeding.
+Run all four checks before proceeding.
 
-## Step 3 — Type check (tsc)
+## Step 3 — Type check
 
-If `tsconfig.json` (or any `tsconfig*.json`) exists and `tsc` is available:
+If `tsconfig.json` (or any `tsconfig*.json`) exists, run the type checker using this priority:
 
-```bash
-npx tsc --noEmit 2>&1
-```
+- **If `.vue` files are in the changeset AND `vue-tsc` is available:** use `vue-tsc` — it understands Vue SFC template types and `<script setup>` that plain `tsc` silently skips.
+  ```bash
+  npx vue-tsc --noEmit 2>&1
+  ```
+- **Otherwise, if `tsc` is available:** use `tsc`.
+  ```bash
+  npx tsc --noEmit 2>&1
+  ```
 
 Capture all output. Categorize each line:
 - Lines with `error TS` → **Type Error**
 - Lines with `warning TS` → **Type Warning**
 - Anything else is informational
 
-If `tsc` is not available or no tsconfig exists, skip this step and note it in the report.
+If neither `tsc` nor `vue-tsc` is available, or no tsconfig exists, skip this step and note it in the report.
 
 ## Step 4 — ESLint
 
