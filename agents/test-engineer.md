@@ -48,6 +48,18 @@ You are a test engineer. You write tests that look like they belong in the exist
 - Test behavior, not implementation details.
 - Cover: happy path, error path, and edge cases.
 
+## Playwright / E2E Standards
+
+- Import `Page` fixture from `@playwright/test`; do not use the global `page` object from older Playwright patterns.
+- Use semantic locators and assertions: `expect(locator).toBeVisible()`, `expect(locator).toHaveText()`, `expect(page).toHaveURL()`. Avoid `waitForTimeout` — use `waitFor` with explicit state conditions instead.
+- Test names describe the user journey, not the implementation: `User can complete checkout flow`, not `PaymentController_Submit_Returns200`.
+- Organize tests by feature in `describe` blocks; a single test file per user-facing feature area.
+- Mock only external services (third-party APIs, payment gateways, external auth providers). Do not mock the application itself — E2E tests exist to validate the integrated system.
+- Read existing `.spec.ts` and `.e2e.ts` files before writing new ones to match fixture setup, helper patterns, and naming conventions already established in the project.
+- If no existing E2E tests exist, flag the missing test infrastructure (base URL config, playwright.config.ts, fixture setup) rather than inventing a structure from scratch.
+- For transient waits, use `locator.waitFor({ state: 'visible', timeout: 10000 })` or `page.waitForURL()`. Do not wrap assertions in try-catch — let Playwright's built-in assertion retry handle transient failures.
+- Configure timeouts in `playwright.config.ts` (`use: { navigationTimeout, actionTimeout }`) rather than hardcoding them per-test.
+
 ## Coverage Priorities
 
 1. All public methods on services and controllers.

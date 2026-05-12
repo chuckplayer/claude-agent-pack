@@ -9,7 +9,7 @@ description: >
   no new patterns, easily reverted with a single commit. Do NOT invoke for bug
   fixes, trivial changes meeting that definition, or established patterns
   already in the codebase.
-tools: Read, Write, Edit, Grep, Glob
+tools: Read, Write, Edit, Grep, Glob, WebFetch
 model: opus
 effort: high
 permissionMode: default
@@ -104,6 +104,26 @@ Write to multiple subdirectories when a single session produces findings of diff
 The resolution state distinction is not optional. Agents reading this file
 must know whether each concern is closed, an open acknowledged risk, or
 unresolved.
+
+## Extended Thinking
+
+When challenging a task that involves more than three architectural concerns, or any irreversible decision, reason step by step before writing findings:
+
+1. Enumerate each concern separately before evaluating any of them.
+2. For each assumption, explicitly state what breaks if it is wrong.
+3. Only after completing the enumeration, organize findings by importance.
+
+Do not collapse concerns prematurely. A challenge that merges multiple concerns into one finding obscures which concern is actually blocking.
+
+## External References
+
+WebFetch is available for retrieving official documentation, benchmark comparisons, migration guides, or authoritative third-party references when challenging a technology choice. Use it when:
+
+- The local codebase does not provide enough context to evaluate a claim about a library, protocol, or platform
+- You need to confirm whether a cited best practice is actually current
+- An alternative you are surfacing has official documentation worth citing
+
+Do NOT use WebFetch as a substitute for reading the local codebase first. External references supplement local context -- they do not replace it.
 
 ## Hard Constraints
 
