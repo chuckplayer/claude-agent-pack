@@ -82,18 +82,32 @@ Twenty-five slash-command entry points are included. Invoke them directly in Cla
 | `/obsidian-log` | Logs the current session to the Obsidian vault: git branch, recent commits, and uncommitted changes. |
 | `/obsidian-capture` | Saves a user-supplied title and body as a timestamped capture note in `Claude/captures/`. |
 | `/obsidian-daily` | Reads and displays today's daily note from `Claude/daily/`; creates it if it doesn't exist. |
-| `/obsidian-search` | Full-text search across all `Claude/` notes in the vault; opens the best match in Obsidian if the REST API is available. |
+| `/obsidian-search` | Full-text search across Claude notes in the vault, scoped to the current project by default; pass `--global` to search all projects. Opens the best match in Obsidian if the REST API is available. |
 
 ## Obsidian Vault Integration
 
 The installer optionally connects Claude Code to an [Obsidian](https://obsidian.md) vault. When enabled, every session is automatically logged to your vault when Claude Code stops.
 
-**What gets written:**
+**What gets written per session:**
 
-- `Claude/sessions/YYYY-MM-DD-HHmm-<project>.md` — git branch, last 5 commits, diff stat, and uncommitted changes
-- `Claude/daily/YYYY-MM-DD.md` — one-line entry linking to the session note
+- `<base>/sessions/YYYY-MM-DD-HHmm-<project>.md` — git branch, last 5 commits, diff stat, and uncommitted changes
+- `<base>/daily/YYYY-MM-DD.md` — one-line entry linking to the session note
+- `<base>/memory-snapshot.md` — freeze of `./memory/*.md` for vault-side search
 
-**Setup:** the installer prompts for your vault path and detects whether the [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) community plugin is running. If found, writes go through the API (supports opening notes directly in Obsidian); if not, it falls back to direct filesystem writes.
+Where `<base>` is determined by two env vars set during install:
+
+| Env var | Description |
+|---|---|
+| `OBSIDIAN_VAULT_PATH` | Absolute path to your vault (required) |
+| `OBSIDIAN_PROJECTS_FOLDER` | Folder inside the vault for project logs (optional) |
+
+With `OBSIDIAN_PROJECTS_FOLDER=Projects` and project `agent-pack`:
+`<vault>/Projects/agent-pack/sessions/`, `<vault>/Projects/agent-pack/daily/`
+
+Without `OBSIDIAN_PROJECTS_FOLDER`:
+`<vault>/Claude/agent-pack/sessions/`, global `<vault>/Claude/daily/`
+
+**Setup:** the installer prompts for your vault path, an optional projects folder, and detects whether the [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) community plugin is running. If found, writes go through the API (supports opening notes directly in Obsidian); if not, it falls back to direct filesystem writes.
 
 **REST API note:** the plugin uses HTTPS with a self-signed certificate and may run on port 27123 or 27124 depending on your Obsidian version. The installer probes both ports on both HTTP and HTTPS automatically.
 

@@ -10,16 +10,26 @@ description: >
 # Obsidian Capture
 
 Save an ad-hoc note, decision, or thought to the vault immediately. Captures
-land in `Claude/captures/` and are linked into the daily note automatically.
+always land in `Claude/captures/` (global, not project-specific) and are linked
+into the project's daily note automatically.
 
 ## Step 1 — Check configuration
 
-Run `bash -c 'echo $OBSIDIAN_VAULT_PATH'` (or `$env:OBSIDIAN_VAULT_PATH` on
-Windows). If the result is empty, stop and tell the user:
+Read `OBSIDIAN_VAULT_PATH` from the environment:
+- Bash: `bash -c 'echo $OBSIDIAN_VAULT_PATH'`
+- PowerShell: `$env:OBSIDIAN_VAULT_PATH`
+
+If empty, stop and tell the user:
 
 > "OBSIDIAN_VAULT_PATH is not set. Re-run `install.sh` and provide your vault
 > path when prompted, or add it manually to `~/.claude/settings.json` under
 > the `env` key."
+
+Also read:
+- `OBSIDIAN_CLI_MODE` (default `"filesystem"` if unset)
+- `OBSIDIAN_REST_API_PORT` (default `27123` if unset)
+- `OBSIDIAN_REST_API_HTTPS` (default `"false"` if unset)
+- `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset — used for daily note routing)
 
 ## Step 2 — Collect content
 
@@ -37,6 +47,7 @@ Invoke the **obsidian-writer** agent with:
 - `cli_mode`: value of `OBSIDIAN_CLI_MODE` (default `"filesystem"` if unset)
 - `rest_api_port`: value of `OBSIDIAN_REST_API_PORT` (default `27123` if unset)
 - `rest_api_https`: value of `OBSIDIAN_REST_API_HTTPS` (default `"false"` if unset)
+- `projects_folder`: value of `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
 - `title`: user's title
 - `body`: user's body text
 - `project`: basename of current working directory
@@ -46,10 +57,11 @@ Invoke the **obsidian-writer** agent with:
 
 Report the file path the agent wrote to. Example:
 
-> "Captured to `Claude/captures/2026-05-13-1430.md`"
+> "Captured to `Claude/captures/2026-05-14-1430.md`"
 
 ## Gotchas
 
+- Capture files always go to `Claude/captures/` — they are not project-scoped.
 - If `OBSIDIAN_VAULT_PATH` contains spaces, it still works — the agent handles
   quoting.
 - Do not attempt to write the file yourself — always dispatch obsidian-writer.

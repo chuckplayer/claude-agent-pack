@@ -1,6 +1,6 @@
 'use strict';
 const { execFileSync } = require('child_process');
-const { existsSync, mkdirSync, writeFileSync, appendFileSync, readFileSync } = require('fs');
+const { existsSync, mkdirSync, writeFileSync, appendFileSync, readFileSync, readdirSync } = require('fs');
 const path = require('path');
 const os = require('os');
 
@@ -10,6 +10,9 @@ process.on('uncaughtException', () => process.exit(0));
 // --- Guard: vault must be set and exist ---
 const vault = (process.env.OBSIDIAN_VAULT_PATH || '').replace(/[\r\n]/g, '');
 if (!vault || !existsSync(vault)) process.exit(0);
+
+// --- Optional projects folder (e.g. "Projects") ---
+const projectsFolder = (process.env.OBSIDIAN_PROJECTS_FOLDER || '').replace(/[\r\n]/g, '').replace(/[\\/]+$/, '');
 
 // --- Project context ---
 const projectDir = (process.env.CLAUDE_PROJECT_DIR || process.cwd()).replace(/[\r\n]/g, '');
@@ -54,14 +57,27 @@ const time = `${p2(now.getHours())}:${p2(now.getMinutes())}`;
 const ts   = `${date}-${p2(now.getHours())}${p2(now.getMinutes())}`;
 const slug = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
 
-// --- Resolve target paths ---
-const sessionPath = path.join(vault, 'Claude', 'sessions', `${ts}-${slug}.md`);
-const dailyPath   = path.join(vault, 'Claude', 'daily', `${date}.md`);
+// --- Compute base directory for this project ---
+// With projects folder:  <vault>/<projectsFolder>/<slug>/
+// Without:               <vault>/Claude/<slug>/
+const baseDir = projectsFolder
+  ? path.join(vault, projectsFolder, slug)
+  : path.join(vault, 'Claude', slug);
 
-// Assert both targets are inside vault/Claude/ (prevent traversal from malicious env)
-const claudeDir = path.resolve(vault, 'Claude');
-const inside = p => path.resolve(p).startsWith(claudeDir + path.sep) ||
-                    path.resolve(p) === claudeDir;
+// --- Resolve target paths ---
+const sessionPath = path.join(baseDir, 'sessions', `${ts}-${slug}.md`);
+// Daily note is project-specific when projects folder is configured; global otherwise
+const dailyPath = projectsFolder
+  ? path.join(baseDir, 'daily', `${date}.md`)
+  : path.join(vault, 'Claude', 'daily', `${date}.md`);
+
+// Security guard: paths must be inside Claude/ or the configured projects folder
+const claudeRoot = path.resolve(vault, 'Claude');
+const allowedRoots = [claudeRoot];
+if (projectsFolder) allowedRoots.push(path.resolve(vault, projectsFolder));
+const inside = p => allowedRoots.some(root =>
+  path.resolve(p).startsWith(root + path.sep) || path.resolve(p) === root
+);
 if (!inside(sessionPath) || !inside(dailyPath)) process.exit(0);
 
 mkdirSync(path.dirname(sessionPath), { recursive: true });
@@ -98,11 +114,36 @@ ${changedSection}${uncommittedSection}<!-- auto-logged by Stop hook -->
 writeFileSync(sessionPath, sessionContent, 'utf8');
 
 // --- Append to daily note ---
-const dailyLine = `- ${time} **session** [[Claude/sessions/${ts}-${slug}]] — branch: ${branch} (auto)`;
+// Wikilink must be relative to vault root with forward slashes (Obsidian requirement)
+const relSession = path.relative(vault, sessionPath).replace(/\\/g, '/').replace(/\.md$/, '');
+const dailyLine = `- ${time} **session** [[${relSession}]] — branch: ${branch} (auto)`;
 if (!existsSync(dailyPath)) {
   writeFileSync(dailyPath, `# ${date}\n\n${dailyLine}\n`, 'utf8');
 } else {
   appendFileSync(dailyPath, `\n${dailyLine}\n`, 'utf8');
+}
+
+// --- Memory snapshot: freeze ./memory/*.md into the vault ---
+const memoryDir = path.join(projectDir, 'memory');
+if (existsSync(memoryDir)) {
+  try {
+    const memFiles = readdirSync(memoryDir)
+      .filter(f => f.endsWith('.md') && f !== 'MEMORY.md')
+      .sort();
+    if (memFiles.length > 0) {
+      const snapshotPath = path.join(baseDir, 'memory-snapshot.md');
+      if (inside(snapshotPath)) {
+        mkdirSync(path.dirname(snapshotPath), { recursive: true });
+        let snapshot = `---\ntype: claude/memory-snapshot\nproject: ${rawName}\ndate: ${date}\ntags: [claude, memory, auto]\n---\n\n`;
+        for (const f of memFiles) {
+          try {
+            snapshot += `## ${f}\n\n${readFileSync(path.join(memoryDir, f), 'utf8')}\n\n---\n\n`;
+          } catch {}
+        }
+        writeFileSync(snapshotPath, snapshot, 'utf8');
+      }
+    }
+  } catch {}
 }
 
 // --- Persist SHA for next run ---

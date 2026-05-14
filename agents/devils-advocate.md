@@ -107,6 +107,27 @@ The resolution state distinction is not optional. Agents reading this file
 must know whether each concern is closed, an open acknowledged risk, or
 unresolved.
 
+### Obsidian sync
+
+After writing any memory file to `./memory/`, check whether `OBSIDIAN_VAULT_PATH` is set
+(`bash -c 'echo $OBSIDIAN_VAULT_PATH'` or `$env:OBSIDIAN_VAULT_PATH` on Windows).
+
+If set, invoke the **obsidian-writer** agent for each written memory file with:
+- `write_mode`: `capture`
+- `vault_path`: value of `OBSIDIAN_VAULT_PATH`
+- `cli_mode`: value of `OBSIDIAN_CLI_MODE` (default `"filesystem"`)
+- `rest_api_port`: value of `OBSIDIAN_REST_API_PORT` (default `27123`)
+- `rest_api_https`: value of `OBSIDIAN_REST_API_HTTPS` (default `"false"`)
+- `projects_folder`: value of `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
+- `title`: the memory file's description (from frontmatter) or its filename
+- `body`: full content of the memory file (frontmatter + body)
+- `project`: basename of `CLAUDE_PROJECT_DIR` or current working directory
+- `timestamp`: current datetime in `YYYY-MM-DDThh:mm` format
+
+This ensures each challenge and concern is searchable from Obsidian at write time,
+not only at the next session stop. If obsidian-writer is unavailable or errors,
+continue — the project's `memory/` file is the authoritative record.
+
 ## Extended Thinking
 
 When challenging a task that involves more than three architectural concerns, or any irreversible decision, reason step by step before writing findings:
