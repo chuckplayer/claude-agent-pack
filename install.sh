@@ -154,19 +154,17 @@ PYEOF
             # Confirm or update the vault path (Enter keeps the current value)
             read -rp "  Vault path [$current_vault]: " new_vault
             vault_path="${new_vault:-$current_vault}"
-            if [ -n "$current_projects_folder" ]; then
-                read -rp "  Projects folder in vault [$current_projects_folder]: " new_pf
-            else
-                read -rp "  Projects folder in vault (blank for Claude/<repo> layout): " new_pf
-            fi
-            projects_folder="${new_pf:-$current_projects_folder}"
+            _pf_default="${current_projects_folder:-Claude/Projects}"
+            read -rp "  Projects folder in vault [$_pf_default]: " new_pf
+            projects_folder="${new_pf:-$_pf_default}"
             obsidian_setup=true
         fi
     else
         read -rp "Set up Obsidian vault integration? [y/N] " obsidian_response
         if [ "$obsidian_response" = "y" ] || [ "$obsidian_response" = "Y" ]; then
             read -rp "  Obsidian vault path (absolute path to your vault directory): " vault_path
-            read -rp "  Projects folder in vault (blank for Claude/<repo> layout): " projects_folder
+            read -rp "  Projects folder in vault [Claude/Projects]: " projects_folder
+            projects_folder="${projects_folder:-Claude/Projects}"
             obsidian_setup=true
         fi
     fi
@@ -283,29 +281,28 @@ PYEOF
             fi
             echo "  [ok] env:    OBSIDIAN_PROJECTS_FOLDER=$projects_folder"
         else
-            # Clear the key if it was previously set and the user blanked it
-            if [ -n "$current_projects_folder" ]; then
-                if [ "$json_tool" = "node" ]; then
-                    node <<'JSEOF'
+            # User left it blank — write the default so the env var is always explicit
+            projects_folder="Claude/Projects"
+            if [ "$json_tool" = "node" ]; then
+                node - "$projects_folder" <<'JSEOF'
 const fs=require('fs'),os=require('os'),path=require('path');
 const p=path.join(os.homedir(),'.claude','settings.json');
 const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
-if(s.env)delete s.env.OBSIDIAN_PROJECTS_FOLDER;
+if(!s.env)s.env={};s.env.OBSIDIAN_PROJECTS_FOLDER=process.argv[2];
 fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
 JSEOF
-                else
-                    "$json_tool" <<'PYEOF'
-import json, os
+            else
+                "$json_tool" - "$projects_folder" <<'PYEOF'
+import json, os, sys
 p = os.path.expanduser("~/.claude/settings.json")
 s = json.load(open(p)) if os.path.exists(p) else {}
-s.get("env", {}).pop("OBSIDIAN_PROJECTS_FOLDER", None)
+s.setdefault("env", {})["OBSIDIAN_PROJECTS_FOLDER"] = sys.argv[1]
 with open(p, "w") as f:
     json.dump(s, f, indent=2)
     f.write("\n")
 PYEOF
-                fi
-                echo "  [rm] env:    OBSIDIAN_PROJECTS_FOLDER (cleared — using Claude/<repo> layout)"
             fi
+            echo "  [ok] env:    OBSIDIAN_PROJECTS_FOLDER=$projects_folder (default)"
         fi
 
         # Install hook script

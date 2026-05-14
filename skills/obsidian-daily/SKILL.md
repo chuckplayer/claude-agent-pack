@@ -32,13 +32,12 @@ Also read:
 
 Today's local date in `YYYY-MM-DD` format.
 
-**If `OBSIDIAN_PROJECTS_FOLDER` is set:**
 1. Compute `project_slug`: basename of `CLAUDE_PROJECT_DIR` (or cwd), lowercase,
-   non-alphanumeric chars replaced with hyphens, max 30 characters.
-2. Daily note path: `<OBSIDIAN_VAULT_PATH>/<OBSIDIAN_PROJECTS_FOLDER>/<project_slug>/daily/<YYYY-MM-DD>.md`
-
-**If `OBSIDIAN_PROJECTS_FOLDER` is not set:**
-Daily note path: `<OBSIDIAN_VAULT_PATH>/Claude/daily/<YYYY-MM-DD>.md`
+   non-alphanumeric characters replaced with hyphens, max 30 characters.
+2. Use `OBSIDIAN_PROJECTS_FOLDER` if set, otherwise default to `Claude/Projects`.
+3. `effective_folder` may be multi-segment (e.g. `Claude/Projects`) — treat each
+   `/`-delimited segment as a path component.
+4. Daily note path: `<OBSIDIAN_VAULT_PATH>/<effective_folder>/<project_slug>/daily/<YYYY-MM-DD>.md`
 
 ## Step 3 — Read today's daily note
 

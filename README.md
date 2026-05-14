@@ -104,8 +104,8 @@ Where `<base>` is determined by two env vars set during install:
 With `OBSIDIAN_PROJECTS_FOLDER=Projects` and project `agent-pack`:
 `<vault>/Projects/agent-pack/sessions/`, `<vault>/Projects/agent-pack/daily/`
 
-Without `OBSIDIAN_PROJECTS_FOLDER`:
-`<vault>/Claude/agent-pack/sessions/`, global `<vault>/Claude/daily/`
+Default (`OBSIDIAN_PROJECTS_FOLDER=Claude/Projects` when blank):
+`<vault>/Claude/Projects/agent-pack/sessions/`, `<vault>/Claude/Projects/agent-pack/daily/`
 
 **Setup:** the installer prompts for your vault path, an optional projects folder, and detects whether the [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) community plugin is running. If found, writes go through the API (supports opening notes directly in Obsidian); if not, it falls back to direct filesystem writes.
 

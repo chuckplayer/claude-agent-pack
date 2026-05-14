@@ -40,10 +40,8 @@ Also read:
 **Default (project-first):**
 - Compute `project_slug`: basename of `CLAUDE_PROJECT_DIR` (or cwd), lowercase,
   non-alphanumeric chars replaced with hyphens, max 30 characters.
-- If `OBSIDIAN_PROJECTS_FOLDER` is set:
-  Search `<OBSIDIAN_VAULT_PATH>/<OBSIDIAN_PROJECTS_FOLDER>/<project_slug>/**/*.md`
-- If not set:
-  Search `<OBSIDIAN_VAULT_PATH>/Claude/<project_slug>/**/*.md`
+- Use `OBSIDIAN_PROJECTS_FOLDER` if set, otherwise default to `Claude/Projects`.
+- Search `<OBSIDIAN_VAULT_PATH>/<effective_folder>/<project_slug>/**/*.md`
 
 If the project folder does not exist or returns no results, automatically fall
 through to the global scope and note that you expanded the search.
