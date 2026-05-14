@@ -4,7 +4,7 @@ Twenty specialized Claude Code subagents for enterprise software development tea
 
 ## Why
 
-Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides fourteen agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
+Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides twenty agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
 
 Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job, and session context is automatically logged to an Obsidian vault on Stop.
 
@@ -33,7 +33,7 @@ Without orchestration, a single session planning an architecture change, writing
 | wiki-ingestor | Reads a source from `raw/`, creates or updates `wiki/` pages, updates `index.md` | Dispatched by `/wiki-ingest`; never modifies `raw/` |
 | wiki-librarian | Answers queries against the wiki with citations; can file synthesis pages back | Dispatched by `/wiki-query`; read-only except for filed-back synthesis pages |
 | wiki-linter | Health checks the wiki for orphans, broken links, missing frontmatter, and schema violations | Dispatched by `/wiki-lint`; strictly read-only |
-| obsidian-writer | Writes session logs and capture notes to an Obsidian vault; handles REST API and filesystem modes; enforces writes to `Claude/` prefix only | Dispatched by Obsidian skills; never writes outside `Claude/` |
+| obsidian-writer | Writes session logs and capture notes to an Obsidian vault; handles REST API and filesystem modes; routes to the project folder or `Claude/captures/` based on `OBSIDIAN_PROJECTS_FOLDER` | Dispatched by Obsidian skills; never writes outside allowed vault directories |
 
 ## Installation
 
@@ -81,7 +81,7 @@ Twenty-five slash-command entry points are included. Invoke them directly in Cla
 | `/obsidian` | Help and routing entry point for the Obsidian skill family — dispatches to the right skill based on intent. |
 | `/obsidian-log` | Logs the current session to the Obsidian vault: git branch, recent commits, and uncommitted changes. |
 | `/obsidian-capture` | Saves a user-supplied title and body as a timestamped capture note in `Claude/captures/`. |
-| `/obsidian-daily` | Reads and displays today's daily note from `Claude/daily/`; creates it if it doesn't exist. |
+| `/obsidian-daily` | Reads and displays today's project daily note (path depends on `OBSIDIAN_PROJECTS_FOLDER`). |
 | `/obsidian-search` | Full-text search across Claude notes in the vault, scoped to the current project by default; pass `--global` to search all projects. Opens the best match in Obsidian if the REST API is available. |
 
 ## Obsidian Vault Integration
@@ -92,14 +92,14 @@ The installer optionally connects Claude Code to an [Obsidian](https://obsidian.
 
 - `<base>/sessions/YYYY-MM-DD-HHmm-<project>.md` — git branch, last 5 commits, diff stat, and uncommitted changes
 - `<base>/daily/YYYY-MM-DD.md` — one-line entry linking to the session note
-- `<base>/memory-snapshot.md` — freeze of `./memory/*.md` for vault-side search
+- `<base>/memory-snapshot.md` — freeze of `./memory/**/*.md` (recursive) for vault-side search
 
 Where `<base>` is determined by two env vars set during install:
 
 | Env var | Description |
 |---|---|
 | `OBSIDIAN_VAULT_PATH` | Absolute path to your vault (required) |
-| `OBSIDIAN_PROJECTS_FOLDER` | Folder inside the vault for project logs (optional) |
+| `OBSIDIAN_PROJECTS_FOLDER` | Folder inside the vault for project logs (defaults to `Claude/Projects` if blank) |
 
 With `OBSIDIAN_PROJECTS_FOLDER=Projects` and project `agent-pack`:
 `<vault>/Projects/agent-pack/sessions/`, `<vault>/Projects/agent-pack/daily/`
@@ -214,7 +214,7 @@ Agents are updated in-place. Re-running the installer is safe -- it is idempoten
 bash <pack-dir>/uninstall.sh
 ```
 
-The uninstaller removes agents from `~/.claude/agents/` after confirmation. Project-level `memory/` directories are not touched.
+The uninstaller removes agents from `~/.claude/agents/`, skills from `~/.claude/skills/`, the Obsidian stop hook from `~/.claude/scripts/`, and the Obsidian env vars (`OBSIDIAN_VAULT_PATH`, `OBSIDIAN_PROJECTS_FOLDER`) from `~/.claude/settings.json` — all after confirmation. It also detects `~/.claude/wiki/` and prompts whether to remove wiki vaults. Project-level `memory/` directories are not touched.
 
 ## Agent Dashboard
 
