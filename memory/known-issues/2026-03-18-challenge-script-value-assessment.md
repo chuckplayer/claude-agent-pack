@@ -1,10 +1,14 @@
 **Date:** 2026-03-18
+**Last-updated:** 2026-05-14
 **Type:** finding
-**Status:** active
+**Status:** archived
 **Superseded-by:** n/a
 **Scope:** scripts/
 **Overrides-convention:** no
 **Related-to:** n/a
+
+> All unresolved items from this session were closed by 2026-05-14. See
+> individual concerns below. Archived — agents may skip this file.
 
 ## Summary
 
@@ -35,9 +39,12 @@ The scripts/ directory contains 12 files (6 .sh + 6 .ps1). Five of the six are w
 ### setup-project.sh provides UX value as a one-time operation
 - **Accepted risk:** The script handles conditional file copying, .gitkeep creation, and user-friendly output. While Claude could replicate this with Read+Write, the script is simpler to document and invoke for initial project setup. It runs once per project, so its maintenance cost is low relative to its UX benefit.
 
-## Implications
+## Implications (updated 2026-05-14)
 
-- If query-memory.sh and new-memory.sh are removed (2 files), the script surface shrinks by a third with no loss of capability.
-- The memory-query skill would need to be rewritten to use Grep/Glob/Read directly instead of shelling out, which would likely make it more reliable.
-- .ps1 files have been removed — only .sh scripts remain.
-- The remaining scripts (check-readiness, check-updates, lint-agents, setup-project) should be evaluated for whether their skill wrappers should shell out or replicate the logic inline.
+- query-memory.sh and new-memory.sh have been removed. Script count reduced.
+- .ps1 files were removed in March 2026; obsidian-stop-hook.sh and .ps1 were
+  added then removed again in May 2026, replaced by obsidian-stop-hook.js.
+- Only .sh scripts remain: check-readiness, check-updates, lint-agents, setup-project.
+- check-updates.sh now also checks obsidian-stop-hook.js (added May 2026).
+- The accepted-risk scripts (check-readiness, check-updates, lint-agents,
+  setup-project) remain in place — their human-audience value is confirmed.

@@ -1,10 +1,14 @@
 **Date:** 2026-05-14
+**Last-updated:** 2026-05-14
 **Type:** finding
-**Status:** active
-**Superseded-by:** n/a
+**Status:** archived
+**Superseded-by:** 2026-05-14-decision-obsidian-hook-windows-resolution.md
 **Scope:** scripts/obsidian-stop-hook.*, install.sh hook registration block
 **Overrides-convention:** no
 **Related-to:** 2026-03-18-challenge-script-value-assessment.md, 2026-04-26-challenge-llm-wiki-skill-family.md
+
+> All items resolved or accepted same day. See superseded-by file for resolution
+> of each concern. Archived — agents may skip this file.
 
 ## Summary
 
