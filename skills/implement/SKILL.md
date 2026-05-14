@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Orchestrates the full agent-pack pipeline for a task: git-engineer → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → test-engineer → merge-reviewer → git-engineer (push/PR). Use when implementing a feature, fix, or change end-to-end. Trigger this when someone says: implement this, build this feature, make this change, add this functionality, code this up, I need this feature built, ship this. Do NOT use for targeted bug fixes with a known root cause — use /hotfix or /debug instead. Do NOT use for pure restructuring with no behavior change — use /refactor instead."
+description: "Orchestrates the full agent-pack pipeline for a task: git-engineer → [tech-lead] → engineer(s) → code-reviewer → [security-reviewer] → [performance-reviewer] → smell-reviewer → test-engineer → merge-reviewer → git-engineer (push/PR). Use when implementing a feature, fix, or change end-to-end. Trigger this when someone says: implement this, build this feature, make this change, add this functionality, code this up, I need this feature built, ship this. Do NOT use for targeted bug fixes with a known root cause — use /hotfix or /debug instead. Do NOT use for pure restructuring with no behavior change — use /refactor instead."
 ---
 
 # Implement Task
@@ -44,11 +44,13 @@ Run the full agent pipeline for the task the user described:
 
 8. **performance-reviewer** — invoke if changes include database queries, API endpoints, loops over collections, or caching logic.
 
-   If both security-reviewer and performance-reviewer are required, invoke them in parallel — they are independent and have no dependency on each other.
+8a. **smell-reviewer** — always invoke after code-reviewer for any code change that introduces or modifies classes, methods, or files. Skip only for documentation-only, config-only, or SQL-migration-only changes with no application logic.
+
+   Run security-reviewer, performance-reviewer, and smell-reviewer in parallel — they are all independent and have no dependency on each other. Omit security-reviewer and performance-reviewer when their conditions are not met; smell-reviewer always runs on code changes.
 
 9. **test-engineer** — always last among reviewers, after code-reviewer completes. Never invoke before code-reviewer has finished.
 
-10. **merge-reviewer** — always last. Pass a summary of: the task description, which pipeline stages ran, all findings from code-reviewer / security-reviewer / performance-reviewer, whether test-engineer produced tests, and **the list of worktree branch names** collected in step 5. merge-reviewer will verify all required stages passed and commit the changes to the feature branch.
+10. **merge-reviewer** — always last. Pass a summary of: the task description, which pipeline stages ran, all findings from code-reviewer / security-reviewer / performance-reviewer / smell-reviewer, whether test-engineer produced tests, and **the list of worktree branch names** collected in step 5. merge-reviewer will verify all required stages passed and commit the changes to the feature branch.
 
     **If merge-reviewer returns PASS:** the changes are committed to the feature branch. Proceed to step 10a.
 

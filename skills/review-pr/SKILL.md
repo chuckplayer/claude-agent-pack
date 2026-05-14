@@ -17,20 +17,20 @@ Run a focused multi-reviewer pass on a set of changed files or an open pull requ
 
 Before dispatching reviewers, classify what the changes touch:
 
-- **Always invoke:** code-reviewer
+- **Always invoke:** code-reviewer, smell-reviewer (for any code changes — skip for docs/config/migrations only)
 - **Invoke if** changes touch authentication, authorization, data access, PII, external endpoints, or secrets: **security-reviewer**
 - **Invoke if** changes include database queries, API endpoints, loops over collections, or caching logic: **performance-reviewer**
 
 State which reviewers you are invoking and why before starting.
 
-## 3. Dispatch reviewers (in parallel if all three are needed)
+## 3. Dispatch reviewers (in parallel)
 
 Pass each reviewer:
 - The list of changed file paths
 - The PR title and description (if available)
 - Any relevant context the user provided
 
-Run code-reviewer, security-reviewer, and performance-reviewer in parallel — their inputs are independent.
+Run code-reviewer, smell-reviewer, security-reviewer, and performance-reviewer in parallel — their inputs are independent.
 
 ## 4. Synthesize findings
 
@@ -40,7 +40,7 @@ After all reviewers complete, produce a consolidated report:
 ## Review Summary — <PR title or branch name>
 
 ### Critical
-- <finding> [source: code-reviewer | security-reviewer | performance-reviewer]
+- <finding> [source: code-reviewer | security-reviewer | performance-reviewer | smell-reviewer]
 
 ### Major
 - <finding> [source: ...]
