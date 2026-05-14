@@ -11,17 +11,27 @@ description: >
 # Obsidian Log
 
 Write a lightweight session log capturing what was built, any decisions made,
-and what comes next. Session logs land in `Claude/sessions/` and are linked
-into the daily note automatically.
+and what comes next. Session logs land in the project's vault folder
+(`<projects_folder>/<repo>/sessions/` or `Claude/<repo>/sessions/` if no
+projects folder is configured) and are linked into the daily note automatically.
 
 ## Step 1 — Check configuration
 
-Run `bash -c 'echo $OBSIDIAN_VAULT_PATH'` (or `$env:OBSIDIAN_VAULT_PATH` on
-Windows). If the result is empty, stop and tell the user:
+Read `OBSIDIAN_VAULT_PATH` from the environment:
+- Bash: `bash -c 'echo $OBSIDIAN_VAULT_PATH'`
+- PowerShell: `$env:OBSIDIAN_VAULT_PATH`
+
+If empty, stop and tell the user:
 
 > "OBSIDIAN_VAULT_PATH is not set. Re-run `install.sh` and provide your vault
 > path when prompted, or add it manually to `~/.claude/settings.json` under
 > the `env` key."
+
+Also read:
+- `OBSIDIAN_CLI_MODE` (default `"filesystem"` if unset)
+- `OBSIDIAN_REST_API_PORT` (default `27123` if unset)
+- `OBSIDIAN_REST_API_HTTPS` (default `"false"` if unset)
+- `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
 
 ## Step 2 — Gather git context
 
@@ -51,6 +61,7 @@ Invoke the **obsidian-writer** agent with:
 - `cli_mode`: value of `OBSIDIAN_CLI_MODE` (default `"filesystem"` if unset)
 - `rest_api_port`: value of `OBSIDIAN_REST_API_PORT` (default `27123` if unset)
 - `rest_api_https`: value of `OBSIDIAN_REST_API_HTTPS` (default `"false"` if unset)
+- `projects_folder`: value of `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
 - `project`: basename of `CLAUDE_PROJECT_DIR` or current working directory
 - `project_dir`: `CLAUDE_PROJECT_DIR` or current working directory
 - `branch`: from step 2
@@ -63,9 +74,9 @@ Invoke the **obsidian-writer** agent with:
 
 ## Step 5 — Confirm
 
-Report the session file path. Example:
+Report the session file path returned by obsidian-writer. Example:
 
-> "Session logged to `Claude/sessions/2026-05-13-1430-claude-agent-pack.md`"
+> "Session logged to `Projects/agent-pack/sessions/2026-05-14-1430-agent-pack.md`"
 
 ## Gotchas
 

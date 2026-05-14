@@ -9,54 +9,67 @@ description: >
 
 # Obsidian Daily
 
-View today's Claude activity note. The daily note at
-`Claude/daily/<YYYY-MM-DD>.md` accumulates links to every session log and
-capture written today. This skill is read-only — it never dispatches
+View today's Claude activity note. This skill is read-only — it never dispatches
 obsidian-writer.
 
 ## Step 1 — Check configuration
 
-Run `bash -c 'echo $OBSIDIAN_VAULT_PATH'` (or `$env:OBSIDIAN_VAULT_PATH` on
-Windows). If the result is empty, stop and tell the user:
+Read `OBSIDIAN_VAULT_PATH` from the environment:
+- Bash: `bash -c 'echo $OBSIDIAN_VAULT_PATH'`
+- PowerShell: `$env:OBSIDIAN_VAULT_PATH`
+
+If empty, stop and tell the user:
 
 > "OBSIDIAN_VAULT_PATH is not set. Re-run `install.sh` and provide your vault
 > path when prompted, or add it manually to `~/.claude/settings.json` under
 > the `env` key."
 
-## Step 2 — Read today's daily note
+Also read:
+- `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
+- `CLAUDE_PROJECT_DIR` (or fall back to current working directory) — used to compute the repo slug
 
-Construct the path using today's local date:
+## Step 2 — Compute the daily note path
 
-```
-<OBSIDIAN_VAULT_PATH>/Claude/daily/<YYYY-MM-DD>.md
-```
+Today's local date in `YYYY-MM-DD` format.
 
-Use the Read tool to read the file.
+**If `OBSIDIAN_PROJECTS_FOLDER` is set:**
+1. Compute `project_slug`: basename of `CLAUDE_PROJECT_DIR` (or cwd), lowercase,
+   non-alphanumeric chars replaced with hyphens, max 30 characters.
+2. Daily note path: `<OBSIDIAN_VAULT_PATH>/<OBSIDIAN_PROJECTS_FOLDER>/<project_slug>/daily/<YYYY-MM-DD>.md`
 
-## Step 3 — Display
+**If `OBSIDIAN_PROJECTS_FOLDER` is not set:**
+Daily note path: `<OBSIDIAN_VAULT_PATH>/Claude/daily/<YYYY-MM-DD>.md`
+
+## Step 3 — Read today's daily note
+
+Use the Read tool to read the file at the computed path.
+
+## Step 4 — Display
 
 Show the file contents inline in the conversation.
 
 If the file does not exist, say:
 
-> "No activity logged today yet. Use `/obsidian-capture` to save a note or
-> `/obsidian-log` to record a session."
+> "No activity logged today yet for this project. Use `/obsidian-capture` to
+> save a note or `/obsidian-log` to record a session."
 
-## Step 4 — Open in Obsidian (optional)
+## Step 5 — Open in Obsidian (optional)
 
 If `OBSIDIAN_CLI_MODE` is `"rest-api"`, attempt to open the note in Obsidian's
-editor:
+editor. Compute the vault-relative path (strip the vault root prefix, use forward
+slashes, URL-encode the result), then call:
 
 ```bash
-curl -sk "https://127.0.0.1:${OBSIDIAN_REST_API_PORT:-27123}/open/Claude%2Fdaily%2F<YYYY-MM-DD>.md"
+curl -sk "https://127.0.0.1:${OBSIDIAN_REST_API_PORT:-27123}/open/<url-encoded-vault-relative-path>"
 ```
 
 If this fails, or if CLI mode is `"filesystem"`, skip silently — the note was
-already displayed inline in step 3.
+already displayed inline in step 4.
 
 ## Gotchas
 
 - This skill is strictly read-only. Do not dispatch obsidian-writer under any
   circumstance.
-- If the vault path contains spaces, URL-encode it properly in the curl command.
 - The date must be today's local date, not UTC.
+- If the vault path contains spaces, URL-encode it properly in the curl command.
+- Project slug computation: `basename(cwd).toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30)`

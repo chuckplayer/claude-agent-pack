@@ -89,8 +89,29 @@ PYEOF
 )"
     fi
 
+    # Read existing projects folder (empty string if not configured)
+    if [ "$json_tool" = "node" ]; then
+        current_projects_folder="$(node -e "
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+try{const s=JSON.parse(fs.readFileSync(p,'utf8'));process.stdout.write((s.env&&s.env.OBSIDIAN_PROJECTS_FOLDER)||'');}catch(e){}
+" 2>/dev/null || true)"
+    else
+        current_projects_folder="$("$json_tool" - <<'PYEOF' 2>/dev/null || true
+import json, os, sys
+p = os.path.expanduser("~/.claude/settings.json")
+try:
+    s = json.load(open(p))
+    sys.stdout.write(s.get("env", {}).get("OBSIDIAN_PROJECTS_FOLDER", ""))
+except Exception:
+    pass
+PYEOF
+)"
+    fi
+
     obsidian_setup=false
     vault_path=""
+    projects_folder=""
 
     if [ -n "$current_vault" ]; then
         echo "Obsidian integration is active (vault: $current_vault)"
@@ -102,7 +123,7 @@ PYEOF
 const fs=require('fs'),os=require('os'),path=require('path');
 const p=path.join(os.homedir(),'.claude','settings.json');
 const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
-if(s.env){['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS'].forEach(k=>delete s.env[k]);}
+if(s.env){['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS','OBSIDIAN_PROJECTS_FOLDER'].forEach(k=>delete s.env[k]);}
 if(s.hooks&&s.hooks.Stop){
   s.hooks.Stop=s.hooks.Stop.filter(e=>!(e&&Array.isArray(e.hooks)&&e.hooks.some(h=>h.command&&h.command.includes('obsidian-stop-hook'))));
   if(!s.hooks.Stop.length)delete s.hooks.Stop;
@@ -114,7 +135,7 @@ JSEOF
 import json, os
 p = os.path.expanduser("~/.claude/settings.json")
 s = json.load(open(p)) if os.path.exists(p) else {}
-for k in ['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS']:
+for k in ['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS','OBSIDIAN_PROJECTS_FOLDER']:
     s.get('env', {}).pop(k, None)
 if 'hooks' in s and 'Stop' in s['hooks']:
     s['hooks']['Stop'] = [
@@ -133,12 +154,19 @@ PYEOF
             # Confirm or update the vault path (Enter keeps the current value)
             read -rp "  Vault path [$current_vault]: " new_vault
             vault_path="${new_vault:-$current_vault}"
+            if [ -n "$current_projects_folder" ]; then
+                read -rp "  Projects folder in vault [$current_projects_folder]: " new_pf
+            else
+                read -rp "  Projects folder in vault (blank for Claude/<repo> layout): " new_pf
+            fi
+            projects_folder="${new_pf:-$current_projects_folder}"
             obsidian_setup=true
         fi
     else
         read -rp "Set up Obsidian vault integration? [y/N] " obsidian_response
         if [ "$obsidian_response" = "y" ] || [ "$obsidian_response" = "Y" ]; then
             read -rp "  Obsidian vault path (absolute path to your vault directory): " vault_path
+            read -rp "  Projects folder in vault (blank for Claude/<repo> layout): " projects_folder
             obsidian_setup=true
         fi
     fi
@@ -227,6 +255,57 @@ PYEOF
             echo "  [ok] env:    OBSIDIAN_CLI_MODE=rest-api (Local REST API on port ${rest_port}, HTTPS=${rest_https})"
         else
             echo "  [ok] env:    OBSIDIAN_CLI_MODE=filesystem"
+        fi
+
+        # Write or clear OBSIDIAN_PROJECTS_FOLDER
+        if [ -n "$projects_folder" ]; then
+            if [ "$json_tool" = "node" ]; then
+                node - "$projects_folder" <<'JSEOF'
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+if(!s.env)s.env={};s.env.OBSIDIAN_PROJECTS_FOLDER=process.argv[2];
+fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
+JSEOF
+            else
+                "$json_tool" - "$projects_folder" <<'PYEOF'
+import json, os, sys
+p = os.path.expanduser("~/.claude/settings.json")
+s = json.load(open(p)) if os.path.exists(p) else {}
+s.setdefault("env", {})["OBSIDIAN_PROJECTS_FOLDER"] = sys.argv[1]
+with open(p, "w") as f:
+    json.dump(s, f, indent=2)
+    f.write("\n")
+PYEOF
+            fi
+            if [ $? -ne 0 ]; then
+                echo "  ERROR: failed to update ~/.claude/settings.json"
+            fi
+            echo "  [ok] env:    OBSIDIAN_PROJECTS_FOLDER=$projects_folder"
+        else
+            # Clear the key if it was previously set and the user blanked it
+            if [ -n "$current_projects_folder" ]; then
+                if [ "$json_tool" = "node" ]; then
+                    node <<'JSEOF'
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+if(s.env)delete s.env.OBSIDIAN_PROJECTS_FOLDER;
+fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
+JSEOF
+                else
+                    "$json_tool" <<'PYEOF'
+import json, os
+p = os.path.expanduser("~/.claude/settings.json")
+s = json.load(open(p)) if os.path.exists(p) else {}
+s.get("env", {}).pop("OBSIDIAN_PROJECTS_FOLDER", None)
+with open(p, "w") as f:
+    json.dump(s, f, indent=2)
+    f.write("\n")
+PYEOF
+                fi
+                echo "  [rm] env:    OBSIDIAN_PROJECTS_FOLDER (cleared — using Claude/<repo> layout)"
+            fi
         fi
 
         # Install hook script

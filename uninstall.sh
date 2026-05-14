@@ -22,7 +22,7 @@ import json, sys
 try:
     s = json.load(open(sys.argv[1]))
     env = s.get("env", {})
-    if any(k in env for k in ("OBSIDIAN_VAULT_PATH", "OBSIDIAN_CLI_MODE", "OBSIDIAN_REST_API_PORT")):
+    if any(k in env for k in ("OBSIDIAN_VAULT_PATH", "OBSIDIAN_CLI_MODE", "OBSIDIAN_REST_API_PORT", "OBSIDIAN_PROJECTS_FOLDER")):
         print("yes")
 except Exception:
     pass
@@ -65,7 +65,7 @@ echo "The following will be removed:"
 echo ""
 for path in "${to_remove_agents[@]}"; do echo "  agent: $(basename "$path")"; done
 for path in "${to_remove_skills[@]}"; do echo "  skill: $(basename "$path")"; done
-[ "$remove_obsidian_env" = true ] && echo "  env:   OBSIDIAN_VAULT_PATH, OBSIDIAN_CLI_MODE, OBSIDIAN_REST_API_PORT (~/.claude/settings.json)"
+[ "$remove_obsidian_env" = true ] && echo "  env:   OBSIDIAN_VAULT_PATH, OBSIDIAN_CLI_MODE, OBSIDIAN_REST_API_PORT, OBSIDIAN_PROJECTS_FOLDER (~/.claude/settings.json)"
 [ "$remove_obsidian_hooks" = true ] && echo "  hook:  obsidian-stop-hook (~/.claude/scripts/)"
 
 echo ""
@@ -93,7 +93,7 @@ p = sys.argv[1]
 with open(p) as f:
     s = json.load(f)
 env = s.get("env", {})
-for key in ("OBSIDIAN_VAULT_PATH", "OBSIDIAN_CLI_MODE", "OBSIDIAN_REST_API_PORT"):
+for key in ("OBSIDIAN_VAULT_PATH", "OBSIDIAN_CLI_MODE", "OBSIDIAN_REST_API_PORT", "OBSIDIAN_REST_API_HTTPS", "OBSIDIAN_PROJECTS_FOLDER"):
     env.pop(key, None)
 if not env:
     s.pop("env", None)

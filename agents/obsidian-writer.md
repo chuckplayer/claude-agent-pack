@@ -2,10 +2,10 @@
 name: obsidian-writer
 description: >
   Invoke when an Obsidian skill needs to write a session log or capture note to
-  the vault. Handles REST API and direct filesystem write modes. Creates
-  Claude/sessions/ or Claude/captures/ files and appends to Claude/daily/ notes.
-  Requires: vault_path, cli_mode, write_mode (session|capture), and content.
-  Never modifies files outside the Claude/ directory in the vault.
+  the vault. Handles REST API and direct filesystem write modes. Creates session
+  files under the project's vault folder and appends to the daily note. Requires:
+  vault_path, cli_mode, write_mode (session|capture), and content. Never writes
+  outside the vault's Claude/ directory or the configured projects folder.
 tools:
   - Bash
   - Read
@@ -29,11 +29,37 @@ Accept these inputs from the calling skill:
 - `rest_api_port` — port number (default `27123`)
 - `rest_api_https` — `"true"` if the API uses HTTPS (default `"false"`)
 - `write_mode` — `"session"` or `"capture"`
+- `projects_folder` — value of `OBSIDIAN_PROJECTS_FOLDER` (empty string if not set)
+- `project` — basename of the current working directory (for slug and display)
 - Content fields (vary by mode — see below)
 
-**Iron rule:** Only write inside `<vault_path>/Claude/`. If any computed target
-path does not start with `<vault_path>/Claude/`, stop and report an error. Do
-not write anywhere else in the vault.
+## Path resolution
+
+Compute a `base_dir` and `daily_path` based on whether `projects_folder` is set:
+
+**With `projects_folder` (e.g. "Projects"):**
+```
+base_dir   = <vault_path>/<projects_folder>/<project-slug>/
+daily_path = <vault_path>/<projects_folder>/<project-slug>/daily/<YYYY-MM-DD>.md
+```
+
+**Without `projects_folder` (empty string):**
+```
+base_dir   = <vault_path>/Claude/<project-slug>/
+daily_path = <vault_path>/Claude/daily/<YYYY-MM-DD>.md
+```
+
+Captures always use `<vault_path>/Claude/captures/` regardless of `projects_folder`.
+
+Project-slug rules: lowercase, spaces and non-alphanumeric characters to hyphens,
+maximum 30 characters. Example: `claude-agent-pack`.
+
+**Iron rule:** Only write inside allowed roots:
+- `<vault_path>/Claude/` is always allowed.
+- `<vault_path>/<projects_folder>/` is allowed when `projects_folder` is non-empty.
+
+If any computed target path does not start with an allowed root, stop and report an
+error. Do not write anywhere else in the vault.
 
 ## Runtime write decision tree
 
@@ -42,9 +68,9 @@ not write anywhere else in the vault.
 2. Does the vault directory exist?
    Run `bash -c '[ -d "$vault_path" ] && echo yes || echo no'`
    - NO → Stop. Report: "Vault directory not found at `<vault_path>`."
-2a. Compute the target path(s) for this write. Verify each computed path starts with
-    `<vault_path>/Claude/`. If any path does not, STOP and report:
-    "Target path falls outside vault Claude/ directory — aborting write for safety."
+2a. Compute all target paths for this write. Verify each is inside an allowed root
+    (see Path resolution above). If any path fails, STOP and report:
+    "Target path falls outside allowed vault directories — aborting write for safety."
     Do not proceed to step 3.
 3. Is `cli_mode` = `"rest-api"`?
    - YES → Determine scheme: use `https` if `rest_api_https` = `"true"`, else `http`.
@@ -56,14 +82,17 @@ not write anywhere else in the vault.
 
 **REST API write:**
 
-Before any Bash write command, assert the target path with:
+Before any Bash write command, assert each target path is inside an allowed root:
 ```bash
-[[ "$target_path" == "$vault_path/Claude/"* ]] || { echo "ERROR: path outside Claude/"; exit 1; }
+[[ "$target_path" == "$vault_path/Claude/"* ]] || \
+[[ -n "$projects_folder" && "$target_path" == "$vault_path/$projects_folder/"* ]] || \
+{ echo "ERROR: path outside allowed vault directories"; exit 1; }
 ```
 
+For REST API, compute the path relative to the vault root (e.g., `Projects/agent-pack/sessions/...`):
 ```bash
 curl -sk -X PUT \
-  "<scheme>://127.0.0.1:<port>/vault/Claude/<subpath>" \
+  "<scheme>://127.0.0.1:<port>/vault/<vault-relative-subpath>" \
   -H "Content-Type: text/markdown" \
   --data-binary @- << 'EOF'
 <file content>
@@ -76,13 +105,10 @@ On a non-2xx response or curl error, fall through to filesystem write.
 
 **Filesystem write:**
 
-Before any Bash write command, assert the target path with:
-```bash
-[[ "$target_path" == "$vault_path/Claude/"* ]] || { echo "ERROR: path outside Claude/"; exit 1; }
-```
+Before any Bash write command, assert each target path is inside an allowed root (same guard as REST API above). Then:
 
 ```bash
-mkdir -p "<vault_path>/Claude/<subdir>"
+mkdir -p "<directory>"
 ```
 
 Then use the Write tool to write the file at the full absolute path.
@@ -91,10 +117,7 @@ Then use the Write tool to write the file at the full absolute path.
 
 ### Session file
 
-Path: `Claude/sessions/<YYYY-MM-DD>-<HHmm>-<project-slug>.md`
-
-Project-slug rules: lowercase, spaces to hyphens, alphanumeric and hyphens
-only, maximum 30 characters.
+Path: `<base_dir>/sessions/<YYYY-MM-DD>-<HHmm>-<project-slug>.md`
 
 Content:
 
@@ -121,7 +144,9 @@ tags: [claude, session-log]
 
 ### Capture file
 
-Path: `Claude/captures/<YYYY-MM-DD>-<HHmm>.md`
+Path: `<vault_path>/Claude/captures/<YYYY-MM-DD>-<HHmm>.md`
+
+(Captures always go to the global `Claude/captures/` folder, not the project folder.)
 
 Content:
 
@@ -141,11 +166,13 @@ tags: [claude, capture]
 
 ## Daily note append
 
-After writing the main file, append one line to
-`Claude/daily/<YYYY-MM-DD>.md`:
+After writing the main file, append one line to the `daily_path` computed above.
 
-- For session: `- <HH:MM> **session** [[Claude/sessions/<filename-without-extension>]] — <one-line summary from what_was_done>`
+- For session: `- <HH:MM> **session** [[<vault-relative-path-no-extension>]] — <one-line summary from what_was_done>`
 - For capture: `- <HH:MM> **capture** [[Claude/captures/<filename-without-extension>]] — <title>`
+
+The wikilink must use forward slashes and be relative to the vault root (no `.md` extension).
+Example: `[[Projects/agent-pack/sessions/2026-05-14-1430-agent-pack]]`
 
 To append:
 
@@ -158,14 +185,14 @@ To append:
 
 After writing, report:
 
-- The relative path of the written file (e.g.,
-  `Claude/sessions/2026-05-13-1430-myproject.md`)
+- The vault-relative path of the written file (e.g.,
+  `Projects/agent-pack/sessions/2026-05-14-1430-agent-pack.md`)
 - Whether REST API or filesystem was used
 - That the daily note was updated
 
 ## Hard Constraints
 
-- Never write outside `<vault_path>/Claude/`.
+- Never write outside the allowed vault roots (`Claude/` and, if set, the projects folder).
 - Never delete or truncate existing vault files — only append to daily notes.
 - Never expose the vault path or file contents in error messages beyond what is
   needed to diagnose the problem.
