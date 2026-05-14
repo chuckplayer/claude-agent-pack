@@ -119,21 +119,33 @@ if (!existsSync(dailyPath)) {
   appendFileSync(dailyPath, `\n${dailyLine}\n`, 'utf8');
 }
 
-// --- Memory snapshot: freeze ./memory/*.md into the vault ---
+// --- Memory snapshot: freeze ./memory/**/*.md into the vault ---
 const memoryDir = path.join(projectDir, 'memory');
 if (existsSync(memoryDir)) {
   try {
-    const memFiles = readdirSync(memoryDir)
-      .filter(f => f.endsWith('.md') && f !== 'MEMORY.md')
-      .sort();
+    // Collect all .md files recursively (depth 2: memory/<subdir>/<file>.md)
+    const collectMd = (dir, prefix) => {
+      const entries = [];
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const fullPath = path.join(dir, entry.name);
+        const label = prefix ? `${prefix}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) {
+          entries.push(...collectMd(fullPath, label));
+        } else if (entry.name.endsWith('.md') && entry.name !== 'MEMORY.md') {
+          entries.push({ fullPath, label });
+        }
+      }
+      return entries;
+    };
+    const memFiles = collectMd(memoryDir, '').sort((a, b) => a.label.localeCompare(b.label));
     if (memFiles.length > 0) {
       const snapshotPath = path.join(baseDir, 'memory-snapshot.md');
       if (inside(snapshotPath)) {
         mkdirSync(path.dirname(snapshotPath), { recursive: true });
         let snapshot = `---\ntype: claude/memory-snapshot\nproject: ${rawName}\ndate: ${date}\ntags: [claude, memory, auto]\n---\n\n`;
-        for (const f of memFiles) {
+        for (const { fullPath, label } of memFiles) {
           try {
-            snapshot += `## ${f}\n\n${readFileSync(path.join(memoryDir, f), 'utf8')}\n\n---\n\n`;
+            snapshot += `## ${label}\n\n${readFileSync(fullPath, 'utf8')}\n\n---\n\n`;
           } catch {}
         }
         writeFileSync(snapshotPath, snapshot, 'utf8');
