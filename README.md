@@ -34,7 +34,7 @@ Without orchestration, a single session planning an architecture change, writing
 | wiki-ingestor | Reads a source from `raw/`, creates or updates `wiki/` pages, updates `index.md` | Dispatched by `/wiki-ingest`; never modifies `raw/` |
 | wiki-librarian | Answers queries against the wiki with citations; can file synthesis pages back | Dispatched by `/wiki-query`; read-only except for filed-back synthesis pages |
 | wiki-linter | Health checks the wiki for orphans, broken links, missing frontmatter, and schema violations | Dispatched by `/wiki-lint`; strictly read-only |
-| obsidian-writer | Writes session logs and capture notes to an Obsidian vault; handles REST API and filesystem modes; routes to the project folder or `Claude/captures/` based on `OBSIDIAN_PROJECTS_FOLDER` | Dispatched by Obsidian skills; never writes outside allowed vault directories |
+| obsidian-writer | Writes session logs and capture notes directly to the vault filesystem; routes to the project folder or `Claude/captures/` based on `OBSIDIAN_PROJECTS_FOLDER`; Obsidian's file watcher picks up changes within seconds | Dispatched by Obsidian skills; never writes outside allowed vault directories |
 
 ## Installation
 
@@ -109,9 +109,7 @@ With `OBSIDIAN_PROJECTS_FOLDER=Projects` and project `agent-pack`:
 Default (`OBSIDIAN_PROJECTS_FOLDER=Claude/Projects` when blank):
 `<vault>/Claude/Projects/agent-pack/sessions/`, `<vault>/Claude/Projects/agent-pack/daily/`
 
-**Setup:** the installer prompts for your vault path, an optional projects folder, and detects whether the [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) community plugin is running. If found, writes go through the API (supports opening notes directly in Obsidian); if not, it falls back to direct filesystem writes.
-
-**REST API note:** the plugin uses HTTPS with a self-signed certificate and may run on port 27123 or 27124 depending on your Obsidian version. The installer probes both ports on both HTTP and HTTPS automatically.
+**Setup:** the installer prompts for your vault path and an optional projects folder. Writes go directly to the filesystem — Obsidian's file watcher picks them up within seconds.
 
 **Manual skills:** use `/obsidian-log`, `/obsidian-capture`, `/obsidian-daily`, and `/obsidian-search` at any time regardless of the auto-log hook.
 
