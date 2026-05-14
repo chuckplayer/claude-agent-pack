@@ -8,7 +8,6 @@ description: >
   outside the vault's Claude/ directory or the configured projects folder.
 tools:
   - Bash
-  - PowerShell
   - Read
   - Write
 model: sonnet
@@ -79,76 +78,66 @@ error. Do not write anywhere else in the vault.
      - No response from either method → Fall through to filesystem path
    - NO → Use filesystem path
 
-**Liveness check — platform-aware:**
+**Liveness check — via node (try first) then curl:**
 
-Try Method B (PowerShell) first. If the PowerShell tool is not available or returns
-empty, fall back to Method A (curl).
-
-*Method B — PowerShell (try first; reliable on Windows):*
-
-Use the PowerShell tool. Wrap `Add-Type` in `try/catch` so it is safe to call
-multiple times in the same session:
-```powershell
-try { Add-Type -TypeDefinition @'
-using System.Net; using System.Security.Cryptography.X509Certificates;
-public class OWTrustAll : ICertificatePolicy {
-    public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; }
-}
-'@ } catch {}
-[System.Net.ServicePointManager]::CertificatePolicy = New-Object OWTrustAll
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-try { (Invoke-WebRequest -Uri "<scheme>://127.0.0.1:<rest_api_port>/" -TimeoutSec 2 -UseBasicParsing).StatusCode } catch { "" }
+*Method A — node (try first; works on Windows and macOS/Linux, handles self-signed certs natively):*
+```bash
+node -e "
+const h=require('https');
+const r=h.request({hostname:'127.0.0.1',port:<rest_api_port>,path:'/',rejectUnauthorized:false},
+  res=>{process.stdout.write(String(res.statusCode));process.exit(0)});
+r.on('error',()=>process.exit(0));r.end();
+" 2>/dev/null
 ```
-If this returns `200`, the API is live. Use PowerShell for all writes (Method B writes).
+If this prints `200`, the API is live. Use node for all writes (Method A writes).
 
-*Method A — curl (fallback; reliable on macOS/Linux):*
+*Method B — curl (fallback when node is unavailable):*
 ```bash
 curl -sk --max-time 2 "<scheme>://127.0.0.1:<rest_api_port>/" -o /dev/null -w "%{http_code}"
 ```
-If this prints `200`, the API is live. Use curl for all writes (Method A writes).
+If this prints `200`, the API is live. Use curl for all writes (Method B writes).
 
-**REST API write — Method A (curl):**
+**REST API write — Method A (node):**
 
-Compute the path relative to the vault root (e.g., `Amwins/agent-pack/sessions/...`).
-Assert the target path is inside an allowed root before writing:
+Use a bash heredoc to pipe the file content to a node script that PUTs it to the API.
+The vault-relative path (e.g., `Amwins/agent-pack/sessions/file.md`) must be
+URL-path-safe (alphanumeric, hyphens, forward slashes — no encoding needed for
+standard vault paths). Substitute the actual port and vault-relative path:
+
 ```bash
-[[ "$target_path" == "$vault_path/Claude/"* ]] || \
-[[ "$target_path" == "$vault_path/$effective_folder/"* ]] || \
-{ echo "ERROR: path outside allowed vault directories"; exit 1; }
+node -e "
+const h=require('https');
+let body='';
+process.stdin.on('data',d=>body+=d);
+process.stdin.on('end',()=>{
+  const d=Buffer.from(body,'utf8');
+  const req=h.request({
+    hostname:'127.0.0.1',port:<rest_api_port>,method:'PUT',
+    path:'/vault/<vault-relative-subpath>',
+    rejectUnauthorized:false,
+    headers:{'Content-Type':'text/markdown','Content-Length':d.length}
+  },res=>{process.stdout.write(String(res.statusCode));process.exit(0)});
+  req.on('error',()=>{process.stdout.write('error');process.exit(0)});
+  req.write(d);req.end();
+});
+" 2>/dev/null << 'OW_CONTENT_EOF'
+<file content — paste verbatim here; heredoc delimiter OW_CONTENT_EOF is unlikely to appear in markdown>
+OW_CONTENT_EOF
 ```
+If the output is `200` or `204`, the write succeeded. On any other output or error,
+fall through to filesystem write.
 
-Then PUT the file:
+**REST API write — Method B (curl):**
+
 ```bash
 curl -sk -X PUT \
   "<scheme>://127.0.0.1:<port>/vault/<vault-relative-subpath>" \
   -H "Content-Type: text/markdown" \
-  --data-binary @- << 'EOF'
+  --data-binary @- << 'OW_CONTENT_EOF'
 <file content>
-EOF
+OW_CONTENT_EOF
 ```
 On a non-2xx response or curl error, fall through to filesystem write.
-
-**REST API write — Method B (PowerShell):**
-
-Use the PowerShell tool:
-```powershell
-try { Add-Type -TypeDefinition @'
-using System.Net; using System.Security.Cryptography.X509Certificates;
-public class OWTrustAll : ICertificatePolicy {
-    public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; }
-}
-'@ } catch {}
-[System.Net.ServicePointManager]::CertificatePolicy = New-Object OWTrustAll
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-$content = @'
-<file content — use a here-string so newlines are preserved>
-'@
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
-$r = Invoke-WebRequest -Uri "<scheme>://127.0.0.1:<port>/vault/<vault-relative-subpath>" `
-     -Method PUT -Body $bytes -ContentType "text/markdown" -UseBasicParsing
-$r.StatusCode
-```
-On a non-2xx response or exception, fall through to filesystem write.
 
 **Filesystem write:**
 
