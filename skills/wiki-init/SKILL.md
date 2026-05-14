@@ -86,7 +86,7 @@ File: `wiki/entity/<slug>.md` (slug: kebab-case, e.g., `chiang-mai`)
     cost_tier: mid          # budget | mid | luxury
     attractions: []
     tags: []
-    last_updated: ""        # YYYY-MM-DD
+    last_updated: YYYY-MM-DD
     ---
 
 ### entity/accommodation
@@ -102,7 +102,7 @@ File: `wiki/entity/<slug>.md`
     cons: []
     rating: null            # 1-5 or null
     tags: []
-    last_updated: ""
+    last_updated: YYYY-MM-DD
     ---
 
 ### concept/itinerary
@@ -116,7 +116,7 @@ File: `wiki/concept/<slug>.md`
     dates_planned: ""       # YYYY-MM-DD or range
     status: planned         # planned | active | completed
     tags: []
-    last_updated: ""
+    last_updated: YYYY-MM-DD
     ---
 
 ### concept/tip
@@ -128,7 +128,7 @@ File: `wiki/concept/<slug>.md`
     category: ""            # packing | hacks | health | safety | transport
     applies_to: []          # [[Wikilinks]] to regions or destinations
     tags: []
-    last_updated: ""
+    last_updated: YYYY-MM-DD
     ---
 
 ### source/trip-report
@@ -153,7 +153,7 @@ File: `wiki/comparison/<slug>.md`
     comparing: []           # list of [[Wikilinks]]
     criteria: []
     verdict: ""
-    last_updated: ""
+    last_updated: YYYY-MM-DD
     ---
 
 ### synthesis
@@ -165,7 +165,7 @@ File: `wiki/synthesis/<slug>.md`
     question: ""
     source_pages: []        # list of [[Wikilinks]]
     conclusion: ""
-    last_updated: ""
+    last_updated: YYYY-MM-DD
     ---
 
 ## Cross-Reference Format

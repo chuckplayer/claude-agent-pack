@@ -76,7 +76,7 @@ If yes:
    question: "<the user's question verbatim>"
    source_pages: [<list of [[wikilinks]] you cited>]
    conclusion: "<one-sentence answer>"
-   last_updated: "<YYYY-MM-DD>"
+   last_updated: YYYY-MM-DD
    ---
    ```
 
