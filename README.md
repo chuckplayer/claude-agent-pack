@@ -1,10 +1,10 @@
 # Claude Code Agent Pack
 
-Twenty specialized Claude Code subagents for enterprise software development teams, plus a personal LLM wiki skill family, an Obsidian vault integration, and persistent knowledge management.
+Twenty-one specialized Claude Code subagents for enterprise software development teams, plus a personal LLM wiki skill family, an Obsidian vault integration, and persistent knowledge management.
 
 ## Why
 
-Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides twenty agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
+Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides twenty-one agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
 
 Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job, and session context is automatically logged to an Obsidian vault on Stop.
 
@@ -28,6 +28,7 @@ Without orchestration, a single session planning an architecture change, writing
 | code-reviewer | Code quality, readability, and convention compliance | After any engineer agent output |
 | security-reviewer | Security-focused review only | Changes touching auth, data access, PII, or secrets |
 | performance-reviewer | Performance-focused review only | Changes with database queries, endpoints, or hot-path code |
+| smell-reviewer | Structural anti-pattern detection: God classes, long methods, dead code, feature envy, comment smells (TODO/HACK/FIXME/XXX). Offers to record accepted patterns as suppressions in CONVENTIONS.md | After code-reviewer on every code change; parallel with security-reviewer and performance-reviewer |
 | test-engineer | Test generation matching established project patterns | After code-reviewer has completed its review |
 | merge-reviewer | Final pipeline gate -- verifies all stages passed and commits to the feature branch | After test-engineer completes; never merges to main |
 | wiki-ingestor | Reads a source from `raw/`, creates or updates `wiki/` pages, updates `index.md` | Dispatched by `/wiki-ingest`; never modifies `raw/` |
@@ -54,7 +55,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Twenty-five slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Twenty-six slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -63,7 +64,8 @@ Twenty-five slash-command entry points are included. Invoke them directly in Cla
 | `/hotfix` | Abbreviated pipeline for production incidents. No worktree isolation, 1 retry max. Still requires code-reviewer and merge-reviewer. |
 | `/refactor` | Refactor with impact analysis first: tech-lead → engineer(s) → mandatory test verification → code-reviewer. Enforces a no-behavior-delta constraint. |
 | `/debug` | Diagnose and fix a failing test or error. Reads the stack trace, forms a hypothesis, routes to the right engineer, then runs a lightweight code-reviewer pass. |
-| `/review-pr` | Runs code-reviewer, security-reviewer, and performance-reviewer against a PR or diff. Produces a consolidated findings report. |
+| `/review-pr` | Runs code-reviewer, security-reviewer, performance-reviewer, and smell-reviewer against a PR or diff. Produces a consolidated findings report. |
+| `/smell` | Run smell-reviewer against a file, directory, or working-tree changes. Detects structural anti-patterns and comment smells; offers to record accepted patterns in CONVENTIONS.md. |
 | `/plan` | Decompose a task with tech-lead and optionally pressure-test the plan with devils-advocate before implementation begins. |
 | `/onboard` | Reads the codebase, memory, and conventions to produce a structured orientation: architecture, entry points, data flow, and known gotchas. |
 | `/conventions` | Scaffolds or updates `docs/CONVENTIONS.md` by reading actual code patterns and interviewing the user. |
@@ -163,10 +165,10 @@ Or invoke agents directly in natural language:
 ## Workflow
 
 ```
-task -> git-engineer -> [tech-lead] -> [devils-advocate] -> [api-designer] -> engineer(s) -> [ts-linter] -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> test-engineer -> merge-reviewer -> git-engineer (push/PR)
+task -> git-engineer -> [tech-lead] -> [devils-advocate] -> [api-designer] -> engineer(s) -> [ts-linter] -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> smell-reviewer -> test-engineer -> merge-reviewer -> git-engineer (push/PR)
 ```
 
-Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `git-engineer` is skipped for read-only tasks. `ts-linter` runs only when TypeScript or Vue files were modified. `database-engineer` runs in parallel with engineer agents when schema changes are needed. When invoked through `/implement`, engineer agents run in isolated git worktrees and merge-reviewer commits the result to the feature branch if all gates pass.
+Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `git-engineer` is skipped for read-only tasks. `ts-linter` runs only when TypeScript or Vue files were modified. `database-engineer` runs in parallel with engineer agents when schema changes are needed. `security-reviewer` and `performance-reviewer` run when their trigger conditions are met. `smell-reviewer` always runs on code changes and runs in parallel with security-reviewer and performance-reviewer. When invoked through `/implement`, engineer agents run in isolated git worktrees and merge-reviewer commits the result to the feature branch if all gates pass.
 
 ## Memory
 

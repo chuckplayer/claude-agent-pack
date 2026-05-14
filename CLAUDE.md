@@ -55,8 +55,13 @@ to challenge that plan. Only after devils-advocate completes should api-designer
   data access, PII handling, API endpoints, or configuration with secrets
 - **performance-reviewer** when changes include database queries, API endpoints,
   loops over collections, or caching logic
-- When both security-reviewer and performance-reviewer are required, run them
-  in parallel after code-reviewer completes -- they have no dependency on each other.
+- **smell-reviewer** after every code change that introduces or modifies classes,
+  methods, or files. Skip for documentation-only, config-only, or SQL-migration-only
+  changes with no application logic.
+- Run security-reviewer, performance-reviewer, and smell-reviewer in parallel
+  after code-reviewer completes -- they are independent of each other. Omit
+  security-reviewer and performance-reviewer when their trigger conditions are
+  not met; smell-reviewer always runs on code changes.
 - **test-engineer** after any new public methods or API endpoints are created, or
   when existing methods are modified -- engineer agents must verify test coverage
   and assess test impact (which existing tests are affected) before handoff
@@ -83,6 +88,8 @@ Before handing off to code-reviewer, every engineer agent must:
 - **api-designer** for internal refactors that do not change the API surface
 - **performance-reviewer** when no database queries, endpoints, or hot-path
   code is involved
+- **smell-reviewer** for documentation-only, config-only, or SQL-migration-only
+  changes with no application logic
 - **merge-reviewer** before the full pipeline (engineer → code-reviewer →
   test-engineer) has completed
 
