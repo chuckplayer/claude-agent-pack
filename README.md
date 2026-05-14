@@ -34,7 +34,7 @@ Without orchestration, a single session planning an architecture change, writing
 | wiki-ingestor | Reads a source from `raw/`, creates or updates `wiki/` pages, updates `index.md` | Dispatched by `/wiki-ingest`; never modifies `raw/` |
 | wiki-librarian | Answers queries against the wiki with citations; can file synthesis pages back | Dispatched by `/wiki-query`; read-only except for filed-back synthesis pages |
 | wiki-linter | Health checks the wiki for orphans, broken links, missing frontmatter, and schema violations | Dispatched by `/wiki-lint`; strictly read-only |
-| obsidian-writer | Writes session logs and capture notes directly to the vault filesystem; routes to the project folder or `Claude/captures/` based on `OBSIDIAN_PROJECTS_FOLDER`; Obsidian's file watcher picks up changes within seconds | Dispatched by Obsidian skills; never writes outside allowed vault directories |
+| obsidian-writer | Writes session logs and capture notes to the vault; skips the main file if the calling skill already wrote it via REST API and only appends the daily note | Dispatched by Obsidian skills; never writes outside allowed vault directories |
 
 ## Installation
 
@@ -102,6 +102,9 @@ Where `<base>` is determined by two env vars set during install:
 |---|---|
 | `OBSIDIAN_VAULT_PATH` | Absolute path to your vault (required) |
 | `OBSIDIAN_PROJECTS_FOLDER` | Folder inside the vault for project logs (defaults to `Claude/Projects` if blank) |
+| `OBSIDIAN_REST_API_KEY` | API key for the [Obsidian Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) plugin (optional). When set, writes go through the REST API first with filesystem fallback. When absent, writes go directly to the filesystem. |
+| `OBSIDIAN_REST_API_PORT` | REST API port (default `27124` when key is set) |
+| `OBSIDIAN_REST_API_HTTPS` | `true`/`false` — whether the REST API uses HTTPS (default `true`) |
 
 With `OBSIDIAN_PROJECTS_FOLDER=Projects` and project `agent-pack`:
 `<vault>/Projects/agent-pack/sessions/`, `<vault>/Projects/agent-pack/daily/`
@@ -109,7 +112,7 @@ With `OBSIDIAN_PROJECTS_FOLDER=Projects` and project `agent-pack`:
 Default (`OBSIDIAN_PROJECTS_FOLDER=Claude/Projects` when blank):
 `<vault>/Claude/Projects/agent-pack/sessions/`, `<vault>/Claude/Projects/agent-pack/daily/`
 
-**Setup:** the installer prompts for your vault path and an optional projects folder. Writes go directly to the filesystem — Obsidian's file watcher picks them up within seconds.
+**Setup:** the installer prompts for your vault path, an optional projects folder, and an optional REST API key. If the key is provided, writes go through the Obsidian Local REST API first (filesystem fallback on any failure). Without a key, writes go directly to the filesystem — Obsidian's file watcher picks them up within seconds either way.
 
 **Manual skills:** use `/obsidian-log`, `/obsidian-capture`, `/obsidian-daily`, and `/obsidian-search` at any time regardless of the auto-log hook.
 

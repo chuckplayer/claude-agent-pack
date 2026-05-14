@@ -113,6 +113,26 @@ PYEOF
     vault_path=""
     projects_folder=""
 
+    # Read existing REST API key (empty if not configured)
+    if [ "$json_tool" = "node" ]; then
+        current_api_key="$(node -e "
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+try{const s=JSON.parse(fs.readFileSync(p,'utf8'));process.stdout.write((s.env&&s.env.OBSIDIAN_REST_API_KEY)||'');}catch(e){}
+" 2>/dev/null || true)"
+    else
+        current_api_key="$("$json_tool" - <<'PYEOF' 2>/dev/null || true
+import json, os, sys
+p = os.path.expanduser("~/.claude/settings.json")
+try:
+    s = json.load(open(p))
+    sys.stdout.write(s.get("env", {}).get("OBSIDIAN_REST_API_KEY", ""))
+except Exception:
+    pass
+PYEOF
+)"
+    fi
+
     if [ -n "$current_vault" ]; then
         echo "Obsidian integration is active (vault: $current_vault)"
         read -rp "  Keep Obsidian integration? [Y/n] " keep_response
@@ -123,7 +143,7 @@ PYEOF
 const fs=require('fs'),os=require('os'),path=require('path');
 const p=path.join(os.homedir(),'.claude','settings.json');
 const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
-if(s.env){['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS','OBSIDIAN_PROJECTS_FOLDER'].forEach(k=>delete s.env[k]);}
+if(s.env){['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS','OBSIDIAN_PROJECTS_FOLDER','OBSIDIAN_REST_API_KEY'].forEach(k=>delete s.env[k]);}
 if(s.hooks&&s.hooks.Stop){
   s.hooks.Stop=s.hooks.Stop.filter(e=>!(e&&Array.isArray(e.hooks)&&e.hooks.some(h=>h.command&&h.command.includes('obsidian-stop-hook'))));
   if(!s.hooks.Stop.length)delete s.hooks.Stop;
@@ -135,7 +155,7 @@ JSEOF
 import json, os
 p = os.path.expanduser("~/.claude/settings.json")
 s = json.load(open(p)) if os.path.exists(p) else {}
-for k in ['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS','OBSIDIAN_PROJECTS_FOLDER']:
+for k in ['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS','OBSIDIAN_PROJECTS_FOLDER','OBSIDIAN_REST_API_KEY']:
     s.get('env', {}).pop(k, None)
 if 'hooks' in s and 'Stop' in s['hooks']:
     s['hooks']['Stop'] = [
@@ -157,6 +177,12 @@ PYEOF
             _pf_default="${current_projects_folder:-Claude/Projects}"
             read -rp "  Projects folder in vault [$_pf_default]: " new_pf
             projects_folder="${new_pf:-$_pf_default}"
+            if [ -n "$current_api_key" ]; then
+                read -rp "  REST API key [keep existing, blank to remove]: " new_key
+            else
+                read -rp "  REST API key (optional, leave blank for filesystem writes): " new_key
+            fi
+            rest_api_key="${new_key:-$current_api_key}"
             obsidian_setup=true
         fi
     else
@@ -165,6 +191,7 @@ PYEOF
             read -rp "  Obsidian vault path (absolute path to your vault directory): " vault_path
             read -rp "  Projects folder in vault [Claude/Projects]: " projects_folder
             projects_folder="${projects_folder:-Claude/Projects}"
+            read -rp "  REST API key (optional, leave blank for filesystem writes): " rest_api_key
             obsidian_setup=true
         fi
     fi
@@ -200,45 +227,54 @@ PYEOF
         fi
         echo "  [ok] env:    OBSIDIAN_VAULT_PATH=$vault_path"
 
-        # Detect CLI mode — probe HTTP then HTTPS on ports 27123 and 27124
-        cli_mode="filesystem"
-        rest_port=27123
-        rest_https="false"
-        if command -v curl &>/dev/null; then
-            for probe_port in 27123 27124; do
-                if curl -s --max-time 1 "http://127.0.0.1:${probe_port}/" &>/dev/null 2>&1; then
-                    cli_mode="rest-api"; rest_port=$probe_port; rest_https="false"; break
-                elif curl -sk --max-time 1 "https://127.0.0.1:${probe_port}/" &>/dev/null 2>&1; then
-                    cli_mode="rest-api"; rest_port=$probe_port; rest_https="true"; break
-                fi
-            done
+        # Set CLI mode based on REST API key presence
+        # Key present = rest-api mode (port 27124, HTTPS); absent = filesystem
+        if [ -n "${rest_api_key:-}" ]; then
+            cli_mode="rest-api"
+            rest_port="27124"
+            rest_https="true"
+        else
+            cli_mode="filesystem"
+            rest_port=""
+            rest_https=""
         fi
 
-        # Write CLI mode env vars
+        # Write CLI mode env vars and REST API key
         if [ "$json_tool" = "node" ]; then
-            node - "$cli_mode" "$rest_port" "$rest_https" <<'JSEOF'
+            node - "$cli_mode" "$rest_port" "$rest_https" "${rest_api_key:-}" <<'JSEOF'
 const fs=require('fs'),os=require('os'),path=require('path');
 const p=path.join(os.homedir(),'.claude','settings.json');
 const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
 if(!s.env)s.env={};
-s.env.OBSIDIAN_CLI_MODE=process.argv[2];
-if(process.argv[2]==='rest-api'){s.env.OBSIDIAN_REST_API_PORT=process.argv[3];s.env.OBSIDIAN_REST_API_HTTPS=process.argv[4];}
-else{delete s.env.OBSIDIAN_REST_API_PORT;delete s.env.OBSIDIAN_REST_API_HTTPS;}
+const [,, mode, port, https_, key] = process.argv;
+s.env.OBSIDIAN_CLI_MODE=mode;
+if(mode==='rest-api'){
+  s.env.OBSIDIAN_REST_API_PORT=port;
+  s.env.OBSIDIAN_REST_API_HTTPS=https_;
+  if(key)s.env.OBSIDIAN_REST_API_KEY=key; else delete s.env.OBSIDIAN_REST_API_KEY;
+}else{
+  delete s.env.OBSIDIAN_REST_API_PORT;
+  delete s.env.OBSIDIAN_REST_API_HTTPS;
+  delete s.env.OBSIDIAN_REST_API_KEY;
+}
 fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
 JSEOF
         else
-            "$json_tool" - "$cli_mode" "$rest_port" "$rest_https" <<'PYEOF'
+            "$json_tool" - "$cli_mode" "$rest_port" "$rest_https" "${rest_api_key:-}" <<'PYEOF'
 import json, os, sys
-port = int(sys.argv[2])
-assert 1 <= port <= 65535, f"Invalid port: {port}"
+mode, port, https_, key = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 p = os.path.expanduser("~/.claude/settings.json")
 s = json.load(open(p)) if os.path.exists(p) else {}
-s.setdefault("env", {})["OBSIDIAN_CLI_MODE"] = sys.argv[1]
-if sys.argv[1] == "rest-api":
-    s["env"]["OBSIDIAN_REST_API_PORT"] = sys.argv[2]
-    s["env"]["OBSIDIAN_REST_API_HTTPS"] = sys.argv[3]
+s.setdefault("env", {})["OBSIDIAN_CLI_MODE"] = mode
+if mode == "rest-api":
+    s["env"]["OBSIDIAN_REST_API_PORT"] = port
+    s["env"]["OBSIDIAN_REST_API_HTTPS"] = https_
+    if key:
+        s["env"]["OBSIDIAN_REST_API_KEY"] = key
+    else:
+        s["env"].pop("OBSIDIAN_REST_API_KEY", None)
 else:
-    for k in ["OBSIDIAN_REST_API_PORT", "OBSIDIAN_REST_API_HTTPS"]:
+    for k in ["OBSIDIAN_REST_API_PORT", "OBSIDIAN_REST_API_HTTPS", "OBSIDIAN_REST_API_KEY"]:
         s.get("env", {}).pop(k, None)
 os.makedirs(os.path.dirname(p), exist_ok=True)
 with open(p, "w") as f:
@@ -250,9 +286,9 @@ PYEOF
             echo "  ERROR: failed to update ~/.claude/settings.json"
         fi
         if [ "$cli_mode" = "rest-api" ]; then
-            echo "  [ok] env:    OBSIDIAN_CLI_MODE=rest-api (Local REST API on port ${rest_port}, HTTPS=${rest_https})"
+            echo "  [ok] env:    OBSIDIAN_CLI_MODE=rest-api (port ${rest_port}, HTTPS=${rest_https}, API key set)"
         else
-            echo "  [ok] env:    OBSIDIAN_CLI_MODE=filesystem"
+            echo "  [ok] env:    OBSIDIAN_CLI_MODE=filesystem (no REST API key)"
         fi
 
         # Write or clear OBSIDIAN_PROJECTS_FOLDER

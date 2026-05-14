@@ -107,23 +107,20 @@ ${commitLines}
 ${changedSection}${uncommittedSection}<!-- auto-logged by Stop hook -->
 `;
 
-writeFileSync(sessionPath, sessionContent, 'utf8');
+// --- REST API write (if key configured) with filesystem fallback ---
+const apiKey   = (process.env.OBSIDIAN_REST_API_KEY  || '').replace(/[\r\n]/g, '');
+const apiPort  = parseInt(process.env.OBSIDIAN_REST_API_PORT || '27124', 10);
+const apiHttps = process.env.OBSIDIAN_REST_API_HTTPS !== 'false';
 
-// --- Append to daily note ---
-// Wikilink must be relative to vault root with forward slashes (Obsidian requirement)
+// Wikilink for daily note (no .md extension, forward slashes)
 const relSession = path.relative(vault, sessionPath).replace(/\\/g, '/').replace(/\.md$/, '');
-const dailyLine = `- ${time} **session** [[${relSession}]] — branch: ${branch} (auto)`;
-if (!existsSync(dailyPath)) {
-  writeFileSync(dailyPath, `# ${date}\n\n${dailyLine}\n`, 'utf8');
-} else {
-  appendFileSync(dailyPath, `\n${dailyLine}\n`, 'utf8');
-}
+const dailyLine  = `- ${time} **session** [[${relSession}]] — branch: ${branch} (auto)`;
 
-// --- Memory snapshot: freeze ./memory/**/*.md into the vault ---
-const memoryDir = path.join(projectDir, 'memory');
-if (existsSync(memoryDir)) {
+// --- Memory snapshot helper (runs in both branches) ---
+function writeMemorySnapshot() {
+  const memoryDir = path.join(projectDir, 'memory');
+  if (!existsSync(memoryDir)) return;
   try {
-    // Collect all .md files recursively (depth 2: memory/<subdir>/<file>.md)
     const collectMd = (dir, prefix) => {
       const entries = [];
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -144,9 +141,7 @@ if (existsSync(memoryDir)) {
         mkdirSync(path.dirname(snapshotPath), { recursive: true });
         let snapshot = `---\ntype: claude/memory-snapshot\nproject: ${rawName}\ndate: ${date}\ntags: [claude, memory, auto]\n---\n\n`;
         for (const { fullPath, label } of memFiles) {
-          try {
-            snapshot += `## ${label}\n\n${readFileSync(fullPath, 'utf8')}\n\n---\n\n`;
-          } catch {}
+          try { snapshot += `## ${label}\n\n${readFileSync(fullPath, 'utf8')}\n\n---\n\n`; } catch {}
         }
         writeFileSync(snapshotPath, snapshot, 'utf8');
       }
@@ -154,7 +149,78 @@ if (existsSync(memoryDir)) {
   } catch {}
 }
 
-// --- Persist SHA for next run ---
-if (headSha) writeFileSync(shaFile, headSha + '\n', 'utf8');
+function finish() {
+  writeMemorySnapshot();
+  if (headSha) writeFileSync(shaFile, headSha + '\n', 'utf8');
+  process.exit(0);
+}
 
-process.exit(0);
+function writeSessionFilesystem() { writeFileSync(sessionPath, sessionContent, 'utf8'); }
+
+function writeDailyNote() {
+  if (!existsSync(dailyPath)) {
+    writeFileSync(dailyPath, `# ${date}\n\n${dailyLine}\n`, 'utf8');
+  } else {
+    appendFileSync(dailyPath, `\n${dailyLine}\n`, 'utf8');
+  }
+}
+
+function tryApiWrite(vaultRelPath, content, cb) {
+  const { request } = require(apiHttps ? 'https' : 'http');
+  const encoded = vaultRelPath.split('/').map(encodeURIComponent).join('/');
+  const opts = {
+    hostname: '127.0.0.1', port: apiPort,
+    path: '/vault/' + encoded, method: 'PUT',
+    headers: {
+      'Authorization': 'Bearer ' + apiKey,
+      'Content-Type': 'text/markdown',
+      'Content-Length': Buffer.byteLength(content, 'utf8'),
+    },
+    rejectUnauthorized: false, timeout: 4000,
+  };
+  const req = request(opts, res => cb(res.statusCode >= 200 && res.statusCode < 300));
+  req.on('error', () => cb(false));
+  req.on('timeout', () => { req.destroy(); cb(false); });
+  req.write(content, 'utf8');
+  req.end();
+}
+
+if (apiKey) {
+  const relSessionMd = path.relative(vault, sessionPath).replace(/\\/g, '/');
+  const relDailyMd   = path.relative(vault, dailyPath).replace(/\\/g, '/');
+
+  tryApiWrite(relSessionMd, sessionContent, sessionOk => {
+    if (!sessionOk) writeSessionFilesystem();
+
+    // Daily note via REST API: GET existing → append line → PUT back
+    const { request } = require(apiHttps ? 'https' : 'http');
+    const getOpts = {
+      hostname: '127.0.0.1', port: apiPort,
+      path: '/vault/' + relDailyMd.split('/').map(encodeURIComponent).join('/'),
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + apiKey },
+      rejectUnauthorized: false, timeout: 4000,
+    };
+    const getReq = request(getOpts, getRes => {
+      let existing = '';
+      getRes.on('data', chunk => { existing += chunk; });
+      getRes.on('end', () => {
+        const newContent = getRes.statusCode === 200
+          ? existing.trimEnd() + '\n\n' + dailyLine + '\n'
+          : `# ${date}\n\n${dailyLine}\n`;
+        tryApiWrite(relDailyMd, newContent, dailyOk => {
+          if (!dailyOk) writeDailyNote();
+          finish();
+        });
+      });
+    });
+    getReq.on('error',   () => { writeDailyNote(); finish(); });
+    getReq.on('timeout', () => { getReq.destroy(); writeDailyNote(); finish(); });
+    getReq.end();
+  });
+} else {
+  // No API key — filesystem writes only
+  writeSessionFilesystem();
+  writeDailyNote();
+  finish();
+}
