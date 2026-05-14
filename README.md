@@ -8,8 +8,6 @@ Claude Code works best on large, complex tasks when it can delegate to focused s
 
 Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job, and session context is automatically logged to an Obsidian vault on Stop.
 
-
-
 ## Agents
 
 | Agent | Role | When invoked |
@@ -34,7 +32,7 @@ Without orchestration, a single session planning an architecture change, writing
 | wiki-ingestor | Reads a source from `raw/`, creates or updates `wiki/` pages, updates `index.md` | Dispatched by `/wiki-ingest`; never modifies `raw/` |
 | wiki-librarian | Answers queries against the wiki with citations; can file synthesis pages back | Dispatched by `/wiki-query`; read-only except for filed-back synthesis pages |
 | wiki-linter | Health checks the wiki for orphans, broken links, missing frontmatter, and schema violations | Dispatched by `/wiki-lint`; strictly read-only |
-| obsidian-writer | Writes session logs and capture notes to the vault; skips the main file if the calling skill already wrote it via REST API and only appends the daily note | Dispatched by Obsidian skills; never writes outside allowed vault directories |
+| obsidian-writer | Writes session logs and capture notes to the vault via filesystem; skips the main file when the calling skill already wrote it via REST API and handles only the daily note append | Dispatched by Obsidian skills; never writes outside allowed vault directories |
 
 ## Installation
 
@@ -126,7 +124,7 @@ Five utility scripts are included in `scripts/`.
 | `check-readiness` | Verifies Claude Code is installed, all agents and skills are installed, and the target project has full scaffolding |
 | `check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated |
 | `lint-agents` | Validates all agent and skill files for required frontmatter fields, description length, and body content |
-| `obsidian-stop-hook` | Auto-log hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/` by the installer; fires on Claude Code Stop |
+| `obsidian-stop-hook` | Auto-log hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/` by the installer; fires on Stop and SessionEnd; tries REST API when `OBSIDIAN_REST_API_KEY` is set, falls back to filesystem |
 
 ```bash
 bash scripts/setup-project.sh <project>
@@ -219,7 +217,7 @@ Agents are updated in-place. Re-running the installer is safe -- it is idempoten
 bash <pack-dir>/uninstall.sh
 ```
 
-The uninstaller removes agents from `~/.claude/agents/`, skills from `~/.claude/skills/`, the Obsidian stop hook from `~/.claude/scripts/`, and the Obsidian env vars (`OBSIDIAN_VAULT_PATH`, `OBSIDIAN_PROJECTS_FOLDER`) from `~/.claude/settings.json` — all after confirmation. It also detects `~/.claude/wiki/` and prompts whether to remove wiki vaults. Project-level `memory/` directories are not touched.
+The uninstaller removes agents from `~/.claude/agents/`, skills from `~/.claude/skills/`, the Obsidian stop hook from `~/.claude/scripts/`, and all Obsidian env vars (`OBSIDIAN_VAULT_PATH`, `OBSIDIAN_PROJECTS_FOLDER`, `OBSIDIAN_REST_API_KEY`, `OBSIDIAN_REST_API_PORT`, `OBSIDIAN_REST_API_HTTPS`) from `~/.claude/settings.json` — all after confirmation. It also detects `~/.claude/wiki/` and prompts whether to remove wiki vaults. Project-level `memory/` directories are not touched.
 
 ## Agent Dashboard
 
