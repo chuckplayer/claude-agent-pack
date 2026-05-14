@@ -52,6 +52,21 @@ for skill_dir in "$PACK_DIR/skills/"*/; do
 done
 
 echo ""
+echo "-- Obsidian hook"
+HOOK_SRC="$PACK_DIR/scripts/obsidian-stop-hook.js"
+HOOK_INSTALLED="$HOME/.claude/scripts/obsidian-stop-hook.js"
+if [ ! -f "$HOOK_INSTALLED" ]; then
+    echo "  [--] obsidian-stop-hook.js  (not installed — run install.sh)"
+    not_installed=$((not_installed + 1))
+elif diff -q "$HOOK_SRC" "$HOOK_INSTALLED" > /dev/null 2>&1; then
+    echo "  [ok] obsidian-stop-hook.js"
+    up_to_date=$((up_to_date + 1))
+else
+    echo "  [!!] obsidian-stop-hook.js  (outdated — run install.sh)"
+    outdated=$((outdated + 1))
+fi
+
+echo ""
 echo "----"
 echo "  $up_to_date up to date, $outdated outdated, $not_installed not installed"
 echo ""
