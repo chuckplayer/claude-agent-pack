@@ -2,11 +2,11 @@
 name: obsidian-writer
 description: >
   Invoke when an Obsidian skill needs to write a session log or capture note to
-  the vault. Writes directly to the filesystem; Obsidian's file watcher picks
-  up changes within seconds. Creates session files under the project's vault
-  folder and appends to the daily note. Requires: vault_path, write_mode
-  (session|capture), and content fields. Never writes outside the vault's
-  Claude/ directory or the configured projects folder.
+  the vault. Handles filesystem writes; REST API writes are attempted by the
+  calling skill before dispatch. Creates or skips the main note file based on
+  session_api_written flag, then always appends the daily note via filesystem.
+  Requires: vault_path, write_mode (session|capture), and content fields. Never
+  writes outside the vault's Claude/ directory or the configured projects folder.
 tools:
   - Bash
   - Read
@@ -29,6 +29,9 @@ note and the daily note.
 - `write_mode` — `"session"` or `"capture"`
 - `projects_folder` — value of `OBSIDIAN_PROJECTS_FOLDER` (empty string if not set)
 - `project` — basename of the current working directory (for slug and display)
+- `session_api_written` — (optional, boolean, default `false`) if `true` and
+  `write_mode` is `"session"`, the session file was already written via REST API;
+  skip the session file write step and only append the daily note.
 - Content fields (vary by mode — see below)
 
 ## Path resolution
@@ -63,6 +66,8 @@ If any computed target path does not start with an allowed root, stop and report
    mkdir -p "<directory>"
    ```
 4. Write the main file using the Write tool at the full absolute path.
+   **Skip this step** when `session_api_written` is `true` and `write_mode` is `"session"` —
+   the session file was already written via REST API by the calling skill.
 5. Read the daily note with the Read tool, append the new entry, write it back.
 
 ## File paths and content
