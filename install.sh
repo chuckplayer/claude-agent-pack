@@ -312,15 +312,23 @@ PYEOF
 
         # Build hook command. The hook is pure Node.js — no bash dependency — so it
         # works identically on Windows and macOS/Linux without path or fork issues.
-        # On Windows we need Windows-format paths (cygpath -w); everywhere else we
-        # use the POSIX path straight from command -v.
+        # On Windows (cygpath available) we convert the JS path to Windows format.
+        # Use `type -P` to find the actual node executable — `command -v` may return
+        # a bash alias (e.g. "alias node='winpty node.exe'") on Windows Git Bash,
+        # which produces a broken hook command.
         hook_cmd=""
-        if command -v node &>/dev/null; then
+        node_posix="$(type -P node 2>/dev/null || true)"
+        # If type -P failed, fall back to command -v only when it returns a real path
+        if [ -z "$node_posix" ]; then
+            _cv="$(command -v node 2>/dev/null || true)"
+            case "$_cv" in /*) node_posix="$_cv" ;; esac
+        fi
+        if [ -n "$node_posix" ]; then
             if command -v cygpath &>/dev/null; then
-                node_cmd="$(cygpath -w "$(command -v node)")"
+                node_cmd="$(cygpath -w "$node_posix")"
                 js_cmd="$(cygpath -w "$HOME/.claude/scripts/obsidian-stop-hook.js")"
             else
-                node_cmd="$(command -v node)"
+                node_cmd="$node_posix"
                 js_cmd="$HOME/.claude/scripts/obsidian-stop-hook.js"
             fi
             hook_cmd="\"${node_cmd}\" \"${js_cmd}\""
@@ -329,8 +337,10 @@ PYEOF
             echo "           Install Node.js and re-run install.sh to enable auto-logging."
         fi
 
-        # Replace any existing obsidian Stop hook (handles path format changes across
-        # installs) then write the canonical entry.
+        # Replace any existing obsidian Stop/SessionEnd hooks (handles path format
+        # changes across installs) then write the canonical entries.
+        # Both Stop and SessionEnd fire the same script; the SHA guard in the script
+        # prevents duplicate writes when both fire in the same session.
         if [ -n "$hook_cmd" ]; then
         if [ "$json_tool" = "node" ]; then
             node - "$hook_cmd" <<'JSEOF'
@@ -338,9 +348,9 @@ const fs=require('fs'),os=require('os'),path=require('path');
 const p=path.join(os.homedir(),'.claude','settings.json');
 const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
 if(!s.hooks)s.hooks={};
-s.hooks.Stop=s.hooks.Stop||[];
-s.hooks.Stop=s.hooks.Stop.filter(e=>!(e&&Array.isArray(e.hooks)&&e.hooks.some(h=>h.command&&h.command.includes('obsidian-stop-hook'))));
-s.hooks.Stop.push({hooks:[{type:'command',command:process.argv[2]}]});
+const cmd=process.argv[2];
+const clean=k=>{s.hooks[k]=(s.hooks[k]||[]).filter(e=>!(e&&Array.isArray(e.hooks)&&e.hooks.some(h=>h.command&&h.command.includes('obsidian-stop-hook'))));s.hooks[k].push({hooks:[{type:'command',command:cmd}]});};
+clean('Stop');clean('SessionEnd');
 fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
 JSEOF
         else
@@ -349,14 +359,14 @@ import json, os, sys
 p = os.path.expanduser("~/.claude/settings.json")
 s = json.load(open(p)) if os.path.exists(p) else {}
 hooks = s.setdefault("hooks", {})
-stop_hooks = hooks.get("Stop", [])
 cmd = sys.argv[1]
-stop_hooks = [
-    e for e in stop_hooks
-    if not any('obsidian-stop-hook' in h.get('command', '') for h in e.get('hooks', []))
-]
-stop_hooks.append({"hooks": [{"type": "command", "command": cmd}]})
-hooks["Stop"] = stop_hooks
+for key in ("Stop", "SessionEnd"):
+    entries = [
+        e for e in hooks.get(key, [])
+        if not any('obsidian-stop-hook' in h.get('command', '') for h in e.get('hooks', []))
+    ]
+    entries.append({"hooks": [{"type": "command", "command": cmd}]})
+    hooks[key] = entries
 with open(p, "w") as f:
     json.dump(s, f, indent=2)
     f.write("\n")
@@ -365,7 +375,7 @@ PYEOF
         if [ $? -ne 0 ]; then
             echo "  ERROR: failed to update ~/.claude/settings.json"
         fi
-        echo "  [ok] hook:   Stop hook registered in ~/.claude/settings.json"
+        echo "  [ok] hook:   Stop and SessionEnd hooks registered in ~/.claude/settings.json"
         fi
     elif [ "$obsidian_setup" = "true" ] && [ -z "$vault_path" ]; then
         echo "  [skip] No vault path provided — skipping Obsidian setup."
