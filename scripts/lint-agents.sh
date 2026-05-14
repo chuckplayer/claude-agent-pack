@@ -16,7 +16,7 @@ fi
 
 # Valid frontmatter fields by file type
 AGENT_VALID_FIELDS="name description tools model effort permissionMode version"
-SKILL_VALID_FIELDS="name description model effort"
+SKILL_VALID_FIELDS="name description license compatibility metadata allowed-tools"
 
 pass() {
     echo "  [ok] $1"
@@ -99,6 +99,38 @@ lint_file() {
     if ! has_field "$file" "name"; then
         fail "$label" "Missing required field: \`name\`"
         file_pass=0
+    else
+        local name_val
+        name_val=$(get_field "$file" "name")
+        # Max 64 characters
+        if [ "${#name_val}" -gt 64 ]; then
+            fail "$label" "name exceeds 64 characters (${#name_val} chars)"
+            file_pass=0
+        fi
+        # Lowercase alphanumeric + hyphens only
+        if echo "$name_val" | grep -qE '[^a-z0-9-]'; then
+            fail "$label" "name contains invalid characters (only a-z, 0-9, and hyphens allowed): \`$name_val\`"
+            file_pass=0
+        fi
+        # No leading or trailing hyphen
+        if echo "$name_val" | grep -qE '^-|-$'; then
+            fail "$label" "name must not start or end with a hyphen: \`$name_val\`"
+            file_pass=0
+        fi
+        # No consecutive hyphens
+        if echo "$name_val" | grep -qF -- '--'; then
+            fail "$label" "name must not contain consecutive hyphens: \`$name_val\`"
+            file_pass=0
+        fi
+        # For skills: name must match parent directory name
+        if [ "$type" = "skill" ]; then
+            local dir_name
+            dir_name=$(basename "$(dirname "$file")")
+            if [ "$name_val" != "$dir_name" ]; then
+                fail "$label" "name \`$name_val\` does not match directory \`$dir_name\`"
+                file_pass=0
+            fi
+        fi
     fi
 
     # Check required: description
@@ -106,10 +138,11 @@ lint_file() {
         fail "$label" "Missing required field: \`description\`"
         file_pass=0
     else
-        local desc_len
+        local desc_len desc_limit
         desc_len=$(description_length "$file")
-        if [ "$desc_len" -gt 1536 ]; then
-            fail "$label" "Description exceeds 1536 characters (${desc_len} chars)"
+        [ "$type" = "skill" ] && desc_limit=1024 || desc_limit=1536
+        if [ "$desc_len" -gt "$desc_limit" ]; then
+            fail "$label" "Description exceeds ${desc_limit} characters (${desc_len} chars)"
             file_pass=0
         fi
     fi

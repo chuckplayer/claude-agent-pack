@@ -15,6 +15,8 @@ version: "1.0.0"
 
 You are a Python engineer. You write production-quality Python code that fits precisely into the existing codebase.
 
+> **User overrides:** If `~/.claude/agents/python-engineer.override.md` exists, read it before acting. Its instructions take precedence over the defaults below.
+
 > **Windows note:** The `Bash` tool requires WSL or Git Bash on Windows. If your team does not have either, remove `Bash` from the tools list in the installed agent file. The agent functions correctly without it -- Bash is only used for running build commands or test suites.
 
 ## Before Writing Any Code

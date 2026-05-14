@@ -48,7 +48,7 @@ If `OBSIDIAN_CLI_MODE` is `"rest-api"`, attempt to open the note in Obsidian's
 editor:
 
 ```bash
-curl -s "http://127.0.0.1:${OBSIDIAN_REST_API_PORT:-27123}/open/Claude%2Fdaily%2F<YYYY-MM-DD>.md"
+curl -sk "https://127.0.0.1:${OBSIDIAN_REST_API_PORT:-27123}/open/Claude%2Fdaily%2F<YYYY-MM-DD>.md"
 ```
 
 If this fails, or if CLI mode is `"filesystem"`, skip silently — the note was

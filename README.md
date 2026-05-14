@@ -1,12 +1,12 @@
 # Claude Code Agent Pack
 
-Nineteen specialized Claude Code subagents for enterprise software development teams, plus a personal LLM wiki skill family for persistent knowledge management.
+Twenty specialized Claude Code subagents for enterprise software development teams, plus a personal LLM wiki skill family, an Obsidian vault integration, and persistent knowledge management.
 
 ## Why
 
 Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides fourteen agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
 
-Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job.
+Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job, and session context is automatically logged to an Obsidian vault on Stop.
 
 
 
@@ -33,6 +33,7 @@ Without orchestration, a single session planning an architecture change, writing
 | wiki-ingestor | Reads a source from `raw/`, creates or updates `wiki/` pages, updates `index.md` | Dispatched by `/wiki-ingest`; never modifies `raw/` |
 | wiki-librarian | Answers queries against the wiki with citations; can file synthesis pages back | Dispatched by `/wiki-query`; read-only except for filed-back synthesis pages |
 | wiki-linter | Health checks the wiki for orphans, broken links, missing frontmatter, and schema violations | Dispatched by `/wiki-lint`; strictly read-only |
+| obsidian-writer | Writes session logs and capture notes to an Obsidian vault; handles REST API and filesystem modes; enforces writes to `Claude/` prefix only | Dispatched by Obsidian skills; never writes outside `Claude/` |
 
 ## Installation
 
@@ -53,7 +54,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Twenty slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Twenty-five slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -77,10 +78,30 @@ Twenty slash-command entry points are included. Invoke them directly in Claude C
 | `/wiki-ingest` | Reads a source and integrates its knowledge into the wiki — creating/updating pages, refreshing the index, and logging the operation. |
 | `/wiki-query` | Asks a question against the wiki; synthesizes an answer with citations and offers to file valuable answers back as synthesis pages. |
 | `/wiki-lint` | Health-checks the wiki for orphaned pages, broken wikilinks, missing frontmatter, stale dates, and schema violations. |
+| `/obsidian` | Help and routing entry point for the Obsidian skill family — dispatches to the right skill based on intent. |
+| `/obsidian-log` | Logs the current session to the Obsidian vault: git branch, recent commits, and uncommitted changes. |
+| `/obsidian-capture` | Saves a user-supplied title and body as a timestamped capture note in `Claude/captures/`. |
+| `/obsidian-daily` | Reads and displays today's daily note from `Claude/daily/`; creates it if it doesn't exist. |
+| `/obsidian-search` | Full-text search across all `Claude/` notes in the vault; opens the best match in Obsidian if the REST API is available. |
+
+## Obsidian Vault Integration
+
+The installer optionally connects Claude Code to an [Obsidian](https://obsidian.md) vault. When enabled, every session is automatically logged to your vault when Claude Code stops.
+
+**What gets written:**
+
+- `Claude/sessions/YYYY-MM-DD-HHmm-<project>.md` — git branch, last 5 commits, diff stat, and uncommitted changes
+- `Claude/daily/YYYY-MM-DD.md` — one-line entry linking to the session note
+
+**Setup:** the installer prompts for your vault path and detects whether the [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) community plugin is running. If found, writes go through the API (supports opening notes directly in Obsidian); if not, it falls back to direct filesystem writes.
+
+**REST API note:** the plugin uses HTTPS with a self-signed certificate and may run on port 27123 or 27124 depending on your Obsidian version. The installer probes both ports on both HTTP and HTTPS automatically.
+
+**Manual skills:** use `/obsidian-log`, `/obsidian-capture`, `/obsidian-daily`, and `/obsidian-search` at any time regardless of the auto-log hook.
 
 ## Scripts
 
-Four utility scripts are included in `scripts/`.
+Five utility scripts are included in `scripts/`.
 
 | Script | What it does |
 |---|---|
@@ -88,6 +109,7 @@ Four utility scripts are included in `scripts/`.
 | `check-readiness` | Verifies Claude Code is installed, all agents and skills are installed, and the target project has full scaffolding |
 | `check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated |
 | `lint-agents` | Validates all agent and skill files for required frontmatter fields, description length, and body content |
+| `obsidian-stop-hook` | Auto-log hook (`.sh` and `.ps1`) — installed to `~/.claude/scripts/` by the installer; fires on Claude Code Stop |
 
 ```bash
 bash scripts/setup-project.sh <project>
@@ -101,7 +123,7 @@ bash scripts/lint-agents.sh
 Use skills as entry points:
 
 ```
-/agent-plan add a payment processing feature
+/plan add a payment processing feature
 /implement add a GetByExternalId method to OrderRepository
 /scaffold add a notifications feature with API, DB, backend, and frontend
 /review-pr 42
@@ -110,11 +132,11 @@ Use skills as entry points:
 /refactor extract the retry logic in HttpClientWrapper into a separate class
 /onboard
 /conventions
-/challenge we're considering migrating from REST to GraphQL
 /memory-audit
 /setup-project
-/check-readiness
-/check-updates
+/system-check
+/obsidian-log
+/obsidian-capture my design decision: keep auth in middleware, not controllers
 ```
 
 Or invoke agents directly in natural language:
