@@ -68,7 +68,7 @@ the best match in Obsidian:
 If yes, call:
 
 ```bash
-curl -s "http://127.0.0.1:${OBSIDIAN_REST_API_PORT:-27123}/open/<url-encoded-relative-path>"
+curl -sk "https://127.0.0.1:${OBSIDIAN_REST_API_PORT:-27123}/open/<url-encoded-relative-path>"
 ```
 
 ## Gotchas

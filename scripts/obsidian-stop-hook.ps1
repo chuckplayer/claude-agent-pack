@@ -99,7 +99,7 @@ $lines | Out-File -FilePath $fullSessionPath -Encoding utf8
 
 # Append to daily note
 $slugNoExt = "${timestamp}-${slug}"
-$dailyLine = "- $time **session** [[Claude/sessions/$slugNoExt]] — branch: $branch (auto)"
+$dailyLine = "- $time **session** [[Claude/sessions/$slugNoExt]] - branch: $branch (auto)"
 
 if (-not (Test-Path $fullDailyPath)) {
     "# $date`n`n$dailyLine" | Out-File -FilePath $fullDailyPath -Encoding utf8

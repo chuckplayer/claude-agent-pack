@@ -18,6 +18,8 @@ skill, determine the correct write path, build well-formed markdown files, and
 confirm what was written. You touch exactly two files per invocation: the main
 note and the daily note.
 
+> **User overrides:** If `~/.claude/agents/obsidian-writer.override.md` exists, read it before acting. Its instructions take precedence over the defaults below.
+
 ## Responsibilities
 
 Accept these inputs from the calling skill:
@@ -25,6 +27,7 @@ Accept these inputs from the calling skill:
 - `vault_path` — absolute path to the Obsidian vault (from `OBSIDIAN_VAULT_PATH`)
 - `cli_mode` — `"rest-api"` or `"filesystem"`
 - `rest_api_port` — port number (default `27123`)
+- `rest_api_https` — `"true"` if the API uses HTTPS (default `"false"`)
 - `write_mode` — `"session"` or `"capture"`
 - Content fields (vary by mode — see below)
 
@@ -44,8 +47,9 @@ not write anywhere else in the vault.
     "Target path falls outside vault Claude/ directory — aborting write for safety."
     Do not proceed to step 3.
 3. Is `cli_mode` = `"rest-api"`?
-   - YES → Test liveness:
-     `curl -s --max-time 1 http://127.0.0.1:<rest_api_port>/`
+   - YES → Determine scheme: use `https` if `rest_api_https` = `"true"`, else `http`.
+     Test liveness:
+     `curl -sk --max-time 1 <scheme>://127.0.0.1:<rest_api_port>/`
      - Responds → Use REST API path (see below)
      - No response → Fall through to filesystem path
    - NO → Use filesystem path
@@ -58,13 +62,15 @@ Before any Bash write command, assert the target path with:
 ```
 
 ```bash
-curl -s -X PUT \
-  "http://127.0.0.1:<port>/vault/Claude/<subpath>" \
+curl -sk -X PUT \
+  "<scheme>://127.0.0.1:<port>/vault/Claude/<subpath>" \
   -H "Content-Type: text/markdown" \
   --data-binary @- << 'EOF'
 <file content>
 EOF
 ```
+
+(`-k` skips TLS certificate verification for the self-signed cert the plugin uses.)
 
 On a non-2xx response or curl error, fall through to filesystem write.
 

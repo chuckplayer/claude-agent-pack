@@ -14,7 +14,7 @@ to_remove_skills=()
 remove_obsidian_env=false
 remove_obsidian_hooks=false
 HOOK_SH="$HOME/.claude/scripts/obsidian-stop-hook.sh"
-HOOK_PS1="$HOME/.claude/scripts/obsidian-stop-hook.ps1"
+HOOK_JS="$HOME/.claude/scripts/obsidian-stop-hook.js"
 
 if [ -f "$SETTINGS" ] && command -v python3 &>/dev/null; then
     has_obsidian_env=$(python3 - "$SETTINGS" <<'PYEOF'
@@ -31,7 +31,7 @@ PYEOF
     [ "$has_obsidian_env" = "yes" ] && remove_obsidian_env=true
 fi
 
-if [ -f "$HOOK_SH" ] || [ -f "$HOOK_PS1" ]; then
+if [ -f "$HOOK_SH" ] || [ -f "$HOOK_JS" ]; then
     remove_obsidian_hooks=true
 fi
 
@@ -105,7 +105,7 @@ PYEOF
 fi
 
 if [ "$remove_obsidian_hooks" = true ]; then
-    rm -f "$HOOK_SH" "$HOOK_PS1"
+    rm -f "$HOOK_SH" "$HOOK_JS"
     # Remove Stop hook entries from settings.json
     if [ -f "$SETTINGS" ] && command -v python3 &>/dev/null; then
         python3 - "$SETTINGS" <<'PYEOF'
@@ -115,8 +115,13 @@ with open(p) as f:
     s = json.load(f)
 hooks = s.get("hooks", {})
 stop_hooks = hooks.get("Stop", [])
-# Remove obsidian stop hook entries
-new_stop = [h for h in stop_hooks if "obsidian-stop-hook" not in h.get("command", "")]
+# Each entry has the shape {"hooks": [{"type": "command", "command": "..."}]}
+def is_obsidian(entry):
+    return isinstance(entry, dict) and any(
+        'obsidian-stop-hook' in h.get('command', '')
+        for h in entry.get('hooks', [])
+    )
+new_stop = [h for h in stop_hooks if not is_obsidian(h)]
 if new_stop != stop_hooks:
     if new_stop:
         hooks["Stop"] = new_stop

@@ -18,6 +18,8 @@ You are a meticulous wiki health inspector. Your job is to find problems and
 surface them — not to fix them. You read everything, write nothing (except
 the log entry), and produce a clear severity-labeled report.
 
+> **User overrides:** If `~/.claude/agents/wiki-linter.override.md` exists, read it before acting. Its instructions take precedence over the defaults below.
+
 ## Before Starting
 
 1. Read `<vault>/CLAUDE.md` in full. You need the schema to know what

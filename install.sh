@@ -49,15 +49,114 @@ done
 
 # Optional: Obsidian vault integration
 echo ""
-read -p "Set up Obsidian vault integration? [y/N] " obsidian_response
-if [ "$obsidian_response" = "y" ] || [ "$obsidian_response" = "Y" ]; then
-    if ! command -v python3 &>/dev/null; then
-        echo "  WARNING: python3 not found -- Obsidian setup requires python3."
-        echo "  Install python3 and re-run install.sh to complete Obsidian setup."
+
+# Detect JSON tool: prefer python3/python, fall back to node.
+# Liveness-test each candidate — Windows ships a python3 Store stub in PATH
+# that exits non-zero when called non-interactively, so we cannot trust
+# command -v alone.
+json_tool=""
+_try_json_tool() {
+    command -v "$1" &>/dev/null || return 1
+    case "$1" in
+        python*) "$1" -c 'import sys; sys.exit(0)' &>/dev/null 2>&1 || return 1 ;;
+        node)    "$1" -e  'process.exit(0)'         &>/dev/null 2>&1 || return 1 ;;
+    esac
+    json_tool="$1"
+}
+_try_json_tool python3 || _try_json_tool python || _try_json_tool node || true
+
+if [ -z "$json_tool" ]; then
+    echo "  WARNING: python3 or node is required for Obsidian setup — neither found."
+    echo "  Install either and re-run install.sh to complete Obsidian setup."
+else
+    # Read existing vault path from settings.json (empty if not previously configured)
+    if [ "$json_tool" = "node" ]; then
+        current_vault="$(node -e "
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+try{const s=JSON.parse(fs.readFileSync(p,'utf8'));process.stdout.write((s.env&&s.env.OBSIDIAN_VAULT_PATH)||'');}catch(e){}
+" 2>/dev/null || true)"
     else
-    read -p "  Obsidian vault path (absolute path to your vault directory): " vault_path
-    if [ -n "$vault_path" ]; then
-        python3 - "$vault_path" <<'PYEOF'
+        current_vault="$("$json_tool" - <<'PYEOF' 2>/dev/null || true
+import json, os, sys
+p = os.path.expanduser("~/.claude/settings.json")
+try:
+    s = json.load(open(p))
+    sys.stdout.write(s.get("env", {}).get("OBSIDIAN_VAULT_PATH", ""))
+except Exception:
+    pass
+PYEOF
+)"
+    fi
+
+    obsidian_setup=false
+    vault_path=""
+
+    if [ -n "$current_vault" ]; then
+        echo "Obsidian integration is active (vault: $current_vault)"
+        read -rp "  Keep Obsidian integration? [Y/n] " keep_response
+        if [ "$keep_response" = "n" ] || [ "$keep_response" = "N" ]; then
+            # Remove all Obsidian env vars and the Stop hook entry from settings.json
+            if [ "$json_tool" = "node" ]; then
+                node <<'JSEOF'
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+if(s.env){['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS'].forEach(k=>delete s.env[k]);}
+if(s.hooks&&s.hooks.Stop){
+  s.hooks.Stop=s.hooks.Stop.filter(e=>!(e&&Array.isArray(e.hooks)&&e.hooks.some(h=>h.command&&h.command.includes('obsidian-stop-hook'))));
+  if(!s.hooks.Stop.length)delete s.hooks.Stop;
+}
+fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
+JSEOF
+            else
+                "$json_tool" - <<'PYEOF'
+import json, os
+p = os.path.expanduser("~/.claude/settings.json")
+s = json.load(open(p)) if os.path.exists(p) else {}
+for k in ['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS']:
+    s.get('env', {}).pop(k, None)
+if 'hooks' in s and 'Stop' in s['hooks']:
+    s['hooks']['Stop'] = [
+        e for e in s['hooks']['Stop']
+        if not any('obsidian-stop-hook' in h.get('command', '') for h in e.get('hooks', []))
+    ]
+    if not s['hooks']['Stop']:
+        del s['hooks']['Stop']
+with open(p, 'w') as f:
+    json.dump(s, f, indent=2)
+    f.write('\n')
+PYEOF
+            fi
+            echo "  [rm] Obsidian integration removed from ~/.claude/settings.json"
+        else
+            # Confirm or update the vault path (Enter keeps the current value)
+            read -rp "  Vault path [$current_vault]: " new_vault
+            vault_path="${new_vault:-$current_vault}"
+            obsidian_setup=true
+        fi
+    else
+        read -rp "Set up Obsidian vault integration? [y/N] " obsidian_response
+        if [ "$obsidian_response" = "y" ] || [ "$obsidian_response" = "Y" ]; then
+            read -rp "  Obsidian vault path (absolute path to your vault directory): " vault_path
+            obsidian_setup=true
+        fi
+    fi
+
+    if [ "$obsidian_setup" = "true" ] && [ -n "$vault_path" ]; then
+        # Write OBSIDIAN_VAULT_PATH
+        if [ "$json_tool" = "node" ]; then
+            node - "$vault_path" <<'JSEOF'
+const fs=require('fs'),os=require('os'),path=require('path');
+const vp=path.resolve(process.argv[2].replace(/^~/,os.homedir()));
+const p=path.join(os.homedir(),'.claude','settings.json');
+const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+if(!s.env)s.env={};s.env.OBSIDIAN_VAULT_PATH=vp;
+fs.mkdirSync(path.dirname(p),{recursive:true});
+fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
+JSEOF
+        else
+            "$json_tool" - "$vault_path" <<'PYEOF'
 import json, os, sys
 vault_path = sys.argv[1]
 vault_path = os.path.realpath(os.path.expanduser(vault_path))
@@ -69,18 +168,40 @@ with open(p, "w") as f:
     json.dump(s, f, indent=2)
     f.write("\n")
 PYEOF
+        fi
         if [ $? -ne 0 ]; then
             echo "  ERROR: failed to update ~/.claude/settings.json"
         fi
         echo "  [ok] env:    OBSIDIAN_VAULT_PATH=$vault_path"
 
-        # Detect CLI mode
-        rest_port=27123
+        # Detect CLI mode — probe HTTP then HTTPS on ports 27123 and 27124
         cli_mode="filesystem"
-        if command -v curl &>/dev/null && curl -s --max-time 1 "http://127.0.0.1:${rest_port}/" &>/dev/null 2>&1; then
-            cli_mode="rest-api"
+        rest_port=27123
+        rest_https="false"
+        if command -v curl &>/dev/null; then
+            for probe_port in 27123 27124; do
+                if curl -s --max-time 1 "http://127.0.0.1:${probe_port}/" &>/dev/null 2>&1; then
+                    cli_mode="rest-api"; rest_port=$probe_port; rest_https="false"; break
+                elif curl -sk --max-time 1 "https://127.0.0.1:${probe_port}/" &>/dev/null 2>&1; then
+                    cli_mode="rest-api"; rest_port=$probe_port; rest_https="true"; break
+                fi
+            done
         fi
-        python3 - "$cli_mode" "$rest_port" <<'PYEOF'
+
+        # Write CLI mode env vars
+        if [ "$json_tool" = "node" ]; then
+            node - "$cli_mode" "$rest_port" "$rest_https" <<'JSEOF'
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+if(!s.env)s.env={};
+s.env.OBSIDIAN_CLI_MODE=process.argv[2];
+if(process.argv[2]==='rest-api'){s.env.OBSIDIAN_REST_API_PORT=process.argv[3];s.env.OBSIDIAN_REST_API_HTTPS=process.argv[4];}
+else{delete s.env.OBSIDIAN_REST_API_PORT;delete s.env.OBSIDIAN_REST_API_HTTPS;}
+fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
+JSEOF
+        else
+            "$json_tool" - "$cli_mode" "$rest_port" "$rest_https" <<'PYEOF'
 import json, os, sys
 port = int(sys.argv[2])
 assert 1 <= port <= 65535, f"Invalid port: {port}"
@@ -89,54 +210,89 @@ s = json.load(open(p)) if os.path.exists(p) else {}
 s.setdefault("env", {})["OBSIDIAN_CLI_MODE"] = sys.argv[1]
 if sys.argv[1] == "rest-api":
     s["env"]["OBSIDIAN_REST_API_PORT"] = sys.argv[2]
+    s["env"]["OBSIDIAN_REST_API_HTTPS"] = sys.argv[3]
+else:
+    for k in ["OBSIDIAN_REST_API_PORT", "OBSIDIAN_REST_API_HTTPS"]:
+        s.get("env", {}).pop(k, None)
 os.makedirs(os.path.dirname(p), exist_ok=True)
 with open(p, "w") as f:
     json.dump(s, f, indent=2)
     f.write("\n")
 PYEOF
+        fi
         if [ $? -ne 0 ]; then
             echo "  ERROR: failed to update ~/.claude/settings.json"
         fi
         if [ "$cli_mode" = "rest-api" ]; then
-            echo "  [ok] env:    OBSIDIAN_CLI_MODE=rest-api (Local REST API on port ${rest_port})"
+            echo "  [ok] env:    OBSIDIAN_CLI_MODE=rest-api (Local REST API on port ${rest_port}, HTTPS=${rest_https})"
         else
             echo "  [ok] env:    OBSIDIAN_CLI_MODE=filesystem"
         fi
 
-        # Install hook scripts
+        # Install hook script
         mkdir -p "$HOME/.claude/scripts"
-        cp "$SCRIPT_DIR/scripts/obsidian-stop-hook.sh" "$HOME/.claude/scripts/"
-        cp "$SCRIPT_DIR/scripts/obsidian-stop-hook.ps1" "$HOME/.claude/scripts/"
-        chmod +x "$HOME/.claude/scripts/obsidian-stop-hook.sh"
-        echo "  [ok] hook:   obsidian-stop-hook installed"
+        cp "$SCRIPT_DIR/scripts/obsidian-stop-hook.js" "$HOME/.claude/scripts/"
+        echo "  [ok] hook:   obsidian-stop-hook.js installed"
 
-        # Register Stop hook
-        if uname -s 2>/dev/null | grep -qi "mingw\|cygwin\|msys\|windows"; then
-            hook_cmd="powershell.exe -ExecutionPolicy Bypass -File \"$HOME/.claude/scripts/obsidian-stop-hook.ps1\""
+        # Build hook command. The hook is pure Node.js — no bash dependency — so it
+        # works identically on Windows and macOS/Linux without path or fork issues.
+        # On Windows we need Windows-format paths (cygpath -w); everywhere else we
+        # use the POSIX path straight from command -v.
+        hook_cmd=""
+        if command -v node &>/dev/null; then
+            if command -v cygpath &>/dev/null; then
+                node_cmd="$(cygpath -w "$(command -v node)")"
+                js_cmd="$(cygpath -w "$HOME/.claude/scripts/obsidian-stop-hook.js")"
+            else
+                node_cmd="$(command -v node)"
+                js_cmd="$HOME/.claude/scripts/obsidian-stop-hook.js"
+            fi
+            hook_cmd="\"${node_cmd}\" \"${js_cmd}\""
         else
-            hook_cmd="bash \"$HOME/.claude/scripts/obsidian-stop-hook.sh\""
+            echo "  WARNING: node not found — Obsidian Stop hook not registered."
+            echo "           Install Node.js and re-run install.sh to enable auto-logging."
         fi
-        python3 - "$hook_cmd" <<'PYEOF'
+
+        # Replace any existing obsidian Stop hook (handles path format changes across
+        # installs) then write the canonical entry.
+        if [ -n "$hook_cmd" ]; then
+        if [ "$json_tool" = "node" ]; then
+            node - "$hook_cmd" <<'JSEOF'
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+if(!s.hooks)s.hooks={};
+s.hooks.Stop=s.hooks.Stop||[];
+s.hooks.Stop=s.hooks.Stop.filter(e=>!(e&&Array.isArray(e.hooks)&&e.hooks.some(h=>h.command&&h.command.includes('obsidian-stop-hook'))));
+s.hooks.Stop.push({hooks:[{type:'command',command:process.argv[2]}]});
+fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
+JSEOF
+        else
+            "$json_tool" - "$hook_cmd" <<'PYEOF'
 import json, os, sys
 p = os.path.expanduser("~/.claude/settings.json")
 s = json.load(open(p)) if os.path.exists(p) else {}
 hooks = s.setdefault("hooks", {})
-stop_hooks = hooks.setdefault("Stop", [])
-new_hook = {"type": "command", "command": sys.argv[1]}
-# Avoid duplicates
-if not any(h.get("command") == sys.argv[1] for h in stop_hooks):
-    stop_hooks.append(new_hook)
+stop_hooks = hooks.get("Stop", [])
+cmd = sys.argv[1]
+stop_hooks = [
+    e for e in stop_hooks
+    if not any('obsidian-stop-hook' in h.get('command', '') for h in e.get('hooks', []))
+]
+stop_hooks.append({"hooks": [{"type": "command", "command": cmd}]})
+hooks["Stop"] = stop_hooks
 with open(p, "w") as f:
     json.dump(s, f, indent=2)
     f.write("\n")
 PYEOF
+        fi
         if [ $? -ne 0 ]; then
             echo "  ERROR: failed to update ~/.claude/settings.json"
         fi
         echo "  [ok] hook:   Stop hook registered in ~/.claude/settings.json"
-    else
+        fi
+    elif [ "$obsidian_setup" = "true" ] && [ -z "$vault_path" ]; then
         echo "  [skip] No vault path provided — skipping Obsidian setup."
-    fi
     fi
 fi
 

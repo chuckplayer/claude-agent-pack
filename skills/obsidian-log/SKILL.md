@@ -50,6 +50,7 @@ Invoke the **obsidian-writer** agent with:
 - `vault_path`: value of `OBSIDIAN_VAULT_PATH`
 - `cli_mode`: value of `OBSIDIAN_CLI_MODE` (default `"filesystem"` if unset)
 - `rest_api_port`: value of `OBSIDIAN_REST_API_PORT` (default `27123` if unset)
+- `rest_api_https`: value of `OBSIDIAN_REST_API_HTTPS` (default `"false"` if unset)
 - `project`: basename of `CLAUDE_PROJECT_DIR` or current working directory
 - `project_dir`: `CLAUDE_PROJECT_DIR` or current working directory
 - `branch`: from step 2
