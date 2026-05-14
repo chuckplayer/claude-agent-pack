@@ -106,7 +106,7 @@ fi
 
 if [ "$remove_obsidian_hooks" = true ]; then
     rm -f "$HOOK_SH" "$HOOK_JS"
-    # Remove Stop hook entries from settings.json
+    # Remove Stop and SessionEnd hook entries from settings.json
     if [ -f "$SETTINGS" ] && command -v python3 &>/dev/null; then
         python3 - "$SETTINGS" <<'PYEOF'
 import json, sys
@@ -114,24 +114,24 @@ p = sys.argv[1]
 with open(p) as f:
     s = json.load(f)
 hooks = s.get("hooks", {})
-stop_hooks = hooks.get("Stop", [])
-# Each entry has the shape {"hooks": [{"type": "command", "command": "..."}]}
 def is_obsidian(entry):
     return isinstance(entry, dict) and any(
         'obsidian-stop-hook' in h.get('command', '')
         for h in entry.get('hooks', [])
     )
-new_stop = [h for h in stop_hooks if not is_obsidian(h)]
-if new_stop != stop_hooks:
-    if new_stop:
-        hooks["Stop"] = new_stop
-    else:
-        del hooks["Stop"]
-    if not hooks:
-        del s["hooks"]
-    with open(p, "w") as f:
-        json.dump(s, f, indent=2)
-        f.write("\n")
+for key in ("Stop", "SessionEnd"):
+    old = hooks.get(key, [])
+    new = [h for h in old if not is_obsidian(h)]
+    if new != old:
+        if new:
+            hooks[key] = new
+        else:
+            del hooks[key]
+if not hooks:
+    del s["hooks"]
+with open(p, "w") as f:
+    json.dump(s, f, indent=2)
+    f.write("\n")
 PYEOF
     fi
     echo "  Removed hook:  obsidian-stop-hook"
