@@ -17,13 +17,14 @@ The scripts/ directory contains 12 files (6 .sh + 6 .ps1). Five of the six are w
 ## Concerns Raised
 
 ### query-memory.sh is redundant with Claude's native tools
-- **Unresolved:** This script does case-insensitive grep with a superseded/archived filter. Claude already has Grep (with regex), Glob (for file discovery), and Read (for status checking). The CLAUDE.md already instructs all agents to skip superseded/archived files. The skill's own SKILL.md tells Claude to read matching files in full after the script runs, making the script a pure intermediary. The skill indirection adds failure modes (wrong pack path, permission errors) without adding capability.
+- **Resolved (2026-05-14):** Script removed from the repository. The memory-query skill now uses Glob/Grep/Read inline without shelling out.
 
 ### new-memory.sh has no skill and limited audience
-- **Unresolved:** This is the only script with no corresponding skill -- Claude never invokes it. It scaffolds a memory file with a template, but the devils-advocate and tech-lead agents already write memory files directly using Write. The human CLI audience could be served by a copy-pasteable template in docs/MEMORY-WRITING.md without maintaining a script in two languages.
+- **Resolved (2026-05-14):** Script removed from the repository. The tech-lead and devils-advocate agents write memory files directly using Write. Template guidance lives in docs/MEMORY-WRITING.md.
 
 ### sh/ps1 duplication — resolved
-- **Resolved (2026-03-19):** The .ps1 files were removed. Git Bash (which ships with Git for Windows) runs .sh scripts on Windows without issue. All skills and the README now reference only the .sh versions.
+- **Resolved (2026-03-19):** The six utility .ps1 files were removed. Git Bash runs .sh scripts on Windows without issue.
+- **Amendment (2026-05-14):** `obsidian-stop-hook.sh` and `obsidian-stop-hook.ps1` were subsequently added and then superseded by `obsidian-stop-hook.js` (pure Node.js, no shell dependency). Both `.sh` and `.ps1` hook files have been removed. The `.js` file is the canonical hook.
 
 ### check-readiness.sh and check-updates.sh serve a human audience Claude cannot replace
 - **Accepted risk:** These scripts check installed agent/skill state against the pack source using filesystem traversal and diff. They provide diagnostic output for humans at the terminal independent of Claude. This is a genuinely different audience. However, the skill-wrapped versions (where Claude shells out to the script) could still be replaced with inline tool usage.

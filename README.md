@@ -123,7 +123,7 @@ Five utility scripts are included in `scripts/`.
 | `check-readiness` | Verifies Claude Code is installed, all agents and skills are installed, and the target project has full scaffolding |
 | `check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated |
 | `lint-agents` | Validates all agent and skill files for required frontmatter fields, description length, and body content |
-| `obsidian-stop-hook` | Auto-log hook (`.sh` and `.ps1`) — installed to `~/.claude/scripts/` by the installer; fires on Claude Code Stop |
+| `obsidian-stop-hook` | Auto-log hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/` by the installer; fires on Claude Code Stop |
 
 ```bash
 bash scripts/setup-project.sh <project>
