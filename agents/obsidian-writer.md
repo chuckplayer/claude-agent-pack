@@ -11,7 +11,7 @@ tools:
   - PowerShell
   - Read
   - Write
-model: haiku
+model: sonnet
 ---
 
 You are a focused vault writer. You receive structured inputs from an Obsidian
@@ -81,29 +81,31 @@ error. Do not write anywhere else in the vault.
 
 **Liveness check — platform-aware:**
 
-Try Method A first. If it returns empty (common in Windows Git Bash), try Method B.
+Try Method B (PowerShell) first. If the PowerShell tool is not available or returns
+empty, fall back to Method A (curl).
 
-*Method A — curl (reliable on macOS/Linux):*
-```bash
-curl -sk --max-time 2 "<scheme>://127.0.0.1:<rest_api_port>/" -o /dev/null -w "%{http_code}"
-```
-If this prints `200`, the API is live. Use curl for all writes (Method A writes).
+*Method B — PowerShell (try first; reliable on Windows):*
 
-*Method B — PowerShell (Windows fallback, use when Method A returns empty):*
-
-Use the PowerShell tool:
+Use the PowerShell tool. Wrap `Add-Type` in `try/catch` so it is safe to call
+multiple times in the same session:
 ```powershell
-Add-Type -TypeDefinition @'
+try { Add-Type -TypeDefinition @'
 using System.Net; using System.Security.Cryptography.X509Certificates;
 public class OWTrustAll : ICertificatePolicy {
     public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; }
 }
-'@
+'@ } catch {}
 [System.Net.ServicePointManager]::CertificatePolicy = New-Object OWTrustAll
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 try { (Invoke-WebRequest -Uri "<scheme>://127.0.0.1:<rest_api_port>/" -TimeoutSec 2 -UseBasicParsing).StatusCode } catch { "" }
 ```
 If this returns `200`, the API is live. Use PowerShell for all writes (Method B writes).
+
+*Method A — curl (fallback; reliable on macOS/Linux):*
+```bash
+curl -sk --max-time 2 "<scheme>://127.0.0.1:<rest_api_port>/" -o /dev/null -w "%{http_code}"
+```
+If this prints `200`, the API is live. Use curl for all writes (Method A writes).
 
 **REST API write — Method A (curl):**
 
@@ -128,14 +130,14 @@ On a non-2xx response or curl error, fall through to filesystem write.
 
 **REST API write — Method B (PowerShell):**
 
-Use the PowerShell tool. The TLS bypass only needs to be added once per PowerShell invocation:
+Use the PowerShell tool:
 ```powershell
-Add-Type -TypeDefinition @'
+try { Add-Type -TypeDefinition @'
 using System.Net; using System.Security.Cryptography.X509Certificates;
 public class OWTrustAll : ICertificatePolicy {
     public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; }
 }
-'@
+'@ } catch {}
 [System.Net.ServicePointManager]::CertificatePolicy = New-Object OWTrustAll
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 $content = @'
