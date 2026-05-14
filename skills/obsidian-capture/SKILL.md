@@ -63,6 +63,9 @@ tags: [claude, capture]
 
 **Attempt the PUT via PowerShell:**
 ```powershell
+# -SkipCertificateCheck is PowerShell 7+ only; use ServicePointManager for 5.1 compat
+[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $key    = $env:OBSIDIAN_REST_API_KEY
 $port   = if ($env:OBSIDIAN_REST_API_PORT) { $env:OBSIDIAN_REST_API_PORT } else { "27124" }
 $scheme = if ($env:OBSIDIAN_REST_API_HTTPS -eq 'false') { 'http' } else { 'https' }
@@ -73,7 +76,7 @@ try {
     Invoke-RestMethod -Method Put -Uri $url `
         -Headers @{ "Authorization" = "Bearer $key"; "Content-Type" = "text/markdown" } `
         -Body $body -ContentType 'text/markdown' `
-        -SkipCertificateCheck -TimeoutSec 5
+        -TimeoutSec 5
     $apiWritten = $true
 } catch {
     $apiWritten = $false
