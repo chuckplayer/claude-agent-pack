@@ -90,30 +90,51 @@ tags: [claude, session-log]
 <next_steps bullets>
 ```
 
-**Attempt the PUT via PowerShell:**
+**Attempt the PUT — try PowerShell first, curl fallback:**
+
+*PowerShell (Windows PS5.1 or PS7, or macOS/Linux with `pwsh` installed):*
 ```powershell
-# -SkipCertificateCheck is PowerShell 7+ only; use ServicePointManager for 5.1 compat
-[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $key    = $env:OBSIDIAN_REST_API_KEY
 $port   = if ($env:OBSIDIAN_REST_API_PORT) { $env:OBSIDIAN_REST_API_PORT } else { "27124" }
 $scheme = if ($env:OBSIDIAN_REST_API_HTTPS -eq 'false') { 'http' } else { 'https' }
 $vaultRel = "<vault_rel_path computed above>"
 $url    = "${scheme}://127.0.0.1:${port}/vault/${vaultRel}"
 $body   = @"<session markdown content>"@
+# Cert bypass: -SkipCertificateCheck on PS7+; ServicePointManager on PS5.1
+$irm = @{ Method='Put'; Uri=$url; Body=$body; ContentType='text/markdown'; TimeoutSec=5
+          Headers=@{"Authorization"="Bearer $key";"Content-Type"="text/markdown"} }
 try {
-    Invoke-RestMethod -Method Put -Uri $url `
-        -Headers @{ "Authorization" = "Bearer $key"; "Content-Type" = "text/markdown" } `
-        -Body $body -ContentType 'text/markdown' `
-        -TimeoutSec 5
+    if ($PSVersionTable.PSVersion.Major -ge 7) {
+        Invoke-RestMethod @irm -SkipCertificateCheck
+    } else {
+        [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-RestMethod @irm
+    }
     $apiWritten = $true
 } catch {
     $apiWritten = $false
 }
 ```
 
-- If `$apiWritten` is `$true`: proceed to step 4b with `session_api_written: true`
-- If `$apiWritten` is `$false` (any error): proceed to step 4b with `session_api_written: false`
+*If PowerShell tool is unavailable (macOS/Linux without `pwsh`), use curl via Bash:*
+```bash
+KEY="$OBSIDIAN_REST_API_KEY"
+PORT="${OBSIDIAN_REST_API_PORT:-27124}"
+SCHEME=$([ "$OBSIDIAN_REST_API_HTTPS" = "false" ] && echo "http" || echo "https")
+VAULT_REL="<vault_rel_path computed above>"
+BODY='<session markdown content>'
+STATUS=$(curl -sk -X PUT \
+  -H "Authorization: Bearer $KEY" \
+  -H "Content-Type: text/markdown" \
+  --data-binary "$BODY" \
+  -w "%{http_code}" -o /dev/null \
+  "${SCHEME}://127.0.0.1:${PORT}/vault/${VAULT_REL}")
+[ "${STATUS:-0}" -ge 200 ] && [ "${STATUS:-0}" -lt 300 ] && apiWritten=true || apiWritten=false
+```
+
+- If write succeeded: proceed to step 4b with `session_api_written: true`
+- If write failed (any error, non-2xx, no tool available): proceed to step 4b with `session_api_written: false`
 
 ### 4b. Dispatch obsidian-writer
 
