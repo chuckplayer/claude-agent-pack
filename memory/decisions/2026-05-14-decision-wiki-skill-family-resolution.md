@@ -92,11 +92,11 @@ the user to remove it or keep it, with the manual delete path printed if
 they keep it.
 
 ### L16 — Dataview compatibility unverified
-**Open.** `last_updated` is written as a quoted YAML string. Dataview
-requires unquoted date values for date filtering. Not yet tested in Obsidian.
-Revisit trigger: if a user reports Dataview date queries returning no results.
-Fix: change frontmatter template to write `last_updated: YYYY-MM-DD` without
-quotes.
+**Addressed.** All `last_updated` frontmatter templates now use the unquoted
+format `last_updated: YYYY-MM-DD` (not `"YYYY-MM-DD"`). Fixed in:
+wiki-librarian synthesis template, wiki-ingestor update instruction (with
+explicit "quoted dates break Dataview" note), and all six page-type templates
+in wiki-init SKILL.md.
 
 ## Implications
 

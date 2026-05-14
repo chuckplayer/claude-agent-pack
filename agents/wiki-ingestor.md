@@ -67,7 +67,9 @@ For each entity and concept extracted in Step 1:
 1. Check if a page already exists using `Glob("wiki/**/*.md")` and reading
    the index.
 2. **Existing page:** Read it, then edit only the sections affected by the
-   new source. Update `last_updated`. Add new wikilinks where relevant.
+   new source. Update `last_updated` to today's date as an unquoted value
+   (e.g., `last_updated: 2026-05-14`) — quoted dates break Dataview filters.
+   Add new wikilinks where relevant.
 3. **New page:** Create it with the full required frontmatter per CLAUDE.md
    and a body section. Add wikilinks to related pages.
 
