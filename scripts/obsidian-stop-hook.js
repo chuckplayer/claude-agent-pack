@@ -11,8 +11,9 @@ process.on('uncaughtException', () => process.exit(0));
 const vault = (process.env.OBSIDIAN_VAULT_PATH || '').replace(/[\r\n]/g, '');
 if (!vault || !existsSync(vault)) process.exit(0);
 
-// --- Optional projects folder (e.g. "Projects") ---
-const projectsFolder = (process.env.OBSIDIAN_PROJECTS_FOLDER || '').replace(/[\r\n]/g, '').replace(/[\\/]+$/, '');
+// --- Projects folder — defaults to Claude/Projects when not configured ---
+const projectsFolder = (process.env.OBSIDIAN_PROJECTS_FOLDER || 'Claude/Projects')
+  .replace(/[\r\n]/g, '').replace(/[\\/]+$/, '');
 
 // --- Project context ---
 const projectDir = (process.env.CLAUDE_PROJECT_DIR || process.cwd()).replace(/[\r\n]/g, '');
@@ -58,23 +59,18 @@ const ts   = `${date}-${p2(now.getHours())}${p2(now.getMinutes())}`;
 const slug = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
 
 // --- Compute base directory for this project ---
-// With projects folder:  <vault>/<projectsFolder>/<slug>/
-// Without:               <vault>/Claude/<slug>/
-const baseDir = projectsFolder
-  ? path.join(vault, projectsFolder, slug)
-  : path.join(vault, 'Claude', slug);
+// projectsFolder may be multi-segment (e.g. "Claude/Projects"), split and join safely
+const folderParts = projectsFolder.replace(/\\/g, '/').split('/').filter(Boolean);
+const baseDir = path.join(vault, ...folderParts, slug);
 
 // --- Resolve target paths ---
 const sessionPath = path.join(baseDir, 'sessions', `${ts}-${slug}.md`);
-// Daily note is project-specific when projects folder is configured; global otherwise
-const dailyPath = projectsFolder
-  ? path.join(baseDir, 'daily', `${date}.md`)
-  : path.join(vault, 'Claude', 'daily', `${date}.md`);
+const dailyPath   = path.join(baseDir, 'daily', `${date}.md`);
 
-// Security guard: paths must be inside Claude/ or the configured projects folder
-const claudeRoot = path.resolve(vault, 'Claude');
-const allowedRoots = [claudeRoot];
-if (projectsFolder) allowedRoots.push(path.resolve(vault, projectsFolder));
+// Security guard: allow Claude/ root and the effective projects folder root
+const claudeRoot  = path.resolve(vault, 'Claude');
+const projectRoot = path.resolve(vault, ...folderParts);
+const allowedRoots = [claudeRoot, projectRoot];
 const inside = p => allowedRoots.some(root =>
   path.resolve(p).startsWith(root + path.sep) || path.resolve(p) === root
 );

@@ -37,16 +37,15 @@ Accept these inputs from the calling skill:
 
 Compute a `base_dir` and `daily_path` based on whether `projects_folder` is set:
 
-**With `projects_folder` (e.g. "Projects"):**
-```
-base_dir   = <vault_path>/<projects_folder>/<project-slug>/
-daily_path = <vault_path>/<projects_folder>/<project-slug>/daily/<YYYY-MM-DD>.md
-```
+The `projects_folder` value may be a multi-segment path (e.g., `Claude/Projects`).
+Split on `/` and join using the platform path separator when building `base_dir`.
 
-**Without `projects_folder` (empty string):**
+Default when `projects_folder` is empty or not passed: `Claude/Projects`.
+
 ```
-base_dir   = <vault_path>/Claude/<project-slug>/
-daily_path = <vault_path>/Claude/daily/<YYYY-MM-DD>.md
+effective_folder = projects_folder || "Claude/Projects"
+base_dir         = <vault_path>/<effective_folder>/<project-slug>/
+daily_path       = <vault_path>/<effective_folder>/<project-slug>/daily/<YYYY-MM-DD>.md
 ```
 
 Captures always use `<vault_path>/Claude/captures/` regardless of `projects_folder`.
@@ -56,7 +55,7 @@ maximum 30 characters. Example: `claude-agent-pack`.
 
 **Iron rule:** Only write inside allowed roots:
 - `<vault_path>/Claude/` is always allowed.
-- `<vault_path>/<projects_folder>/` is allowed when `projects_folder` is non-empty.
+- `<vault_path>/<effective_folder>/` (resolved from `projects_folder` or its default) is always allowed.
 
 If any computed target path does not start with an allowed root, stop and report an
 error. Do not write anywhere else in the vault.
