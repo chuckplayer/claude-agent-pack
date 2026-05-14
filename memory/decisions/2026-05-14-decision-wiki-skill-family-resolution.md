@@ -85,11 +85,11 @@ Same-day collision risk is negligible at minute granularity.
 **Accepted.** Advisory. Low probability of conflict. No action taken.
 
 ### L15 — install.sh does not disclose ~/.claude/wiki/ creation
-**Open.** The `install.sh` wizard does not mention wiki vault directories.
-Wiki vault initialization is on-demand via `/wiki-init`, not during install,
-so there is nothing to disclose at install time. However, the uninstall.sh
-does not clean up `~/.claude/wiki/` either. This should be addressed in a
-future uninstall.sh update with an advisory note.
+**Addressed.** Wiki vaults are created on-demand by `/wiki-init`, not by
+`install.sh`, so there is nothing to disclose at install time. `uninstall.sh`
+now detects `~/.claude/wiki/` at the end of the uninstall run and prompts
+the user to remove it or keep it, with the manual delete path printed if
+they keep it.
 
 ### L16 — Dataview compatibility unverified
 **Open.** `last_updated` is written as a quoted YAML string. Dataview
