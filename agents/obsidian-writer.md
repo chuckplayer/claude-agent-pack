@@ -8,6 +8,7 @@ description: >
   outside the vault's Claude/ directory or the configured projects folder.
 tools:
   - Bash
+  - PowerShell
   - Read
   - Write
 model: haiku
@@ -73,22 +74,48 @@ error. Do not write anywhere else in the vault.
     Do not proceed to step 3.
 3. Is `cli_mode` = `"rest-api"`?
    - YES → Determine scheme: use `https` if `rest_api_https` = `"true"`, else `http`.
-     Test liveness:
-     `curl -sk --max-time 1 <scheme>://127.0.0.1:<rest_api_port>/`
-     - Responds → Use REST API path (see below)
-     - No response → Fall through to filesystem path
+     Test liveness using the platform-appropriate method below.
+     - Responds 200 → Use REST API path (see below)
+     - No response from either method → Fall through to filesystem path
    - NO → Use filesystem path
 
-**REST API write:**
+**Liveness check — platform-aware:**
 
-Before any Bash write command, assert each target path is inside an allowed root:
+Try Method A first. If it returns empty (common in Windows Git Bash), try Method B.
+
+*Method A — curl (reliable on macOS/Linux):*
+```bash
+curl -sk --max-time 2 "<scheme>://127.0.0.1:<rest_api_port>/" -o /dev/null -w "%{http_code}"
+```
+If this prints `200`, the API is live. Use curl for all writes (Method A writes).
+
+*Method B — PowerShell (Windows fallback, use when Method A returns empty):*
+
+Use the PowerShell tool:
+```powershell
+Add-Type -TypeDefinition @'
+using System.Net; using System.Security.Cryptography.X509Certificates;
+public class OWTrustAll : ICertificatePolicy {
+    public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; }
+}
+'@
+[System.Net.ServicePointManager]::CertificatePolicy = New-Object OWTrustAll
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+try { (Invoke-WebRequest -Uri "<scheme>://127.0.0.1:<rest_api_port>/" -TimeoutSec 2 -UseBasicParsing).StatusCode } catch { "" }
+```
+If this returns `200`, the API is live. Use PowerShell for all writes (Method B writes).
+
+**REST API write — Method A (curl):**
+
+Compute the path relative to the vault root (e.g., `Amwins/agent-pack/sessions/...`).
+Assert the target path is inside an allowed root before writing:
 ```bash
 [[ "$target_path" == "$vault_path/Claude/"* ]] || \
-[[ -n "$projects_folder" && "$target_path" == "$vault_path/$projects_folder/"* ]] || \
+[[ "$target_path" == "$vault_path/$effective_folder/"* ]] || \
 { echo "ERROR: path outside allowed vault directories"; exit 1; }
 ```
 
-For REST API, compute the path relative to the vault root (e.g., `Projects/agent-pack/sessions/...`):
+Then PUT the file:
 ```bash
 curl -sk -X PUT \
   "<scheme>://127.0.0.1:<port>/vault/<vault-relative-subpath>" \
@@ -97,10 +124,29 @@ curl -sk -X PUT \
 <file content>
 EOF
 ```
-
-(`-k` skips TLS certificate verification for the self-signed cert the plugin uses.)
-
 On a non-2xx response or curl error, fall through to filesystem write.
+
+**REST API write — Method B (PowerShell):**
+
+Use the PowerShell tool. The TLS bypass only needs to be added once per PowerShell invocation:
+```powershell
+Add-Type -TypeDefinition @'
+using System.Net; using System.Security.Cryptography.X509Certificates;
+public class OWTrustAll : ICertificatePolicy {
+    public bool CheckValidationResult(ServicePoint s, X509Certificate c, WebRequest r, int p) { return true; }
+}
+'@
+[System.Net.ServicePointManager]::CertificatePolicy = New-Object OWTrustAll
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+$content = @'
+<file content — use a here-string so newlines are preserved>
+'@
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+$r = Invoke-WebRequest -Uri "<scheme>://127.0.0.1:<port>/vault/<vault-relative-subpath>" `
+     -Method PUT -Body $bytes -ContentType "text/markdown" -UseBasicParsing
+$r.StatusCode
+```
+On a non-2xx response or exception, fall through to filesystem write.
 
 **Filesystem write:**
 
