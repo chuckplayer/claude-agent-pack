@@ -62,31 +62,17 @@ Do not proceed to the checklist until all worktree branches are cleanly merged.
 
 ## Step 0a — Clean up worktree branches
 
-After all worktree branches are cleanly merged, remove each worktree and its branch before proceeding to the gate checklist. This prevents stale worktrees and branches from accumulating.
-
-For each worktree branch name provided:
+After all worktree branches are cleanly merged, remove each worktree and its branch, then prune stale entries. For each worktree branch:
 
 ```bash
-# Find the worktree path for this branch
-git worktree list --porcelain | grep -B5 "branch refs/heads/<worktree-branch>" | grep "^worktree" | awk '{print $2}'
-```
-
-If a path is found, remove the worktree:
-```bash
-git worktree remove <path> --force
-```
-
-Delete the branch:
-```bash
-git branch -d <worktree-branch>
-```
-
-After all worktree branches are processed, prune stale entries:
-```bash
+# Find path, remove worktree, delete branch, then prune
+path=$(git worktree list --porcelain | grep -B5 "branch refs/heads/<worktree-branch>" | grep "^worktree" | awk '{print $2}')
+[ -n "$path" ] && git worktree remove "$path" --force
+git branch -d <worktree-branch> || git branch -D <worktree-branch>
 git worktree prune
 ```
 
-If `git branch -d` fails because the branch is not fully merged (this should not happen after a successful `--no-ff` merge), use `git branch -D` and note it in the output.
+If `git branch -d` falls back to `-D`, note it in the output.
 
 ## Checklist
 
