@@ -58,6 +58,7 @@ Twenty-six slash-command entry points are included. Invoke them directly in Clau
 | Skill | What it does |
 |---|---|
 | `/implement` | Runs the full pipeline: git-engineer → [tech-lead] → engineer(s) → ts-linter → code-reviewer → [security-reviewer] → [performance-reviewer] → smell-reviewer → test-engineer → merge-reviewer → git-engineer (push/PR). Engineers run in isolated worktrees. |
+| `/interview-me` | Shape a vague idea into an actionable brief through structured one-at-a-time questioning. Terminates when the user signals readiness or all major branches resolve; produces an optional design brief that feeds into `/plan` or `/implement`. |
 | `/scaffold` | End-to-end feature scaffolding: api-designer → database-engineer → backend engineer → frontend-engineer, in dependency order. Use when building something new across all layers. |
 | `/hotfix` | Abbreviated pipeline for production incidents. No worktree isolation, 1 retry max. Still requires code-reviewer and merge-reviewer. |
 | `/refactor` | Refactor with impact analysis first: tech-lead → engineer(s) → mandatory test verification → code-reviewer. Enforces a no-behavior-delta constraint. |
