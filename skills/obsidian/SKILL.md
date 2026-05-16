@@ -5,7 +5,7 @@ description: >
   help", "log something to Obsidian", "what obsidian commands are there",
   "obsidian?". Routes to the correct skill based on intent. Also use as a
   fallback when an Obsidian operation does not clearly map to capture, log,
-  daily, or search.
+  daily, search, or brief.
 ---
 
 # Obsidian Help
@@ -16,10 +16,11 @@ search across everything Claude has logged. Every note written follows a
 consistent folder layout under `Claude/` so the vault stays clean and
 navigable.
 
-## The four skills
+## The five skills
 
 | Skill | Use when |
 |---|---|
+| `/obsidian-brief` | Loading project context before starting work — synthesizes recent notes without a search query |
 | `/obsidian-capture` | Saving a note, decision, or thought to the vault right now |
 | `/obsidian-log` | Writing a session log entry for the current Claude Code session |
 | `/obsidian-daily` | Viewing today's Claude activity note |
@@ -31,6 +32,7 @@ Ask the user one question: **"What are you trying to do?"**
 
 Listen for these patterns:
 
+- "brief", "catch me up", "context", "what have we been working on", "load context" → `/obsidian-brief`
 - "capture", "save", "note", "jot", "quick note", "save this" → `/obsidian-capture`
 - "log", "session", "log this session", "what did we do", "record session" → `/obsidian-log`
 - "today", "daily", "what did I do today", "daily note" → `/obsidian-daily`
