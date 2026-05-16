@@ -140,21 +140,6 @@ fi
 echo ""
 echo "${#to_remove_agents[@]} agent(s) and ${#to_remove_skills[@]} skill(s) removed."
 
-# Wiki vault advisory
-WIKI_DIR="$HOME/.claude/wiki"
-if [ -d "$WIKI_DIR" ]; then
-    echo ""
-    echo "Note: wiki vaults found at $WIKI_DIR"
-    echo "  These are not removed automatically (they contain your data)."
-    read -p "  Remove $WIKI_DIR and all wiki vaults? [y/N] " wiki_response
-    if [ "$wiki_response" = "y" ] || [ "$wiki_response" = "Y" ]; then
-        rm -rf "$WIKI_DIR"
-        echo "  Removed: $WIKI_DIR"
-    else
-        echo "  Kept. Delete manually when no longer needed: rm -rf \"$WIKI_DIR\""
-    fi
-fi
-
 echo ""
 echo "Note: project-level memory/ directories are not removed -- those live"
 echo "in your repositories and are managed like any other project file."
