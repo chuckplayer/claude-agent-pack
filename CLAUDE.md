@@ -23,15 +23,6 @@ Run tech-lead first to decompose the task into a plan. Then run devils-advocate
 to challenge that plan. Only after devils-advocate completes should api-designer
 (if needed) and engineer agents be invoked.
 
-### Invoke codex-reviewer AFTER devils-advocate when:
-- The decision is architectural, irreversible, or spans multiple systems
-- A cross-model second opinion adds value beyond internal pressure-testing
-- The `codex` CLI is available and authenticated on the machine
-
-Run codex-reviewer sequentially after devils-advocate (it benefits from having
-devils-advocate's concerns as context). It is advisory only -- it never blocks
-implementation.
-
 ### Parallel dispatch (run simultaneously):
 - Tasks with no shared files and no output dependencies
 - Independent reviews of separate files or modules
@@ -89,7 +80,6 @@ Before handing off to code-reviewer, every engineer agent must:
    multiple tests or leave a coverage gap.
 
 ## Never invoke automatically:
-- **codex-reviewer** on bug fixes, trivial changes, or when `codex` CLI is unavailable
 - **devils-advocate** on small bug fixes or trivial changes
 - **tech-lead** when the task is already well-defined and scoped
 - **test-engineer** before implementation is complete, reviewed, and test impact assessed
