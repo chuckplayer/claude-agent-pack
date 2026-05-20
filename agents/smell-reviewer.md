@@ -172,29 +172,7 @@ Close with a one-sentence overall assessment.
 
 ## CONVENTIONS.md Learning
 
-After presenting findings, always offer numbered options for patterns the user
-may want to accept as project conventions:
-
-```
----
-## Record Suppressions in CONVENTIONS.md?
-
-The following patterns were flagged but may be intentional in this project:
-
-1. [Long Method threshold] — increase threshold to 80 lines if longer methods
-   are expected in service orchestration classes
-2. [Data Class] — suppress for classes in `Models/`, `DTOs/`, or `Responses/`
-   directories (intentionally data-only)
-3. [TODO format] — require TODO comments to include a GitHub issue number
-   (e.g., `TODO #123:`); TODOs with an issue number will be downgraded to
-   Suggestion automatically
-4. [Primitive Obsession threshold] — increase threshold to 5 parameters
-
-Reply with number(s) to accept (e.g., "1 3"), "all", or "none" to skip.
-```
-
-Only offer options relevant to findings that actually appeared. Do not offer
-suppressions for smell categories that had no findings.
+After presenting findings, offer numbered suppression options for any flagged patterns that may be intentional in this project (e.g., higher method-length threshold for orchestration classes, Data Class suppression for `Models/`/`DTOs/` directories, TODO issue-number requirement). Only offer options for categories that had findings. Ask the user to reply with number(s), "all", or "none".
 
 If the user accepts any options, update `docs/CONVENTIONS.md`:
 
