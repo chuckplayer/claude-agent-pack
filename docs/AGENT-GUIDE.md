@@ -66,13 +66,12 @@ Open `docs/CONVENTIONS.md` and fill in your project-specific values. All agents 
 The full agent sequence from task to completion:
 
 ```
-task -> [tech-lead] -> [devils-advocate] -> [codex-reviewer] -> engineer -> code-reviewer -> [security-reviewer] -> test-engineer
+task -> [tech-lead] -> [devils-advocate] -> engineer -> code-reviewer -> [security-reviewer] -> test-engineer
 ```
 
 Bracketed agents are conditional:
 - **tech-lead** -- invoke when the task is ambiguous, spans multiple concerns, or touches more than three files.
 - **devils-advocate** -- invoke before implementation on new patterns, architectural decisions, or irreversible changes.
-- **codex-reviewer** -- invoke after devils-advocate on architectural or irreversible decisions to get a cross-model second opinion via the Codex CLI. Requires `codex` to be installed and authenticated.
 - **security-reviewer** -- invoke after implementation when changes touch auth, data access, PII, or secrets.
 
 For small, well-scoped tasks, invoke the specialist directly (e.g., `Use the csharp-engineer to add a null check to OrderService.GetById`).
@@ -180,7 +179,6 @@ Before scaling to multi-server, evaluate Hangfire Pro licensing cost.
 
 1. "Use the tech-lead agent to plan adding a payment processing feature."
 2. "Use the devils-advocate agent to challenge our plan to migrate from REST to GraphQL."
-2a. "Use the codex-reviewer agent to get Codex's take on this architecture decision."
 3. "Use the csharp-engineer to add a `GetByExternalId` method to `OrderRepository`."
 4. "Use the frontend-engineer to create a `useOrderStatus` composable that polls the order endpoint."
 5. "Use the code-reviewer to review the changes in `OrderService.cs`."
