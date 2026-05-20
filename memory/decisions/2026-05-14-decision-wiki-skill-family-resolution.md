@@ -1,7 +1,7 @@
 **Date:** 2026-05-14
 **Type:** decision
-**Status:** active
-**Superseded-by:** n/a
+**Status:** archived
+**Superseded-by:** wiki family removed 2026-05-16; replaced by /obsidian-brief
 **Scope:** skills/wiki-*, agents/wiki-*
 **Overrides-convention:** no
 **Related-to:** 2026-04-26-challenge-llm-wiki-skill-family.md
