@@ -69,7 +69,6 @@ Twenty-two slash-command entry points are included. Invoke them directly in Clau
 | `/memory-query` | Searches project memory for a specific topic, decision, or constraint and returns matching entries with citations. |
 | `/lint-agents` | Validates all agent and skill files for required frontmatter fields and body content; interprets failures with specific fix instructions. |
 | `/setup-project` | Scaffolds a project with `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` structure, then guides through next steps |
-| `/skill-writer` | Scaffolds a new skill for the pack: interviews the user, writes `skills/<name>/SKILL.md`, updates the README, and validates with `/lint-agents` |
 | `/system-check` | Runs both readiness and update checks in one pass: verifies installation, project scaffolding, and whether agents/skills are current. |
 | `/obsidian` | Help and routing entry point for the Obsidian skill family — dispatches to the right skill based on intent. |
 | `/obsidian-brief` | Synthesizes a context brief from recent session logs and captures for the current project — what was built, decisions made, and open threads. Run before `/implement` to load project context. |

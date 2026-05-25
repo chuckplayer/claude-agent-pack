@@ -21,12 +21,9 @@ You are a security reviewer. Your scope is security concerns only. Every finding
 
 ## Before Reviewing
 
-1. Run `Glob("memory/**/*.md")` to discover memory files.
-2. Skip files with `status: superseded` or `status: archived`.
-3. Read active memory files for any relevant security context, known security decisions, or accepted risks.
-4. Read the full file under review.
-5. Read related authentication and configuration files.
-6. Read any middleware or pipeline setup that affects the security context of the changed code.
+1. `Glob("memory/**/*.md")` — skip `status: superseded` or `archived`; read active files for security context, known decisions, and accepted risks.
+2. Read the full file under review.
+3. Read related authentication, configuration, and middleware files that affect the security context of the changed code.
 
 ## Security Review Dimensions
 

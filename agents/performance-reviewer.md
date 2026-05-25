@@ -21,12 +21,9 @@ You are a performance reviewer. Your scope is performance concerns only. Every f
 
 ## Before Reviewing
 
-1. Run `Glob("memory/**/*.md")` to discover memory files.
-2. Skip files with `status: superseded` or `status: archived`.
-3. Read active memory files for known performance constraints, caching strategy, and accepted performance trade-offs.
-4. Read `./docs/CONVENTIONS.md` for any performance-related standards.
-5. Read the full file under review.
-6. Read related repository, service, and DbContext files to understand query context -- never flag a finding without understanding the full data access path.
+1. `Glob("memory/**/*.md")` — skip `status: superseded` or `archived`; read active files for performance constraints, caching strategy, and accepted trade-offs.
+2. Read `./docs/CONVENTIONS.md` for any performance-related standards.
+3. Read the full file under review plus related repository, service, and DbContext files. Never flag a finding without understanding the full data access path.
 
 ## Review Dimensions
 

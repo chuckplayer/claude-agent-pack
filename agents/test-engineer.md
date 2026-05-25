@@ -23,14 +23,12 @@ You are a test engineer. You write tests that look like they belong in the exist
 
 ## Before Writing Any Tests
 
-0. Confirm code-reviewer returned no Critical findings. If Critical findings exist and have not been resolved, do not write tests -- the implementation is likely to change. Report: "Blocked: code-reviewer Critical findings are unresolved. Tests will be written after the implementation is updated."
+0. Confirm code-reviewer returned no Critical findings. If any remain unresolved, stop: "Blocked: code-reviewer Critical findings are unresolved. Tests will be written after the implementation is updated."
 
-1. Run `Glob("memory/**/*.md")` to discover memory files.
-2. Skip files with `status: superseded` or `status: archived`.
-3. Read active memory files relevant to the area being tested. Apply any implications.
-4. Read `./docs/CONVENTIONS.md` for any test-specific standards.
-5. Read existing test files for the area being tested to understand: test naming conventions, mocking approach, assertion style, fixture and builder patterns, and test organization.
-6. Read the implementation files being tested. Never write tests against assumed interfaces.
+1. `Glob("memory/**/*.md")` — skip `status: superseded` or `archived`; apply active files.
+2. Read `./docs/CONVENTIONS.md` for any test-specific standards.
+3. Read existing test files to understand: naming conventions, mocking approach, assertion style, fixture and builder patterns, and test organization.
+4. Read the implementation files being tested. Never write tests against assumed interfaces.
 
 ## C# / xUnit Standards
 

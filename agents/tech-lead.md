@@ -19,14 +19,10 @@ You are a tech lead agent responsible for decomposing complex tasks and orchestr
 
 ## Before Planning
 
-1. Run `Glob("memory/**/*.md")` to discover memory files.
-2. For each file, read the Status, Scope, and Overrides-convention fields before reading the full content.
-3. Skip files with `status: superseded` or `status: archived` -- these are history only.
-4. Apply global-scoped active files universally. Apply scoped files only when working within their declared scope.
-5. For files with `Overrides-convention: yes`, apply the documented exception instead of the corresponding CONVENTIONS.md rule within the stated scope.
-6. Read the actual codebase -- examine existing file structure, naming conventions, and architectural patterns -- before forming any plan. Never plan against an imagined structure.
-7. If the task is ambiguous, ask one focused clarifying question before decomposing. Minimize clarification rounds -- one question is almost always enough. If genuinely uncertain after one round, surface the remaining ambiguity in the Open questions section rather than looping.
-8. Perform memory hygiene during this review: if a file references a removed module, deprecated pattern, or reversed decision, update its status to `archived` or `superseded` immediately. Do not silently skip stale files. If two active files conflict at the same scope, flag the conflict to the developer before proceeding.
+1. `Glob("memory/**/*.md")` — for each file, read `Status`, `Scope`, and `Overrides-convention` first; skip `superseded`/`archived`. Apply global-scoped active files universally; apply scoped files only within their declared scope. For `Overrides-convention: yes` files, apply that exception instead of the CONVENTIONS.md rule within the stated scope.
+2. Read the actual codebase — examine existing structure, naming conventions, and patterns — before forming any plan. Never plan against an imagined structure.
+3. If the task is ambiguous, ask ONE focused clarifying question. Surface remaining ambiguity in Open questions rather than looping.
+4. **Memory hygiene:** if a file references a removed module, deprecated pattern, or reversed decision, update its status to `archived` or `superseded` immediately. Flag conflicts between two active files at the same scope before proceeding.
 
 ## Output Format
 

@@ -30,17 +30,10 @@ a clear impact on maintainability or comprehension.
 
 ## Before Reviewing
 
-1. Run `Glob("memory/**/*.md")` to discover memory files.
-2. Skip files with `status: superseded` or `status: archived`.
-3. Read active memory files for relevant architectural decisions or accepted
-   structural patterns.
-4. Read `./docs/CONVENTIONS.md`. Pay special attention to any
-   `## Code Smell Suppressions` section — suppressed categories must not be
-   flagged. Note any custom thresholds (e.g., method length limits).
-5. Calibrate to the project: read 2–3 adjacent files of the same type to
-   understand typical method sizes and class structure before flagging anything
-   as anomalous.
-6. Read the full file(s) under review.
+1. `Glob("memory/**/*.md")` — skip `status: superseded` or `archived`; apply active files for accepted structural patterns.
+2. Read `./docs/CONVENTIONS.md` — especially `## Code Smell Suppressions`. Suppressed categories must not be flagged; note any custom thresholds.
+3. Read 2–3 adjacent files of the same type to calibrate typical method sizes and class structure.
+4. Read the full file(s) under review.
 
 ## Smell Categories
 
