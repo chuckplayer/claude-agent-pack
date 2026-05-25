@@ -37,7 +37,7 @@ Map linter failure messages to actionable fixes:
 | Missing body content | The file has frontmatter but no body. Add at minimum one section (`## ...`) explaining what the agent or skill does. |
 | Body is too short | Expand the body. Agent files must contain behavioral instructions, not just a title. |
 
-If the failure message does not match any of the above patterns, quote the exact linter message and suggest reading the relevant agent or skill file against the conventions in `skills/skill-writer/SKILL.md`.
+If the failure message does not match any of the above patterns, quote the exact linter message and ask the developer to compare their file against a well-formed example in the `skills/` or `agents/` directory.
 
 ## 4. Report
 

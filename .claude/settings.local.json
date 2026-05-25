@@ -20,7 +20,8 @@
       "WebFetch(domain:github.com)",
       "Bash(powershell:*)",
       "Bash(tee /tmp/git_out.txt)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Skill(system-check)"
     ]
   }
 }

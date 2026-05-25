@@ -126,7 +126,7 @@ Check whether any test files appear in the changed file list (patterns: `*.test.
 - FAIL if test-engineer was required (new public methods or API endpoints were created) but no test files are present in the diff.
 - PASS otherwise.
 
-### 4. No uncommitted conflicts
+### 5. No uncommitted conflicts
 
 ```bash
 git status --short

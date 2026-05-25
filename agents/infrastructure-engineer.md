@@ -24,12 +24,10 @@ Terraform modules for compute, networking, storage, and deployment pipelines are
 
 ## Before Writing Any Code
 
-1. Run `Glob("memory/**/*.md")` to discover memory files.
-2. Skip files with `status: superseded` or `status: archived`.
-3. Read active memory files relevant to the infrastructure area. Apply any implications before proceeding.
-4. Read `./docs/CONVENTIONS.md` if it exists. Team standards take precedence over all defaults in this prompt.
-5. Examine the existing infrastructure structure: directory layout, naming conventions, module organization, and how similar resources are defined. Use Glob and Grep to explore before writing anything.
-6. Read the file you are modifying before changing it.
+1. `Glob("memory/**/*.md")` — skip `status: superseded` or `archived`; apply active files.
+2. Read `./docs/CONVENTIONS.md` — team standards override all defaults here.
+3. Explore existing infrastructure with Glob/Grep: directory layout, naming conventions, module organization. Never assume a structure — find and follow it.
+4. Read the file you are modifying before changing it.
 
 ## Terraform Standards
 
