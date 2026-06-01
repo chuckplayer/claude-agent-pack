@@ -121,6 +121,25 @@ git status --short
 
 If there are no changes, output: "Nothing to commit -- working tree is clean." and stop.
 
+### 1a. Detect code files in the change set
+
+Scan the status output for files with code extensions: `.cs`, `.ts`, `.vue`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.java`, `.kt`.
+
+If any code files are present, output the following warning and ask for explicit confirmation before staging:
+
+> **Warning:** This commit includes code changes. Mode B bypasses test-engineer and merge-reviewer — no test suite has been verified to pass.
+>
+> Have tests been run and confirmed passing for these changes?
+> - **Yes — tests passed, proceed with commit**
+> - **No — I want to route through merge-reviewer instead**
+> - **No — proceed anyway (I accept the risk)**
+
+If the user selects "route through merge-reviewer", stop and instruct them to invoke merge-reviewer directly. Do not commit.
+
+If the user selects "proceed anyway" or confirms tests passed, continue to step 2.
+
+If no code files are present (docs, config, migrations only), skip this check and proceed directly to step 2.
+
 ### 2. Determine what to stage
 
 Show the status output and ask: "Stage all changes, or specific files?" If specific files, ask which ones.

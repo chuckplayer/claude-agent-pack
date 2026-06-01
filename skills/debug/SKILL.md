@@ -73,7 +73,14 @@ Report:
 - What was changed and why
 - Whether any follow-up work is needed (e.g., the fix revealed a broader pattern issue)
 
-Do not run test-engineer, merge-reviewer, or git-engineer unless the user asks. This skill is diagnosis-and-fix, not full pipeline delivery.
+This skill is diagnosis-and-fix, not full pipeline delivery. Do not run test-engineer, merge-reviewer, or git-engineer unless the user asks.
+
+**If the user asks to commit the fix**, apply these minimum gates before git-engineer commits:
+
+1. Run the project's test suite (`dotnet test`, `npm run test`, or `pytest`) and confirm all tests pass. If any fail, loop back to the engineer before proceeding.
+2. Route through **merge-reviewer** as the commit gate — do not use git-engineer Mode B directly. merge-reviewer will run the test suite (Step 0b), apply the gate checklist, and produce the commit.
+
+> The purpose of /debug is speed of diagnosis. The purpose of committing is permanence. Once the user decides to commit, the same safety guarantees as /implement apply.
 
 ## Gotchas
 
