@@ -71,7 +71,14 @@ If FAIL: fix the blocking issue and re-run steps 5–6. Allow **1 retry only** �
 
 After merge-reviewer returns PASS, push the hotfix branch immediately. Ask the user whether to open a pull request targeting `main` and whether to request an expedited review.
 
-> **test-engineer is skipped** in the hotfix pipeline — speed is the priority and the change scope is intentionally narrow. If test coverage for the fix is needed, flag it as a follow-up task in the PR description rather than blocking the hotfix.
+> **test-engineer is skipped** in the hotfix pipeline — speed is the priority and the change scope is intentionally narrow.
+
+**Required PR description items** — the PR body must include both of these before the hotfix is considered complete:
+
+- `**Test coverage gap:** <list each changed method/function that has no test coverage>`
+- `**TODO:** Add tests for <method(s)> in a follow-up task before next release`
+
+Do not open the PR without these items. They create a traceable artifact so the coverage gap is not silently forgotten. If the user declines to open a PR, include the same items in the commit message body.
 
 ## Gotchas
 

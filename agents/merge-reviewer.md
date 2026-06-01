@@ -74,6 +74,29 @@ git worktree prune
 
 If `git branch -d` falls back to `-D`, note it in the output.
 
+## Step 0b — Run test suite
+
+After all worktree branches are merged and worktrees pruned, detect and run the project's test command:
+
+- **C# / .NET:** `dotnet test` (run from the solution root or the test project directory)
+- **TypeScript / Node:** `npm run test` or `npx vitest run` — check `package.json` scripts to pick the right command
+- **Python:** `pytest`
+- **Mixed repo:** run all applicable commands
+
+If any tests fail, **stop immediately** and output:
+
+```
+FAIL -- test suite failed after worktree merge.
+
+Failed tests:
+- <test name / file / error excerpt>
+
+Required actions:
+- Route to <engineer agent>: fix the failing tests before re-running the pipeline from step 6.
+```
+
+Do not proceed to the checklist until the full test suite passes. If no test command can be detected (no test project, no `test` script in `package.json`, no `pytest` config), note it as a warning and proceed.
+
 ## Checklist
 
 Work through each check in order. Record PASS or FAIL for each.
