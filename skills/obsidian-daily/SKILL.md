@@ -59,7 +59,7 @@ editor. Compute the vault-relative path (strip the vault root prefix, use forwar
 slashes, URL-encode the result), then call:
 
 ```bash
-curl -sk "https://127.0.0.1:${OBSIDIAN_REST_API_PORT:-27123}/open/<url-encoded-vault-relative-path>"
+curl -sk "https://127.0.0.1:${OBSIDIAN_REST_API_PORT:-27124}/open/<url-encoded-vault-relative-path>"
 ```
 
 If this fails, or if CLI mode is `"filesystem"`, skip silently — the note was

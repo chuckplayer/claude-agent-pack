@@ -62,8 +62,6 @@ Skip security-reviewer and performance-reviewer unless:
 - The fix touches auth, authorization, data access, or secrets → invoke **security-reviewer**
 - The fix touches a hot path → invoke **performance-reviewer**
 
-> **Hot-path examples:** tight loops over large collections, API endpoints handling high traffic, database queries in critical flows (login, checkout, search). If uncertain, include performance-reviewer.
-
 State your reasoning either way.
 
 ## 7. Wrap up
@@ -88,4 +86,5 @@ This skill is diagnosis-and-fix, not full pipeline delivery. Do not run test-eng
 - **Multi-layer errors:** A frontend error that says "404 Not Found" is often a backend routing bug, not a frontend bug. Read the network request and the backend logs before deciding which layer to fix. Route to the root-cause layer first.
 - **Fix breaks other tests:** After the engineer returns, run the full test suite (or at minimum the suite for the changed module), not just the originally failing test. A fix that breaks three other tests is not a fix.
 - **Hypothesis not passed to the engineer:** If you route to an engineer without a clear hypothesis, the engineer will re-investigate from scratch. Save time by passing the exact error, the files involved, and your best theory.
+- **Unclear hot path:** Tight loops over large collections, endpoints under high traffic, and database queries in critical flows (login, checkout, search) all qualify. If uncertain, include performance-reviewer — it is faster than explaining why you skipped it.
 - **Escalating too quickly to /implement:** Debug is the right skill for most errors. Only escalate to /implement if the fix requires new files, new dependencies, or an architectural change that is out of scope for a targeted patch.

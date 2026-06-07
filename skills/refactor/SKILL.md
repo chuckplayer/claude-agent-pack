@@ -54,8 +54,6 @@ Pass each engineer:
 
 Run **ts-linter** immediately after frontend-engineer or mcp-engineer. Block on FAIL.
 
-> **Test requirement (same as all pipelines):** Every engineer must confirm all pre-existing tests still pass and that test coverage has not decreased before handing off. If any pre-existing test fails after the refactor, the engineer must fix it before proceeding to code-reviewer. This is not unique to refactor — it is the standard requirement for all engineer agents per CLAUDE.md.
-
 ## 6. code-reviewer
 
 Invoke with the explicit note that this is a refactor — reviewer should flag any unintended behavior changes, not just style issues.

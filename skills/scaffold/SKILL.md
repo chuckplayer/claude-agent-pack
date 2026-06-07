@@ -32,7 +32,7 @@ The api-designer will produce routes, HTTP methods, request/response shapes, sta
 
 Invoke if the feature requires new or modified tables, columns, indexes, or stored procedures. Pass the approved API contract as context so entity names and field names stay consistent.
 
-Use `isolation: "worktree"` for database-engineer.
+Use `isolation: "worktree"` for database-engineer. Collect the worktree path and branch name it returns.
 
 ## 5. Backend engineer — services and controllers
 
@@ -41,7 +41,7 @@ Invoke **csharp-engineer** (or the appropriate backend engineer for this project
 - The migration output or schema changes from database-engineer
 - Existing patterns for services, repositories, and controllers
 
-Use `isolation: "worktree"` for the engineer agent.
+Use `isolation: "worktree"` for the engineer agent. Collect the worktree path and branch name it returns.
 
 Run **ts-linter** immediately after if any `.ts` files were touched. Block on FAIL before continuing.
 
@@ -51,7 +51,7 @@ Invoke if the feature has a frontend component. Pass:
 - The approved API contract (as the source of truth for endpoint URLs, request/response shapes)
 - Any relevant component patterns from CONVENTIONS.md
 
-Use `isolation: "worktree"` for frontend-engineer.
+Use `isolation: "worktree"` for frontend-engineer. Collect the worktree path and branch name it returns.
 
 Run **ts-linter** immediately after. Block on FAIL before continuing.
 
@@ -72,17 +72,38 @@ After code-reviewer completes. Cover all new public methods, API endpoints, and 
 
 Final gate. Pass the worktree branch names from steps 4–6 and a summary of all pipeline stages.
 
-If PASS: proceed to step 10.
-If FAIL: retry up to 2 cycles, routing findings back to the responsible engineer.
+If PASS: proceed to step 9a.
+If FAIL: retry up to 2 cycles, routing findings back to the responsible engineer. New worktrees on retry are also created from the feature branch. Collect new paths/branches and pass them to the next merge-reviewer invocation.
+
+## 9a. Worktree cleanup
+
+After merge-reviewer returns PASS, clean up all worktrees created in steps 4–6.
+
+For each worktree path collected, verify it still exists and remove it:
+```bash
+git worktree remove <worktree-path> --force
+```
+
+Then delete each temporary worktree branch:
+```bash
+git branch -d <worktree-branch>
+```
+
+Finally, prune any stale worktree references:
+```bash
+git worktree prune
+```
+
+If a worktree path no longer exists, skip the `git worktree remove` for that path and proceed to branch deletion. Do not skip cleanup — stale worktrees accumulate and confuse future pipelines.
 
 ## 10. git-engineer — push and PR
 
-After merge-reviewer returns PASS. Ask the user whether to push and open a pull request. Include the API contract summary in the PR description.
+After step 9a completes. Ask the user whether to push and open a pull request. Include the API contract summary in the PR description.
 
 ## Gotchas
 
 - **Frontend running before backend is ready:** The frontend depends on the API contract being finalized. Never run frontend-engineer in parallel with csharp-engineer — the endpoint shapes must be locked first.
 - **API contract not approved before engineers start:** If the user skips api-designer approval and an engineer implements against a wrong shape, you will need to redo both layers. Always get explicit approval on the contract before step 4.
 - **Mid-pipeline failure:** If a layer fails (e.g., database-engineer errors out), stop and surface the failure to the user before continuing. Do not skip a broken layer and proceed to the next — downstream layers depend on it.
-- **Worktree not cleaned up after FAIL:** If merge-reviewer returns FAIL and the user abandons the scaffold, still run the worktree cleanup commands from step 10a. Stale worktrees accumulate and confuse future pipelines.
+- **Worktree not cleaned up after FAIL:** If merge-reviewer returns FAIL and the user abandons the scaffold, still run the worktree cleanup commands from step 9a. Stale worktrees accumulate and confuse future pipelines.
 - **Schema changes not committed before backend:** The csharp-engineer must have access to the migration output from database-engineer. Pass the schema diff explicitly — the engineer cannot read an uncommitted migration from a different worktree.
