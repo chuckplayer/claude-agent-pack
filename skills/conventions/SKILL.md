@@ -21,35 +21,14 @@ This skill is interactive. It reads existing code to discover what conventions a
 
 Use Glob and Grep to observe what the code actually does — conventions should describe reality, not aspiration. Sample across all layers:
 
-**Naming:**
-- Class, method, and variable naming style (PascalCase, camelCase, snake_case)
-- File naming patterns
-- Interface naming (prefix `I`? suffix `Interface`?)
-
-**Architecture:**
-- Directory structure and layer boundaries
-- How dependencies flow between layers (DI? static? direct instantiation?)
-- Whether repositories, services, and controllers are consistently separated
-
-**Error handling:**
-- How exceptions are caught and logged
-- Whether a global error handler exists
-- Return types for errors (exceptions, Result<T>, tuples?)
-
-**Testing:**
-- Test framework and file location pattern
-- Naming convention for test classes and methods
-- Whether mocks, fakes, or real dependencies are used
-
-**Frontend (if present):**
-- Component structure (Options API vs. Composition API)
-- State management pattern
-- How API calls are made (fetch, axios, generated client?)
-
-**Other:**
-- Logging framework and log level conventions
-- Authentication/authorization patterns
-- Any compliance or audit requirements visible in the code
+| Category | What to look for |
+|----------|-----------------|
+| **Naming** | Class/method/variable casing, file naming, interface prefix (`I`?) |
+| **Architecture** | Directory layers, dependency flow (DI? static?), repo/service/controller separation |
+| **Error handling** | Catch/log patterns, global error handler, return type (exception/Result\<T\>/tuple) |
+| **Testing** | Framework, file location pattern, test class naming, mocks vs. real deps |
+| **Frontend** | Options vs. Composition API, state management, API call pattern (fetch/axios/generated) |
+| **Other** | Logging levels, auth patterns, compliance requirements visible in code |
 
 ## 3. Interview the user
 

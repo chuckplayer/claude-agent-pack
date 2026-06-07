@@ -135,3 +135,19 @@ decisions. All other agents are read-only with respect to ./memory/.
 - Active files with `Overrides-convention: yes` rank above CONVENTIONS.md, but only within their declared Scope.
 - Narrower scope wins over broader scope when two files conflict.
 - When two active files conflict at the same scope, flag the conflict -- do not pick one silently.
+
+## Obsidian decision capture
+
+When you and the user reach a significant technical decision — an architectural choice, technology selection, pattern adoption, or approach the user explicitly accepts — append a record to `~/.claude/session-decisions.txt` **before moving on**:
+
+```bash
+echo "[$(date +%H:%M)] <what was decided> — <why in 10 words or fewer>" >> ~/.claude/session-decisions.txt
+```
+
+The Stop hook reads this file after each response and includes it in the session log automatically. You do not need to ask the user's permission — just record it and continue.
+
+**What counts:** architecture choices, library/framework selections, pattern adoptions, reversals of previous decisions, anything that would belong in `memory/decisions/`.
+
+**What does not count:** routine implementation details, variable names, minor style choices, anything trivially reversible.
+
+Do not call `/obsidian-capture` for this — writing to the decisions file is sufficient and less disruptive.

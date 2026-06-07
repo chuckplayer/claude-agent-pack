@@ -83,9 +83,12 @@ The installer optionally connects Claude Code to an [Obsidian](https://obsidian.
 
 **What gets written per session:**
 
-- `<base>/sessions/YYYY-MM-DD-HHmm-<project>.md` — git branch, last 5 commits, diff stat, and uncommitted changes
-- `<base>/daily/YYYY-MM-DD.md` — one-line entry linking to the session note
+- `<base>/sessions/YYYY-MM-DD-HHmm-<project>.md` — git branch, last 5 commits, diff stat, uncommitted changes, what was discussed (every prompt you sent), which agents ran, and any decisions Claude recorded
+- `<base>/daily/YYYY-MM-DD.md` — one timestamped line per session linking to the session note, including a compact diff stat (`· 11 files +99 -87`)
+- `<base>/decisions/<file>.md` — auto-captured when `memory/decisions/` gains a new or changed file; links into the daily note
 - `<base>/memory-snapshot.md` — freeze of `./memory/**/*.md` (recursive) for vault-side search
+
+**How decisions get recorded:** a CLAUDE.md rule instructs Claude to append to `~/.claude/session-decisions.txt` whenever a significant architectural choice is made. The Stop hook reads this file and populates the `## Decisions made` section of the session log, then clears it for the next session.
 
 Where `<base>` is determined by two env vars set during install:
 
@@ -109,7 +112,7 @@ Default (`OBSIDIAN_PROJECTS_FOLDER=Claude/Projects` when blank):
 
 ## Scripts
 
-Five utility scripts are included in `scripts/`.
+Seven utility scripts are included in `scripts/`.
 
 | Script | What it does |
 |---|---|
@@ -117,7 +120,9 @@ Five utility scripts are included in `scripts/`.
 | `check-readiness` | Verifies Claude Code is installed, all agents and skills are installed, and the target project has full scaffolding |
 | `check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated |
 | `lint-agents` | Validates all agent and skill files for required frontmatter fields, description length, and body content |
-| `obsidian-stop-hook` | Auto-log hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/` by the installer; fires on Stop and SessionEnd; tries REST API when `OBSIDIAN_REST_API_KEY` is set, falls back to filesystem |
+| `obsidian-stop-hook` | Auto-log hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on Stop and SessionEnd; writes the session note and daily note; tries REST API when `OBSIDIAN_REST_API_KEY` is set, falls back to filesystem |
+| `obsidian-prompt-hook` | Prompt capture hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on UserPromptSubmit; appends each user prompt to a per-session journal for inclusion in the session log |
+| `obsidian-agent-hook` | Agent completion hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on SubagentStop; records which agents ran during the session for inclusion in the session log |
 
 ```bash
 bash scripts/setup-project.sh <project>
@@ -210,7 +215,7 @@ Agents are updated in-place. Re-running the installer is safe -- it is idempoten
 bash <pack-dir>/uninstall.sh
 ```
 
-The uninstaller removes agents from `~/.claude/agents/`, skills from `~/.claude/skills/`, the Obsidian stop hook from `~/.claude/scripts/`, and all Obsidian env vars (`OBSIDIAN_VAULT_PATH`, `OBSIDIAN_PROJECTS_FOLDER`, `OBSIDIAN_REST_API_KEY`, `OBSIDIAN_REST_API_PORT`, `OBSIDIAN_REST_API_HTTPS`) from `~/.claude/settings.json` — all after confirmation. Project-level `memory/` directories are not touched.
+The uninstaller removes agents from `~/.claude/agents/`, skills from `~/.claude/skills/`, all three Obsidian hook scripts (`obsidian-stop-hook.js`, `obsidian-prompt-hook.js`, `obsidian-agent-hook.js`) from `~/.claude/scripts/`, and all Obsidian env vars (`OBSIDIAN_VAULT_PATH`, `OBSIDIAN_PROJECTS_FOLDER`, `OBSIDIAN_REST_API_KEY`, `OBSIDIAN_REST_API_PORT`, `OBSIDIAN_REST_API_HTTPS`) from `~/.claude/settings.json` — all after confirmation. Project-level `memory/` directories are not touched.
 
 ## Agent Dashboard
 

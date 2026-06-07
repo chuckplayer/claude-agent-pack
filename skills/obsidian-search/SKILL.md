@@ -86,7 +86,7 @@ the best match in Obsidian:
 If yes, compute the vault-relative path (forward slashes, URL-encoded), then call:
 
 ```bash
-curl -sk "https://127.0.0.1:${OBSIDIAN_REST_API_PORT:-27123}/open/<url-encoded-vault-relative-path>"
+curl -sk "https://127.0.0.1:${OBSIDIAN_REST_API_PORT:-27124}/open/<url-encoded-vault-relative-path>"
 ```
 
 ## Gotchas

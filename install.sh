@@ -137,16 +137,21 @@ PYEOF
         echo "Obsidian integration is active (vault: $current_vault)"
         read -rp "  Keep Obsidian integration? [Y/n] " keep_response
         if [ "$keep_response" = "n" ] || [ "$keep_response" = "N" ]; then
-            # Remove all Obsidian env vars and the Stop hook entry from settings.json
+            # Remove all Obsidian env vars and all hook entries from settings.json
             if [ "$json_tool" = "node" ]; then
                 node <<'JSEOF'
 const fs=require('fs'),os=require('os'),path=require('path');
 const p=path.join(os.homedir(),'.claude','settings.json');
 const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
 if(s.env){['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS','OBSIDIAN_PROJECTS_FOLDER','OBSIDIAN_REST_API_KEY'].forEach(k=>delete s.env[k]);}
-if(s.hooks&&s.hooks.Stop){
-  s.hooks.Stop=s.hooks.Stop.filter(e=>!(e&&Array.isArray(e.hooks)&&e.hooks.some(h=>h.command&&h.command.includes('obsidian-stop-hook'))));
-  if(!s.hooks.Stop.length)delete s.hooks.Stop;
+const obsidianMarkers=['obsidian-stop-hook','obsidian-prompt-hook','obsidian-agent-hook'];
+const isObsidian=e=>e&&Array.isArray(e.hooks)&&e.hooks.some(h=>obsidianMarkers.some(m=>h.command&&h.command.includes(m)));
+['Stop','SessionEnd','UserPromptSubmit','SubagentStop'].forEach(k=>{
+  if(s.hooks&&s.hooks[k]){s.hooks[k]=s.hooks[k].filter(e=>!isObsidian(e));if(!s.hooks[k].length)delete s.hooks[k];}
+});
+if(s.permissions&&s.permissions.allow){
+  s.permissions.allow=s.permissions.allow.filter(p=>!p.includes('session-decisions'));
+  if(!s.permissions.allow.length)delete s.permissions.allow;
 }
 fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
 JSEOF
@@ -157,13 +162,16 @@ p = os.path.expanduser("~/.claude/settings.json")
 s = json.load(open(p)) if os.path.exists(p) else {}
 for k in ['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS','OBSIDIAN_PROJECTS_FOLDER','OBSIDIAN_REST_API_KEY']:
     s.get('env', {}).pop(k, None)
-if 'hooks' in s and 'Stop' in s['hooks']:
-    s['hooks']['Stop'] = [
-        e for e in s['hooks']['Stop']
-        if not any('obsidian-stop-hook' in h.get('command', '') for h in e.get('hooks', []))
-    ]
-    if not s['hooks']['Stop']:
-        del s['hooks']['Stop']
+markers = ['obsidian-stop-hook', 'obsidian-prompt-hook', 'obsidian-agent-hook']
+def is_obsidian(e):
+    return any(m in h.get('command', '') for h in e.get('hooks', []) for m in markers)
+for key in ('Stop', 'SessionEnd', 'UserPromptSubmit', 'SubagentStop'):
+    if key in s.get('hooks', {}):
+        s['hooks'][key] = [e for e in s['hooks'][key] if not is_obsidian(e)]
+        if not s['hooks'][key]:
+            del s['hooks'][key]
+allow = s.get('permissions', {}).get('allow', [])
+s.get('permissions', {})['allow'] = [a for a in allow if 'session-decisions' not in a]
 with open(p, 'w') as f:
     json.dump(s, f, indent=2)
     f.write('\n')
@@ -341,68 +349,90 @@ PYEOF
             echo "  [ok] env:    OBSIDIAN_PROJECTS_FOLDER=$projects_folder (default)"
         fi
 
-        # Install hook script
+        # Install hook scripts (stop, prompt journal, agent tracker)
         mkdir -p "$HOME/.claude/scripts"
-        cp "$SCRIPT_DIR/scripts/obsidian-stop-hook.js" "$HOME/.claude/scripts/"
-        echo "  [ok] hook:   obsidian-stop-hook.js installed"
+        cp "$SCRIPT_DIR/scripts/obsidian-stop-hook.js"   "$HOME/.claude/scripts/"
+        cp "$SCRIPT_DIR/scripts/obsidian-prompt-hook.js" "$HOME/.claude/scripts/"
+        cp "$SCRIPT_DIR/scripts/obsidian-agent-hook.js"  "$HOME/.claude/scripts/"
+        echo "  [ok] hook:   obsidian hook scripts installed (stop, prompt, agent)"
 
-        # Build hook command. The hook is pure Node.js — no bash dependency — so it
-        # works identically on Windows and macOS/Linux without path or fork issues.
-        # On Windows (cygpath available) we convert the JS path to Windows format.
-        # Use `type -P` to find the actual node executable — `command -v` may return
-        # a bash alias (e.g. "alias node='winpty node.exe'") on Windows Git Bash,
-        # which produces a broken hook command.
-        hook_cmd=""
+        # Build hook commands. Pure Node.js — works identically on Windows and macOS/Linux.
+        # Use `type -P` to find the actual node binary; `command -v` may return an alias.
         node_posix="$(type -P node 2>/dev/null || true)"
-        # If type -P failed, fall back to command -v only when it returns a real path
         if [ -z "$node_posix" ]; then
             _cv="$(command -v node 2>/dev/null || true)"
             case "$_cv" in /*) node_posix="$_cv" ;; esac
         fi
+
         if [ -n "$node_posix" ]; then
             if command -v cygpath &>/dev/null; then
                 node_cmd="$(cygpath -w "$node_posix")"
-                js_cmd="$(cygpath -w "$HOME/.claude/scripts/obsidian-stop-hook.js")"
+                stop_js="$(cygpath -w "$HOME/.claude/scripts/obsidian-stop-hook.js")"
+                prompt_js="$(cygpath -w "$HOME/.claude/scripts/obsidian-prompt-hook.js")"
+                agent_js="$(cygpath -w "$HOME/.claude/scripts/obsidian-agent-hook.js")"
             else
                 node_cmd="$node_posix"
-                js_cmd="$HOME/.claude/scripts/obsidian-stop-hook.js"
+                stop_js="$HOME/.claude/scripts/obsidian-stop-hook.js"
+                prompt_js="$HOME/.claude/scripts/obsidian-prompt-hook.js"
+                agent_js="$HOME/.claude/scripts/obsidian-agent-hook.js"
             fi
-            hook_cmd="\"${node_cmd}\" \"${js_cmd}\""
+            stop_cmd="\"${node_cmd}\" \"${stop_js}\""
+            session_end_cmd="\"${node_cmd}\" \"${stop_js}\" \"SessionEnd\""
+            prompt_cmd="\"${node_cmd}\" \"${prompt_js}\""
+            agent_cmd="\"${node_cmd}\" \"${agent_js}\""
         else
-            echo "  WARNING: node not found — Obsidian Stop hook not registered."
+            echo "  WARNING: node not found — Obsidian hooks not registered."
             echo "           Install Node.js and re-run install.sh to enable auto-logging."
+            stop_cmd=""
         fi
 
-        # Replace any existing obsidian Stop/SessionEnd hooks (handles path format
-        # changes across installs) then write the canonical entries.
-        # Both Stop and SessionEnd fire the same script; the SHA guard in the script
-        # prevents duplicate writes when both fire in the same session.
-        if [ -n "$hook_cmd" ]; then
+        # Register all four hooks, replacing any existing obsidian entries.
+        # Stop/SessionEnd: auto-log on every response and at session end.
+        # UserPromptSubmit: journal user prompts for "What was discussed" section.
+        # SubagentStop: track which agents completed for "Agents invoked" section.
+        if [ -n "$stop_cmd" ]; then
         if [ "$json_tool" = "node" ]; then
-            node - "$hook_cmd" <<'JSEOF'
+            node - "$stop_cmd" "$session_end_cmd" "$prompt_cmd" "$agent_cmd" <<'JSEOF'
 const fs=require('fs'),os=require('os'),path=require('path');
 const p=path.join(os.homedir(),'.claude','settings.json');
 const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
 if(!s.hooks)s.hooks={};
-const cmd=process.argv[2];
-const clean=k=>{s.hooks[k]=(s.hooks[k]||[]).filter(e=>!(e&&Array.isArray(e.hooks)&&e.hooks.some(h=>h.command&&h.command.includes('obsidian-stop-hook'))));s.hooks[k].push({hooks:[{type:'command',command:cmd}]});};
-clean('Stop');clean('SessionEnd');
+const [,, stopCmd, sessionEndCmd, promptCmd, agentCmd]=process.argv;
+const setHook=(k,cmd,marker)=>{
+  s.hooks[k]=(s.hooks[k]||[]).filter(e=>!(e&&Array.isArray(e.hooks)&&e.hooks.some(h=>h.command&&h.command.includes(marker))));
+  s.hooks[k].push({hooks:[{type:'command',command:cmd}]});
+};
+setHook('Stop',       stopCmd,       'obsidian-stop-hook');
+setHook('SessionEnd', sessionEndCmd, 'obsidian-stop-hook');
+setHook('UserPromptSubmit', promptCmd, 'obsidian-prompt-hook');
+setHook('SubagentStop',     agentCmd,  'obsidian-agent-hook');
+if(!s.permissions)s.permissions={};
+if(!s.permissions.allow)s.permissions.allow=[];
+const decPerm='Bash(echo *session-decisions*)';
+if(!s.permissions.allow.includes(decPerm))s.permissions.allow.push(decPerm);
 fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
 JSEOF
         else
-            "$json_tool" - "$hook_cmd" <<'PYEOF'
+            "$json_tool" - "$stop_cmd" "$session_end_cmd" "$prompt_cmd" "$agent_cmd" <<'PYEOF'
 import json, os, sys
 p = os.path.expanduser("~/.claude/settings.json")
 s = json.load(open(p)) if os.path.exists(p) else {}
 hooks = s.setdefault("hooks", {})
-cmd = sys.argv[1]
-for key in ("Stop", "SessionEnd"):
-    entries = [
-        e for e in hooks.get(key, [])
-        if not any('obsidian-stop-hook' in h.get('command', '') for h in e.get('hooks', []))
-    ]
+stop_cmd, session_end_cmd, prompt_cmd, agent_cmd = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+def set_hook(key, cmd, marker):
+    entries = [e for e in hooks.get(key, []) if not any(marker in h.get('command', '') for h in e.get('hooks', []))]
     entries.append({"hooks": [{"type": "command", "command": cmd}]})
     hooks[key] = entries
+set_hook("Stop",            stop_cmd,        "obsidian-stop-hook")
+set_hook("SessionEnd",      session_end_cmd, "obsidian-stop-hook")
+set_hook("UserPromptSubmit", prompt_cmd,     "obsidian-prompt-hook")
+set_hook("SubagentStop",    agent_cmd,       "obsidian-agent-hook")
+perms = s.setdefault("permissions", {})
+allow = perms.setdefault("allow", [])
+dec_perm = "Bash(echo *session-decisions*)"
+if dec_perm not in allow:
+    allow.append(dec_perm)
+os.makedirs(os.path.dirname(p), exist_ok=True)
 with open(p, "w") as f:
     json.dump(s, f, indent=2)
     f.write("\n")
@@ -411,7 +441,7 @@ PYEOF
         if [ $? -ne 0 ]; then
             echo "  ERROR: failed to update ~/.claude/settings.json"
         fi
-        echo "  [ok] hook:   Stop and SessionEnd hooks registered in ~/.claude/settings.json"
+        echo "  [ok] hook:   Stop, SessionEnd, UserPromptSubmit, SubagentStop hooks registered"
         fi
     elif [ "$obsidian_setup" = "true" ] && [ -z "$vault_path" ]; then
         echo "  [skip] No vault path provided — skipping Obsidian setup."
