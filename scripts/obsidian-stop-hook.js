@@ -45,7 +45,44 @@ function proceed(payload) {
   const sessionId = (payload.session_id || '').replace(/[^a-zA-Z0-9_-]/g, '');
   const isSessionEnd = process.argv[2] === 'SessionEnd';
 
-  // --- SHA guard: skip if nothing has changed since last log ---
+  // --- Build timestamp and slug early (needed before SHA guard for GUID logging) ---
+  const now = new Date();
+  const p2 = n => String(n).padStart(2, '0');
+  const date = `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`;
+  const time = `${p2(now.getHours())}:${p2(now.getMinutes())}`;
+  const ts   = `${date}-${p2(now.getHours())}${p2(now.getMinutes())}`;
+  const slug = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
+
+  // --- Compute paths early ---
+  const folderParts = projectsFolder.replace(/\\/g, '/').split('/').filter(Boolean);
+  const baseDir = path.join(vault, ...folderParts, slug);
+  const sessionPath = path.join(baseDir, 'sessions', `${ts}-${slug}.md`);
+  const dailyPath   = path.join(baseDir, 'daily', `${date}.md`);
+
+  // Security guard: allow Claude/ root, the effective projects folder root, and decisions subdir
+  const claudeRoot  = path.resolve(vault, 'Claude');
+  const projectRoot = path.resolve(vault, ...folderParts);
+  const allowedRoots = [claudeRoot, projectRoot];
+  const inside = p => allowedRoots.some(root =>
+    path.resolve(p).startsWith(root + path.sep) || path.resolve(p) === root
+  );
+  if (!inside(sessionPath) || !inside(dailyPath)) process.exit(0);
+
+  // --- Minimal GUID log: always written on early exit so every session is recorded ---
+  function writeSessionGuidLine() {
+    if (!sessionId) return;
+    try {
+      mkdirSync(path.dirname(dailyPath), { recursive: true });
+      const guidLine = `- ${time} session-end \`${sessionId}\` — ${rawName}`;
+      if (!existsSync(dailyPath)) {
+        writeFileSync(dailyPath, `# ${date}\n\n${guidLine}\n`, 'utf8');
+      } else {
+        appendFileSync(dailyPath, `\n${guidLine}\n`, 'utf8');
+      }
+    } catch {}
+  }
+
+  // --- SHA guard: skip full log if nothing has changed since last log ---
   // For SessionEnd: bypass if decisions exist (to ensure ADRs are always written)
   const shaFile = path.join(os.homedir(), '.claude', 'obsidian-last-logged-sha');
   const headSha = git('rev-parse', 'HEAD');
@@ -64,7 +101,11 @@ function proceed(payload) {
   if (!isSessionEnd || !hasDecisions) {
     if (headSha && existsSync(shaFile)) {
       const lastSha = readFileSync(shaFile, 'utf8').trim();
-      if (headSha === lastSha && !git('status', '--short')) process.exit(0);
+      if (headSha === lastSha && !git('status', '--short')) {
+        // Nothing changed — still record the session GUID in the daily note, then exit.
+        writeSessionGuidLine();
+        process.exit(0);
+      }
     }
   }
 
@@ -80,31 +121,6 @@ function proceed(payload) {
     } catch { return ''; }
   })();
   const uncommitted = git('status', '--short');
-
-  // --- Build timestamp and slug ---
-  const now = new Date();
-  const p2 = n => String(n).padStart(2, '0');
-  const date = `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`;
-  const time = `${p2(now.getHours())}:${p2(now.getMinutes())}`;
-  const ts   = `${date}-${p2(now.getHours())}${p2(now.getMinutes())}`;
-  const slug = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
-
-  // --- Compute base directory for this project ---
-  const folderParts = projectsFolder.replace(/\\/g, '/').split('/').filter(Boolean);
-  const baseDir = path.join(vault, ...folderParts, slug);
-
-  // --- Resolve target paths ---
-  const sessionPath = path.join(baseDir, 'sessions', `${ts}-${slug}.md`);
-  const dailyPath   = path.join(baseDir, 'daily', `${date}.md`);
-
-  // Security guard: allow Claude/ root, the effective projects folder root, and decisions subdir
-  const claudeRoot  = path.resolve(vault, 'Claude');
-  const projectRoot = path.resolve(vault, ...folderParts);
-  const allowedRoots = [claudeRoot, projectRoot];
-  const inside = p => allowedRoots.some(root =>
-    path.resolve(p).startsWith(root + path.sep) || path.resolve(p) === root
-  );
-  if (!inside(sessionPath) || !inside(dailyPath)) process.exit(0);
 
   mkdirSync(path.dirname(sessionPath), { recursive: true });
   mkdirSync(path.dirname(dailyPath),   { recursive: true });
@@ -147,7 +163,8 @@ function proceed(payload) {
 
   // Wikilink for session note (no .md extension, forward slashes)
   const relSession = path.relative(vault, sessionPath).replace(/\\/g, '/').replace(/\.md$/, '');
-  const dailyLine  = `- ${time} **session** [[${relSession}]] — branch: ${branch} (auto)`;
+  const guidSuffix = sessionId ? ` — \`${sessionId}\`` : '';
+  const dailyLine  = `- ${time} **session** [[${relSession}]]${guidSuffix} — branch: ${branch} (auto)`;
 
   // --- SessionEnd-only: read journal ---
   function readJournal(sid) {
