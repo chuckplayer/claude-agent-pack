@@ -1,7 +1,7 @@
 'use strict';
 // UserPromptSubmit hook — appends each user prompt to the session journal.
 // The Stop hook reads this journal to populate "What was discussed" in session logs.
-const { mkdirSync, appendFileSync } = require('fs');
+const { mkdirSync, appendFileSync, writeFileSync } = require('fs');
 const path = require('path');
 const os = require('os');
 
@@ -13,8 +13,15 @@ process.stdin.on('data', d => { raw += d; });
 process.stdin.on('close', () => {
   try {
     const payload = JSON.parse(raw);
-    const sessionId = payload.session_id || '';
+    const sessionId = (payload.session_id || '').replace(/[^a-zA-Z0-9_-]/g, '');
     if (!sessionId) return;
+
+    // Persist session_id so CLAUDE.md's echo command can reference it
+    try {
+      const currentIdFile = path.join(os.homedir(), '.claude', 'current-session-id');
+      mkdirSync(path.dirname(currentIdFile), { recursive: true });
+      writeFileSync(currentIdFile, sessionId + '\n', 'utf8');
+    } catch {}
 
     // Extract the most recent user message from transcript
     const transcript = Array.isArray(payload.transcript) ? payload.transcript : [];
@@ -25,13 +32,13 @@ process.stdin.on('close', () => {
         const content = Array.isArray(msg.content)
           ? msg.content.map(b => (typeof b === 'string' ? b : (b.text || ''))).join(' ')
           : String(msg.content || '');
-        prompt = content.replace(/[\n\r]+/g, ' ').trim().slice(0, 200);
+        prompt = content.replace(/[\n\r]+/g, ' ').trim().slice(0, 500);
         break;
       }
     }
     // Fallback: top-level message field
     if (!prompt && payload.message) {
-      prompt = String(payload.message).replace(/[\n\r]+/g, ' ').trim().slice(0, 200);
+      prompt = String(payload.message).replace(/[\n\r]+/g, ' ').trim().slice(0, 500);
     }
     if (!prompt) return;
 

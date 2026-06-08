@@ -141,7 +141,7 @@ decisions. All other agents are read-only with respect to ./memory/.
 When you and the user reach a significant technical decision — an architectural choice, technology selection, pattern adoption, or approach the user explicitly accepts — append a record to `~/.claude/session-decisions.txt` **before moving on**:
 
 ```bash
-echo "[$(date +%H:%M)] <what was decided> — <why in 10 words or fewer>" >> ~/.claude/session-decisions.txt
+echo "[$(date +%H:%M)] <what was decided> — <why in 10 words or fewer>" >> ~/.claude/session-decisions-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]' || echo unknown).txt
 ```
 
 The Stop hook reads this file after each response and includes it in the session log automatically. You do not need to ask the user's permission — just record it and continue.
