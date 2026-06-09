@@ -1,59 +1,38 @@
 'use strict';
-// UserPromptSubmit hook — appends each user prompt to the session journal.
-// The Stop hook reads this journal to populate "What was discussed" in session logs.
+// UserPromptSubmit hook — two jobs:
+// 1. Keep current-session-id up to date so CLAUDE.md echo commands can reference it.
+// 2. Write an activity marker to the session journal so the Stop hook's SHA guard
+//    doesn't suppress the full session log when no git changes occurred.
+//
+// Prompt text collection is handled by the Stop hook, which reads directly from the
+// Claude Code transcript JSONL (fully committed to disk by Stop time, no race conditions).
 const { mkdirSync, appendFileSync, writeFileSync } = require('fs');
 const path = require('path');
 const os = require('os');
 
 process.on('uncaughtException', () => process.exit(0));
 
-let raw = '';
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', d => { raw += d; });
-process.stdin.on('close', () => {
-  try {
-    const payload = JSON.parse(raw);
-    const sessionId = (payload.session_id || '').replace(/[^a-zA-Z0-9_-]/g, '');
-    if (!sessionId) return;
+const sessionId = (process.env.CLAUDE_CODE_SESSION_ID || '').replace(/[^a-zA-Z0-9_-]/g, '');
+if (!sessionId) process.exit(0);
 
-    // Persist session_id so CLAUDE.md's echo command can reference it
-    try {
-      const currentIdFile = path.join(os.homedir(), '.claude', 'current-session-id');
-      mkdirSync(path.dirname(currentIdFile), { recursive: true });
-      writeFileSync(currentIdFile, sessionId + '\n', 'utf8');
-    } catch {}
+// 1. Persist session_id for CLAUDE.md echo commands
+try {
+  writeFileSync(path.join(os.homedir(), '.claude', 'current-session-id'), sessionId + '\n', 'utf8');
+} catch {}
 
-    // Use the top-level message field first — it's the current prompt and avoids
-    // scanning the full transcript (which grows with conversation length).
-    let prompt = '';
-    if (payload.message) {
-      prompt = String(payload.message).replace(/[\n\r]+/g, ' ').trim().slice(0, 500);
-    }
-    // Fallback: scan transcript backwards for the last user message
-    if (!prompt) {
-      const transcript = Array.isArray(payload.transcript) ? payload.transcript : [];
-      for (let i = transcript.length - 1; i >= 0; i--) {
-        const msg = transcript[i];
-        if (msg.role === 'user') {
-          const content = Array.isArray(msg.content)
-            ? msg.content.map(b => (typeof b === 'string' ? b : (b.text || ''))).join(' ')
-            : String(msg.content || '');
-          prompt = content.replace(/[\n\r]+/g, ' ').trim().slice(0, 500);
-          break;
-        }
-      }
-    }
-    if (!prompt) return;
+// 2. Write activity marker so Stop hook bypasses SHA guard
+const now = new Date();
+const p2 = n => String(n).padStart(2, '0');
+const time = `${p2(now.getHours())}:${p2(now.getMinutes())}`;
 
-    const now = new Date();
-    const p2 = n => String(n).padStart(2, '0');
-    const time = `${p2(now.getHours())}:${p2(now.getMinutes())}`;
+try {
+  const journalDir = path.join(os.homedir(), '.claude', 'session-journals');
+  mkdirSync(journalDir, { recursive: true });
+  appendFileSync(
+    path.join(journalDir, `${sessionId}.jsonl`),
+    JSON.stringify({ time, type: 'activity' }) + '\n',
+    'utf8'
+  );
+} catch {}
 
-    const journalDir = path.join(os.homedir(), '.claude', 'session-journals');
-    mkdirSync(journalDir, { recursive: true });
-    const journalFile = path.join(journalDir, `${sessionId}.jsonl`);
-    appendFileSync(journalFile, JSON.stringify({ time, type: 'prompt', text: prompt }) + '\n', 'utf8');
-  } catch {}
-  // Always exit 0 — never block the prompt
-  process.exit(0);
-});
+process.exit(0);
