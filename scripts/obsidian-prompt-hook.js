@@ -23,22 +23,25 @@ process.stdin.on('close', () => {
       writeFileSync(currentIdFile, sessionId + '\n', 'utf8');
     } catch {}
 
-    // Extract the most recent user message from transcript
-    const transcript = Array.isArray(payload.transcript) ? payload.transcript : [];
+    // Use the top-level message field first — it's the current prompt and avoids
+    // scanning the full transcript (which grows with conversation length).
     let prompt = '';
-    for (let i = transcript.length - 1; i >= 0; i--) {
-      const msg = transcript[i];
-      if (msg.role === 'user') {
-        const content = Array.isArray(msg.content)
-          ? msg.content.map(b => (typeof b === 'string' ? b : (b.text || ''))).join(' ')
-          : String(msg.content || '');
-        prompt = content.replace(/[\n\r]+/g, ' ').trim().slice(0, 500);
-        break;
-      }
-    }
-    // Fallback: top-level message field
-    if (!prompt && payload.message) {
+    if (payload.message) {
       prompt = String(payload.message).replace(/[\n\r]+/g, ' ').trim().slice(0, 500);
+    }
+    // Fallback: scan transcript backwards for the last user message
+    if (!prompt) {
+      const transcript = Array.isArray(payload.transcript) ? payload.transcript : [];
+      for (let i = transcript.length - 1; i >= 0; i--) {
+        const msg = transcript[i];
+        if (msg.role === 'user') {
+          const content = Array.isArray(msg.content)
+            ? msg.content.map(b => (typeof b === 'string' ? b : (b.text || ''))).join(' ')
+            : String(msg.content || '');
+          prompt = content.replace(/[\n\r]+/g, ' ').trim().slice(0, 500);
+          break;
+        }
+      }
     }
     if (!prompt) return;
 

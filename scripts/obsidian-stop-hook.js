@@ -82,8 +82,29 @@ function proceed(payload) {
     } catch {}
   }
 
-  // --- SHA guard: skip full log if nothing has changed since last log ---
-  // For SessionEnd: bypass if decisions exist (to ensure ADRs are always written)
+  // --- Read journal on every event (cleanup only on SessionEnd) ---
+  function readJournal(sid) {
+    if (!sid) return { prompts: [], agents: [] };
+    const journalPath = path.join(os.homedir(), '.claude', 'session-journals', `${sid}.jsonl`);
+    try {
+      const lines = readFileSync(journalPath, 'utf8').trim().split('\n').filter(Boolean);
+      const prompts = [], agents = [];
+      for (const line of lines) {
+        try {
+          const e = JSON.parse(line);
+          if (e.type === 'prompt') prompts.push(e);
+          else if (e.type === 'agent') agents.push(e);
+        } catch {}
+      }
+      return { prompts, agents };
+    } catch { return { prompts: [], agents: [] }; }
+  }
+
+  const journal = readJournal(sessionId);
+  const { prompts, agents } = journal;
+  const hasJournalEntries = prompts.length > 0 || agents.length > 0;
+
+  // --- SHA guard: skip full log if nothing changed and no journal activity ---
   const shaFile = path.join(os.homedir(), '.claude', 'obsidian-last-logged-sha');
   const headSha = git('rev-parse', 'HEAD');
 
@@ -98,11 +119,11 @@ function proceed(payload) {
     }
   }
 
-  if (!isSessionEnd || !hasDecisions) {
+  const hasActivity = hasJournalEntries || (isSessionEnd && hasDecisions);
+  if (!hasActivity) {
     if (headSha && existsSync(shaFile)) {
       const lastSha = readFileSync(shaFile, 'utf8').trim();
       if (headSha === lastSha && !git('status', '--short')) {
-        // Nothing changed — still record the session GUID in the daily note, then exit.
         writeSessionGuidLine();
         process.exit(0);
       }
@@ -166,25 +187,7 @@ function proceed(payload) {
   const guidSuffix = sessionId ? ` — \`${sessionId}\`` : '';
   const dailyLine  = `- ${time} **session** [[${relSession}]]${guidSuffix} — branch: ${branch} (auto)`;
 
-  // --- SessionEnd-only: read journal ---
-  function readJournal(sid) {
-    if (!sid) return { prompts: [], agents: [] };
-    const journalPath = path.join(os.homedir(), '.claude', 'session-journals', `${sid}.jsonl`);
-    try {
-      const lines = readFileSync(journalPath, 'utf8').trim().split('\n').filter(Boolean);
-      const prompts = [], agents = [];
-      for (const line of lines) {
-        try {
-          const e = JSON.parse(line);
-          if (e.type === 'prompt') prompts.push(e);
-          else if (e.type === 'agent') agents.push(e);
-        } catch {}
-      }
-      return { prompts, agents };
-    } catch { return { prompts: [], agents: [] }; }
-  }
-
-  // --- SessionEnd-only: read decisions ---
+  // --- Read decisions (SessionEnd-only) ---
   function readDecisions(sid) {
     const perSession = path.join(os.homedir(), '.claude', `session-decisions-${sid}.txt`);
     const global_ = path.join(os.homedir(), '.claude', 'session-decisions.txt');
@@ -206,19 +209,15 @@ function proceed(payload) {
     ? `## Uncommitted changes\n${uncommitted.split('\n').filter(Boolean).map(l => `- ${l}`).join('\n')}\n\n`
     : '';
 
-  // Gather SessionEnd-only data
-  let promptsSection = '';
-  let agentsSection = '';
+  // Prompts and agents always included; decisions only on SessionEnd
+  const promptsSection = `\n## Prompts\n${prompts.map(p => `- ${p.time} ${p.text}`).join('\n') || '(none recorded)'}\n`;
+  const agentsSection  = `\n## Agents invoked\n${agents.map(a => `- ${a.time} ${a.name}`).join('\n') || '(none)'}\n`;
+
   let decisionsSection = '';
   let decisionsFile = null;
   let decisions = [];
 
   if (isSessionEnd) {
-    const journal = readJournal(sessionId);
-    const { prompts, agents } = journal;
-    promptsSection = `\n## Prompts\n${prompts.map(p => `- ${p.time} ${p.text}`).join('\n') || '(none recorded)'}\n`;
-    agentsSection = `\n## Agents invoked\n${agents.map(a => `- ${a.time} ${a.name}`).join('\n') || '(none)'}\n`;
-
     const decResult = readDecisions(sessionId);
     decisionsFile = decResult.file;
     decisions = decResult.decisions;
