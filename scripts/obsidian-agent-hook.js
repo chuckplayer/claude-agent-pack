@@ -13,29 +13,28 @@ process.stdin.on('data', d => { raw += d; });
 process.stdin.on('close', () => {
   try {
     const payload = JSON.parse(raw);
-    const sessionId = payload.session_id || '';
-    if (!sessionId) return;
+    const sessionId = (payload.session_id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    if (sessionId) {
+      // Try multiple possible field names for the agent identifier; fall back to 'subagent'
+      const agentName = (
+        payload.agent_type ||
+        payload.agentType ||
+        payload.agent?.type ||
+        payload.agent?.name ||
+        payload.agent?.agent_type ||
+        payload.name ||
+        'subagent'
+      ).replace(/[\r\n]/g, '').trim();
 
-    // Try multiple possible field names for the agent identifier
-    const agentName = (
-      payload.agent_type ||
-      payload.agentType ||
-      payload.agent?.type ||
-      payload.agent?.name ||
-      payload.agent?.agent_type ||
-      payload.name ||
-      ''
-    ).replace(/[\r\n]/g, '').trim();
-    if (!agentName) return;
+      const now = new Date();
+      const p2 = n => String(n).padStart(2, '0');
+      const time = `${p2(now.getHours())}:${p2(now.getMinutes())}`;
 
-    const now = new Date();
-    const p2 = n => String(n).padStart(2, '0');
-    const time = `${p2(now.getHours())}:${p2(now.getMinutes())}`;
-
-    const journalDir = path.join(os.homedir(), '.claude', 'session-journals');
-    mkdirSync(journalDir, { recursive: true });
-    const journalFile = path.join(journalDir, `${sessionId}.jsonl`);
-    appendFileSync(journalFile, JSON.stringify({ time, type: 'agent', name: agentName }) + '\n', 'utf8');
+      const journalDir = path.join(os.homedir(), '.claude', 'session-journals');
+      mkdirSync(journalDir, { recursive: true });
+      const journalFile = path.join(journalDir, `${sessionId}.jsonl`);
+      appendFileSync(journalFile, JSON.stringify({ time, type: 'agent', name: agentName }) + '\n', 'utf8');
+    }
   } catch {}
   process.exit(0);
 });
