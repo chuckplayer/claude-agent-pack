@@ -42,7 +42,8 @@ process.stdin.on('close', () => {
 });
 
 function proceed(payload) {
-  const sessionId = (payload.session_id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  // CLAUDE_CODE_SESSION_ID env var is the primary source on Windows (stdin is not piped).
+  const sessionId = (process.env.CLAUDE_CODE_SESSION_ID || payload.session_id || '').replace(/[^a-zA-Z0-9_-]/g, '');
   const isSessionEnd = process.argv[2] === 'SessionEnd';
 
   // --- Build timestamp and slug early (needed before SHA guard for GUID logging) ---
@@ -82,26 +83,48 @@ function proceed(payload) {
     } catch {}
   }
 
-  // --- Read journal on every event (cleanup only on SessionEnd) ---
-  function readJournal(sid) {
-    if (!sid) return { prompts: [], agents: [] };
-    const journalPath = path.join(os.homedir(), '.claude', 'session-journals', `${sid}.jsonl`);
+  // --- Read prompts from transcript (reliable at Stop time; all turns committed to disk) ---
+  function readPromptsFromTranscript(sid) {
+    if (!sid) return [];
     try {
-      const lines = readFileSync(journalPath, 'utf8').trim().split('\n').filter(Boolean);
-      const prompts = [], agents = [];
+      const projectDir2 = (process.env.CLAUDE_PROJECT_DIR || projectDir).replace(/[\r\n]/g, '');
+      const projectKey = projectDir2.replace(/[:\\/]/g, '-');
+      const transcriptPath = path.join(os.homedir(), '.claude', 'projects', projectKey, `${sid}.jsonl`);
+      const lines = readFileSync(transcriptPath, 'utf8').trim().split('\n').filter(Boolean);
+      // Collect unique last-prompt values in order, deduplicated
+      const seen = new Set(), results = [];
       for (const line of lines) {
         try {
           const e = JSON.parse(line);
-          if (e.type === 'prompt') prompts.push(e);
-          else if (e.type === 'agent') agents.push(e);
+          if (e.type === 'last-prompt' && e.lastPrompt && !seen.has(e.lastPrompt)) {
+            seen.add(e.lastPrompt);
+            results.push(e.lastPrompt.replace(/[\n\r]+/g, ' ').trim().slice(0, 500));
+          }
         } catch {}
       }
-      return { prompts, agents };
-    } catch { return { prompts: [], agents: [] }; }
+      return results;
+    } catch { return []; }
   }
 
-  const journal = readJournal(sessionId);
-  const { prompts, agents } = journal;
+  // --- Read agents from journal (still needed; no transcript equivalent) ---
+  function readJournal(sid) {
+    if (!sid) return { agents: [] };
+    const journalPath = path.join(os.homedir(), '.claude', 'session-journals', `${sid}.jsonl`);
+    try {
+      const lines = readFileSync(journalPath, 'utf8').trim().split('\n').filter(Boolean);
+      const agents = [];
+      for (const line of lines) {
+        try {
+          const e = JSON.parse(line);
+          if (e.type === 'agent' || e.type === 'activity') agents.push(e);
+        } catch {}
+      }
+      return { agents };
+    } catch { return { agents: [] }; }
+  }
+
+  const prompts = readPromptsFromTranscript(sessionId);
+  const { agents } = readJournal(sessionId);
   const hasJournalEntries = prompts.length > 0 || agents.length > 0;
 
   // --- SHA guard: skip full log if nothing changed and no journal activity ---
@@ -209,8 +232,8 @@ function proceed(payload) {
     ? `## Uncommitted changes\n${uncommitted.split('\n').filter(Boolean).map(l => `- ${l}`).join('\n')}\n\n`
     : '';
 
-  // Prompts and agents always included; decisions only on SessionEnd
-  const promptsSection = `\n## Prompts\n${prompts.map(p => `- ${p.time} ${p.text}`).join('\n') || '(none recorded)'}\n`;
+  // Prompts (from transcript) and agents (from journal); decisions only on SessionEnd
+  const promptsSection = `\n## Prompts\n${prompts.map(p => `- ${p}`).join('\n') || '(none recorded)'}\n`;
   const agentsSection  = `\n## Agents invoked\n${agents.map(a => `- ${a.time} ${a.name}`).join('\n') || '(none)'}\n`;
 
   let decisionsSection = '';
