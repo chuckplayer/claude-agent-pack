@@ -21,7 +21,12 @@ Run the full agent pipeline for the task the user described:
 
 4. **api-designer** — invoke before engineer agents if the task creates or significantly modifies API endpoints. Skip for internal refactors that do not change the API surface.
 
-5. **Engineer agents** — invoke based on the file types being changed, always with `isolation: "worktree"`:
+5. **Engineer agents** — before invoking each engineer, check for model overrides from earlier planning stages:
+   - If tech-lead (step 2) output includes a `## Model Overrides` section naming this agent, note the specified model.
+   - If devils-advocate (step 3) output includes a `## Model Escalations` section naming this agent, use that model instead (it takes precedence over tech-lead).
+   - Pass the `model` parameter to the Agent call only when an override or escalation is present. Otherwise, let the agent use its frontmatter default.
+
+   Invoke based on file types, always with `isolation: "worktree"`:
    - C# / .NET changes: **csharp-engineer**
    - TypeScript / Vue 3 changes: **frontend-engineer**
    - MCP server changes: **mcp-engineer**

@@ -35,13 +35,21 @@ Respond with these sections in order:
    - Which agent handles it (based on agent descriptions -- see Routing below)
    - Whether it runs in parallel or sequentially with adjacent subtasks
    - Success criteria for the subtask
-4. **Sequencing rationale** -- why tasks are ordered or parallelized as specified
-5. **Memory candidates** -- list of memory files to write after execution completes, each with target subdirectory, proposed filename, and one-line description. Omit this section if no memory writes are warranted. Examples of when to include entries:
+4. **Model Overrides** (optional) -- per-agent model recommendations when the default is insufficient. Emit this section only when a specific engineer agent's subtask warrants an upgrade to `opus`. Format each entry as:
+   - `<agent-name>: opus — <rationale in one line>`
+   Omit the section entirely if all engineer agents should use their default model. Escalate to `opus` when any of the following apply to that agent's specific subtask:
+   - Spans 4+ files or architectural layers
+   - Introduces a new pattern not currently in the codebase
+   - Security-sensitive logic (auth, session, PII, permissions, multi-tenant scoping)
+   - Complex domain modeling (state machines, financial calculations, workflow orchestration)
+   - High cascade risk: interface or contract changes with multiple callers
+5. **Sequencing rationale** -- why tasks are ordered or parallelized as specified
+6. **Memory candidates** -- list of memory files to write after execution completes, each with target subdirectory, proposed filename, and one-line description. Omit this section if no memory writes are warranted. Examples of when to include entries:
    - A new pattern is being introduced (decisions/)
    - Module boundaries or data flow are changing (architecture/)
    - A platform quirk or dependency constraint was discovered during planning (context/)
    - A workaround or known limitation is part of the plan (known-issues/)
-6. **Open questions** -- anything that needs resolution before proceeding
+7. **Open questions** -- anything that needs resolution before proceeding
 
 ## Routing
 
@@ -134,10 +142,10 @@ Do not skip to conclusions. A plan written without explicit trade-off enumeratio
 When dispatching subtasks via the Agent tool, match model to task complexity:
 
 - `model: "haiku"` — Read-only lookups, single-file searches, grep-and-report tasks, simple status checks. Fast and cheap.
-- `model: "sonnet"` — Implementation agents (csharp-engineer, frontend-engineer, python-engineer, infrastructure-engineer, database-engineer, mcp-engineer, test-engineer), code review, API design. Standard workhorse.
-- `model: "opus"` — Planning and pressure-testing only (tech-lead recursion, devils-advocate). Reserve for genuine architectural reasoning.
+- `model: "sonnet"` — Default for all implementation agents. Handles well-scoped tasks reliably.
+- `model: "opus"` — Planning and pressure-testing (tech-lead, devils-advocate). Also use for individual engineer agents whose subtask meets the escalation criteria listed in the **Model Overrides** output section above.
 
-Default to the lowest-cost model that can do the job. Only upgrade when the task demonstrably requires it.
+Default to the lowest-cost model that can do the job. Upgrades are per-subtask and must be justified inline.
 
 ## Hard Constraints
 
