@@ -151,3 +151,34 @@ The Stop hook reads this file after each response and includes it in the session
 **What does not count:** routine implementation details, variable names, minor style choices, anything trivially reversible.
 
 Do not call `/obsidian-capture` for this — writing to the decisions file is sufficient and less disruptive.
+
+## Obsidian session state capture
+
+As significant work progresses or when stopping mid-thread, append lines to the session-state file **before ending your response**:
+
+```bash
+echo "<where work currently stands>" >> ~/.claude/session-state-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]' || echo unknown).txt
+```
+
+Three line types are supported in the same file:
+
+- **Plain line** (no prefix) — describes where work currently stands. Becomes the "Where we left off" entry in `_current.md`. Latest write wins; write it once near the end of a work stream.
+- **`THREAD: <short description>`** — records an open thread or unfinished item that should persist across sessions.
+- **`DONE: <thread text>`** — resolves a previously recorded thread. Matching is case-insensitive; the text must otherwise match the original THREAD: text (used for removal).
+
+```bash
+# Plain progress note
+echo "Implemented auth service; wiring to controller next" >> ~/.claude/session-state-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]' || echo unknown).txt
+
+# Open thread
+echo "THREAD: Add rate limiting to /api/orders endpoint" >> ~/.claude/session-state-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]' || echo unknown).txt
+
+# Resolve a thread (case-insensitive match against stored thread text)
+echo "DONE: Add rate limiting to /api/orders endpoint" >> ~/.claude/session-state-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]' || echo unknown).txt
+```
+
+The Stop hook folds this file into the project's `_current.md` automatically at session end. No skill invocation needed.
+
+**What counts:** unfinished multi-session work, blocked items, "we stopped here because X", open questions that need follow-up next session.
+
+**What does not count:** trivial sub-steps completed within the session, anything already resolved before the session ends.
