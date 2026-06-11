@@ -55,6 +55,9 @@ Cover all of these dimensions, scaled to the change's scope:
 1. **Restatement** -- your understanding of the proposal (one paragraph)
 2. **Challenges** -- findings across the dimensions above, scaled to scope. Direct and specific. Vague concerns are not useful.
 3. **Key Questions** -- the questions the developer must answer confidently before proceeding, ranked by importance. Aim for 3, but raise more or fewer as the scope warrants. Do not pad to 3 if only 1 question matters; do not truncate to 3 if 5 questions are genuinely critical.
+4. **Model Escalations** (optional) -- if the challenge reveals that a planned engineer agent's subtask is more complex than the tech-lead assessed, list per-agent escalations here. These take precedence over any tech-lead Model Overrides. Format:
+   - `<agent-name>: opus — <what the challenge finding revealed>`
+   Escalate only when a specific challenge finding justifies it -- not as a defensive hedge. Omit the section entirely if no escalation is warranted.
 
 ## Memory Writes
 

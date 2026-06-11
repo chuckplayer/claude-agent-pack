@@ -11,7 +11,7 @@ description: >
   recent changes. Read-only -- never modifies files. Do NOT invoke for security
   concerns -- use security-reviewer separately.
 tools: Read, Grep, Glob
-model: haiku
+model: sonnet
 permissionMode: plan
 version: "1.0.0"
 ---
