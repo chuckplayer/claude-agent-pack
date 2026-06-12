@@ -120,7 +120,11 @@ Use Glob on memory/**/*.md to discover files. Skip any file with
 `status: superseded` or `status: archived` -- these are history only.
 
 The tech-lead and devils-advocate agents write new memory files after significant
-decisions. All other agents are read-only with respect to ./memory/.
+decisions. Engineer agents (csharp-engineer, frontend-engineer, mcp-engineer,
+database-engineer) may write to `memory/known-issues/` when they discover a
+genuine platform quirk, implementation constraint, or workaround during their
+work — see **Engineer write permission** below. All other agents are read-only
+with respect to `./memory/`.
 
 ### Subdirectory taxonomy
 
@@ -128,6 +132,24 @@ decisions. All other agents are read-only with respect to ./memory/.
 - **`memory/architecture/`** — Module boundaries, data flow, and integration patterns.
 - **`memory/context/`** — Environmental constraints, platform quirks, and tooling workarounds.
 - **`memory/known-issues/`** — Bugs, limitations, and workarounds that remain unresolved.
+
+### Engineer write permission
+
+Engineer agents (csharp-engineer, frontend-engineer, mcp-engineer, database-engineer)
+may create or update files in `memory/known-issues/` when all three conditions hold:
+
+1. The constraint is **non-obvious** — it would not be apparent from reading the code.
+2. It **affects future work** on this codebase (a gotcha that will bite the next engineer too).
+3. It is **not already documented** in CONVENTIONS.md or an existing memory file.
+
+**What qualifies:** ORM limitations, Windows-specific path behaviors, an external API
+that silently ignores a parameter, a framework version quirk that requires a workaround.
+
+**What does not qualify:** routine implementation choices, variable naming, anything
+trivially reversible, or anything that disappears when the dependency is upgraded.
+
+Use standard memory frontmatter: `type: known-issue`, `status: active`,
+`discovered: YYYY-MM-DD`. Include a `Workaround:` line describing the fix applied.
 
 ### Precedence rules
 
