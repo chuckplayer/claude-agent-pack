@@ -550,6 +550,23 @@ function main() {
       } catch { return ''; }
     }
 
+    // --- Extract model ID from transcript (last assistant entry wins) ---
+    function readModelFromTranscript(sid) {
+      if (!sid) return '';
+      try {
+        const transcriptPath = resolveTranscriptPath(sid, projectDir);
+        const lines = readFileSync(transcriptPath, 'utf8').trim().split('\n').filter(Boolean);
+        let model = '';
+        for (const line of lines) {
+          try {
+            const e = JSON.parse(line);
+            if (e.type === 'assistant' && e.message && e.message.model) model = e.message.model;
+          } catch {}
+        }
+        return model.replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 60);
+      } catch { return ''; }
+    }
+
     const prompts = readPromptsFromTranscript(sessionId);
     const { agents } = readJournal(sessionId);
     const hasJournalEntries = prompts.length > 0 || agents.length > 0;
@@ -607,6 +624,8 @@ function main() {
     mkdirSync(path.dirname(dailyPath),   { recursive: true });
 
     const tags = inferTags(slug, changedFiles);
+    const model = readModelFromTranscript(sessionId);
+    if (model) tags.push(`model/${model}`);
 
     const guidSuffix = sessionId ? ` — \`${sessionId}\`` : '';
     const dailyLine  = `- ${time} **session** [[${relSession}]]${guidSuffix} — branch: ${branch} (auto)`;

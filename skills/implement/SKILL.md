@@ -80,6 +80,31 @@ Run the full agent pipeline for the task the user described:
 
     Do not skip cleanup. Stale worktrees and branches accumulate in the repository and confuse future pipelines.
 
+10b. **Obsidian capture** — after worktrees are cleaned up, record what was shipped.
+     Check if `OBSIDIAN_VAULT_PATH` is set (PowerShell: `$env:OBSIDIAN_VAULT_PATH`).
+     If empty, skip this step silently.
+
+     Dispatch the **obsidian-writer** agent with:
+     - `write_mode`: `"capture"`
+     - `vault_path`: value of `OBSIDIAN_VAULT_PATH`
+     - `projects_folder`: value of `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
+     - `project`: basename of the project directory
+     - `session_api_written`: `false`
+     - `title`: one-line description of what was shipped (e.g. "feat: add model tag to obsidian logs")
+     - `body`: build from pipeline results collected during this run:
+       ```
+       **Shipped:** <commit SHA from merge-reviewer>
+       **Branch:** <feature branch name>
+
+       **What was built:**
+       - <2–4 bullet points summarising the change>
+
+       **Pipeline:** <comma-separated list of agents that ran, in order>
+       **Key files:** <list of files changed, from merge-reviewer or engineers>
+       ```
+
+     Keep the body concise — this is a searchable index entry, not a design doc.
+
 11. **git-engineer (push/PR mode)** — invoke after merge-reviewer returns PASS. Ask the user whether to push the feature branch and optionally open a pull request. Pass the feature branch name and the commit SHA from merge-reviewer.
 
     **If merge-reviewer returns FAIL:** begin a retry cycle:
