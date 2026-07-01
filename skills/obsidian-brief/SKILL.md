@@ -61,8 +61,9 @@ Cap at the 10 most recently modified files.
 If the project folder does not exist or zero files are found within the date
 range, check whether any notes exist at all in the project folder:
 
-- **No folder at all:** "No notes found for `<project_slug>`. Try `/obsidian-log`
-  after your next session to start building context."
+- **No folder at all:** "No notes found for `<project_slug>`. Session notes are
+  written automatically when Claude Code stops — run a session, or use
+  `/obsidian-recap` to synthesize one, to start building context."
 - **Folder exists but all files are older:** "Most recent note is from
   `<date>`. Try `/obsidian-brief <N>d` with a wider range."
 
