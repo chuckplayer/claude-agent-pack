@@ -50,7 +50,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Twenty-two slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Twenty-three slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -63,7 +63,8 @@ Twenty-two slash-command entry points are included. Invoke them directly in Clau
 | `/review-pr` | Runs code-reviewer, security-reviewer, performance-reviewer, and smell-reviewer against a PR or diff. Produces a consolidated findings report. |
 | `/smell` | Run smell-reviewer against a file, directory, or working-tree changes. Detects structural anti-patterns and comment smells; offers to record accepted patterns in CONVENTIONS.md. |
 | `/plan` | Decompose a task with tech-lead and optionally pressure-test the plan with devils-advocate before implementation begins. |
-| `/onboard` | Reads the codebase, memory, and conventions to produce a structured orientation: architecture, entry points, data flow, and known gotchas. |
+| `/onboard` | Reads the codebase, memory, and conventions to produce a structured orientation: architecture, entry points, data flow, and known gotchas. Reads the repo map (below) when present instead of re-exploring from scratch. |
+| `/repo-map` | Generates, refreshes, or verifies `memory/architecture/repo-map.md` — a durable directory-level map of the codebase (what each directory does and its entry-point files), stamped with the git commit it was verified against. Refreshes re-describe only the directories that changed. |
 | `/conventions` | Scaffolds or updates `docs/CONVENTIONS.md` by reading actual code patterns and interviewing the user. |
 | `/memory-audit` | Reviews all active memory files for staleness, archives stale entries, and checks for unrecorded decisions. |
 | `/memory-query` | Searches project memory for a specific topic, decision, or constraint and returns matching entries with citations. |
@@ -180,6 +181,8 @@ Memory is committed to version control so the full team shares accumulated conte
 **File naming:** `YYYY-MM-DD-[decision|challenge]-brief-slug.md` in the appropriate subdirectory.
 
 **Agents skip** files with `status: superseded` or `status: archived` automatically.
+
+**Repo map:** `memory/architecture/repo-map.md` is a singleton living document — a directory-level map of the codebase (what each directory does plus its entry-point files) maintained by the `/repo-map` skill and stamped with the git commit it was last verified against (`Verified-at-commit`). Unlike other memory files it uses a fixed, undated name because it is refreshed in place rather than written once. It rides the memory-snapshot hook to Obsidian for free. `/onboard`, tech-lead, `/plan`, `/refactor`, and `/scaffold` read it; merge-reviewer, git-engineer, and `/memory-audit` flag it for refresh when the tree drifts.
 
 See `docs/AGENT-GUIDE.md` for the full memory format, hygiene guidance, and scaling notes.
 
