@@ -22,6 +22,10 @@ If `memory/` does not exist in the current project, report that and stop.
    - Superseded by a newer decision → update `**Status:** superseded` and populate `**Superseded-by:**`
 5. Do not delete files — history is preserved by archiving, not deletion.
 
+## 1a. Check the repo map for drift
+
+If `memory/architecture/repo-map.md` exists, read its `Verified-at-commit` stamp and run `git diff --name-only <that-sha>..HEAD`. If mapped directories have changed, added, or been removed since the stamp, do **not** archive the map — it is meant to be refreshed, not retired. Instead, flag it in the report and recommend running `/repo-map refresh`. Only archive the map if the project structure it describes has been entirely replaced.
+
 ## 2. Check for gaps in decision coverage
 
 After reviewing active files, look for unrecorded decisions. Ask the user:

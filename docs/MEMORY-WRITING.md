@@ -10,6 +10,8 @@ YYYY-MM-DD-{prefix}-brief-slug.md
 
 The prefix is determined by the agent's subdirectory routing table (see each agent's own instructions for which prefix applies to which situation).
 
+**Exception — singleton living documents:** A file that is continuously refreshed in place rather than written once uses a fixed, undated name. The only current instance is `memory/architecture/repo-map.md` (maintained by `/repo-map`), which carries an extra `**Verified-at-commit:**` frontmatter field. Do not date these files — the date convention is for immutable point-in-time records.
+
 ## Subdirectory taxonomy
 
 | Subdirectory | Purpose |

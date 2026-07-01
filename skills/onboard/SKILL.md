@@ -16,9 +16,11 @@ Read the following in parallel:
 - `CLAUDE.md` at the project root if it exists
 - All files in `memory/**/*.md` (skip any with `status: superseded` or `status: archived`)
 
+**If `memory/architecture/repo-map.md` exists**, read it first — it is a cached directory-level map of the codebase. Check its `Verified-at-commit` stamp: run `git diff --name-only <that-sha>..HEAD` to see whether the tree has drifted. If it is current, use it as the backbone of the orientation and skip the exhaustive re-exploration in step 2 (spot-check only). If it is stale, note that and recommend `/repo-map refresh`, then fall back to full exploration for the drifted areas.
+
 ## 2. Explore the codebase structure
 
-Use Glob and Grep to map the project. Tailor the exploration to what you find — not all projects have all layers:
+If a current `repo-map.md` covered the structure in step 1, use it instead of re-deriving and move to step 3. Otherwise use Glob and Grep to map the project. Tailor the exploration to what you find — not all projects have all layers:
 
 **Structure:**
 - Top-level directories and their apparent purpose
