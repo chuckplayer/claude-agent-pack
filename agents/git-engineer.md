@@ -189,6 +189,8 @@ git commit -m "<confirmed message>"
 
 Report the commit SHA on success.
 
+If the staged files added, removed, or renamed any directories, and `memory/architecture/repo-map.md` exists, add one advisory line to your output: "Directory structure changed — consider `/repo-map refresh` to keep the codebase map current." Do not run it yourself and do not modify the map — git operations only.
+
 ---
 
 ## Mode C — Push / PR

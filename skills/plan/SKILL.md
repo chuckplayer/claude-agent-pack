@@ -17,7 +17,7 @@ If unclear, ask: "Do you have a plan already, or do you need one decomposed firs
 
 ## 2. tech-lead — task decomposition (if needed)
 
-Invoke tech-lead with the full task description. Pass any constraints, related files, or architectural context.
+Invoke tech-lead with the full task description. Pass any constraints, related files, or architectural context. tech-lead reads `memory/architecture/repo-map.md` (if present) to accelerate routing and blast-radius assessment — if you already know the repo structure has changed a lot recently, suggest `/repo-map refresh` first so the plan is built against an accurate map.
 
 The tech-lead will:
 - Identify which specialist agents are needed

@@ -136,6 +136,13 @@ Check whether performance-reviewer ran. This is advisory only -- findings do not
 - If performance-reviewer did not run and was warranted (changes include DB queries, API endpoints, loops, or caching): note it as a recommendation, not a FAIL.
 - Performance findings are the developer's decision to accept or escalate.
 
+### 3b. Repo map advisory
+
+Check whether `memory/architecture/repo-map.md` exists. This is advisory only -- it does not block the gate.
+
+- If it exists and this task added, removed, or moved directories (or added significant new entry-point files), check the map's `Verified-at-commit` against HEAD. If the mapped structure has drifted, note in the output: "repo-map.md is stale -- recommend running `/repo-map refresh`."
+- If the structure did not change, or the map does not exist, skip silently.
+
 ### 4. Test coverage gate
 
 Verify that test-engineer ran and produced at least one test file.

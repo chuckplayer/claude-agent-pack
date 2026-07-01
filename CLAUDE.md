@@ -130,6 +130,11 @@ with respect to `./memory/`.
 
 - **`memory/decisions/`** — Architectural and design decisions with rationale.
 - **`memory/architecture/`** — Module boundaries, data flow, and integration patterns.
+  Also hosts `repo-map.md`, a durable directory-level map of the codebase
+  (what each directory does + its entry-point files), maintained by `/repo-map`
+  and stamped with the git commit it was verified against. `/onboard`, tech-lead,
+  `/plan`, `/refactor`, and `/scaffold` read it; merge-reviewer, git-engineer, and
+  `/memory-audit` flag it for refresh when the tree drifts.
 - **`memory/context/`** — Environmental constraints, platform quirks, and tooling workarounds.
 - **`memory/known-issues/`** — Bugs, limitations, and workarounds that remain unresolved.
 

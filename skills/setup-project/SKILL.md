@@ -48,7 +48,10 @@ After the script completes, work through these follow-up steps with the user:
 3. **Ask about onboarding** — after the commit, ask:
    > "Would you like me to run `/onboard` to generate a structured orientation for this codebase?"
 
-Both follow-up skills are optional. Neither blocks the other.
+4. **Ask about the repo map** — offer to seed a durable structure map:
+   > "Would you like me to run `/repo-map` to generate a directory-level map of this codebase? It gets stored in `memory/architecture/` (so it shares across sessions and syncs to Obsidian) and is read by `/onboard`, tech-lead, `/plan`, `/refactor`, and `/scaffold`."
+
+All follow-up skills are optional. None blocks the others.
 
 ## Gotchas
 

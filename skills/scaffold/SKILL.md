@@ -14,7 +14,7 @@ Before starting, confirm with the user:
 - **Which layers** are needed (API, DB, backend, frontend — not every feature needs all four)
 - **Any constraints** (naming conventions, existing patterns to follow, related entities)
 
-Read `docs/CONVENTIONS.md` if it exists. Check `memory/**/*.md` for any architecture or design decisions relevant to this feature.
+Read `docs/CONVENTIONS.md` if it exists. Check `memory/**/*.md` for any architecture or design decisions relevant to this feature. If `memory/architecture/repo-map.md` exists, consult it to decide where new files for each layer belong (which directory owns API, data, service, and frontend code) so the scaffold follows the existing structure. After the feature lands and adds new directories, recommend `/repo-map refresh` so the map stays current.
 
 ## 2. git-engineer — branch setup
 
