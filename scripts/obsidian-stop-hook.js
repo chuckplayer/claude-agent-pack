@@ -359,20 +359,26 @@ tags: [claude, current-state, auto]
 function updateCurrentNote(ctx, stateData, lastAssistantText, vault, baseDir, apiKey, apiPort, apiHttps, tryApiWrite) {
   // Security: exact-path equality — only the canonical _current.md path is writable here
   const canonicalPath = path.resolve(baseDir, '_current.md');
-  if (path.resolve(ctx.currentFilePath) !== canonicalPath) return;
+  if (path.resolve(ctx.currentFilePath) !== canonicalPath) return Promise.resolve();
 
   mkdirSync(path.dirname(ctx.currentFilePath), { recursive: true });
   const content = buildCurrentNote(ctx, stateData, lastAssistantText);
 
   if (apiKey) {
     const relCurrent = path.relative(vault, ctx.currentFilePath).replace(/\\/g, '/');
-    tryApiWrite(relCurrent, content, ok => {
-      if (!ok) {
-        try { writeFileSync(ctx.currentFilePath, content, 'utf8'); } catch {}
-      }
+    // Return a promise so the caller can drain this write before process.exit(0) —
+    // otherwise an abrupt teardown kills the in-flight PUT socket.
+    return new Promise(resolve => {
+      tryApiWrite(relCurrent, content, ok => {
+        if (!ok) {
+          try { writeFileSync(ctx.currentFilePath, content, 'utf8'); } catch {}
+        }
+        resolve();
+      });
     });
   } else {
     writeFileSync(ctx.currentFilePath, content, 'utf8');
+    return Promise.resolve();
   }
 }
 
@@ -421,15 +427,28 @@ function main() {
   };
 
   // --- Read stdin to get session_id (Stop/SessionEnd both deliver JSON on stdin) ---
+  // On Windows the id also arrives via CLAUDE_CODE_SESSION_ID; when it is present we
+  // don't strictly need stdin, so we only grant a short grace period before proceeding.
+  // This shrinks the window in which an abrupt CLI teardown (e.g. `claude update`) can
+  // cancel the SessionEnd hook before it finishes. When the env var is absent (the
+  // non-Windows path where session_id arrives on stdin) we keep the full 2s fallback.
   let raw = '';
-  const stdinTimeout = setTimeout(() => proceed({}), 2000); // fallback: no stdin
+  let proceeded = false;
+  let stdinTimeout;
+  const runOnce = payload => {
+    if (proceeded) return;
+    proceeded = true;
+    clearTimeout(stdinTimeout);
+    proceed(payload);
+  };
+  const stdinGraceMs = process.env.CLAUDE_CODE_SESSION_ID ? 150 : 2000;
+  stdinTimeout = setTimeout(() => runOnce({}), stdinGraceMs);
   process.stdin.setEncoding('utf8');
   process.stdin.on('data', d => { raw += d; });
   process.stdin.on('close', () => {
-    clearTimeout(stdinTimeout);
     let payload = {};
     try { payload = JSON.parse(raw); } catch {}
-    proceed(payload);
+    runOnce(payload);
   });
 
   function proceed(payload) {
@@ -596,11 +615,19 @@ function main() {
         const lastSha = readFileSync(shaFile, 'utf8').trim();
         if (headSha === lastSha && !git('status', '--short')) {
           writeSessionGuidLine();
-          // On early-exit, still update _current.md if session-state has content
+          // On early-exit, still update _current.md if session-state has content.
+          // Await the write (with a hard cap) so an in-flight REST PUT is not killed
+          // by the immediate process.exit(0) below.
           if (hasStateContent && currentPathSafe) {
+            const exitEarly = () => process.exit(0);
+            const capEarly = setTimeout(exitEarly, 4000);
+            if (typeof capEarly.unref === 'function') capEarly.unref();
+            let p;
             try {
-              updateCurrentNote(ctx, stateResult, null, vault, baseDir, apiKey, apiPort, apiHttps, tryApiWrite);
-            } catch {}
+              p = updateCurrentNote(ctx, stateResult, null, vault, baseDir, apiKey, apiPort, apiHttps, tryApiWrite);
+            } catch { p = Promise.resolve(); }
+            Promise.resolve(p).then(() => { clearTimeout(capEarly); exitEarly(); }, () => { clearTimeout(capEarly); exitEarly(); });
+            return;
           }
           process.exit(0);
         }
@@ -692,6 +719,22 @@ ${changedSection}${uncommittedSection}${promptsSection}${agentsSection}${decisio
         };
         const memFiles = collectMd(memoryDir, '').sort((a, b) => a.label.localeCompare(b.label));
         if (memFiles.length > 0) {
+          // 1) Folder mirror — reproduce the repo's memory/ tree under the project
+          //    folder so subdirectories (architecture/, decisions/, ...) are browsable
+          //    as real folders in Obsidian, not just headings in the flat snapshot.
+          //    Synchronous writes: Obsidian's file watcher picks these up and there is
+          //    no exit race. Guarded by the same inside() subtree check.
+          const mirrorRoot = path.join(baseDir, 'memory');
+          for (const { fullPath, label } of memFiles) {
+            const dest = path.join(mirrorRoot, label);
+            if (!inside(dest)) continue;
+            try {
+              mkdirSync(path.dirname(dest), { recursive: true });
+              writeFileSync(dest, readFileSync(fullPath, 'utf8'), 'utf8');
+            } catch {}
+          }
+
+          // 2) Flat all-in-one snapshot (kept for quick single-file review)
           const snapshotPath = path.join(baseDir, 'memory-snapshot.md');
           if (inside(snapshotPath)) {
             mkdirSync(path.dirname(snapshotPath), { recursive: true });
@@ -707,9 +750,10 @@ ${changedSection}${uncommittedSection}${promptsSection}${agentsSection}${decisio
 
     // --- SessionEnd-only: write ADR files (best-effort; errors intentionally swallowed) ---
     function writeADRs() {
-      if (!decisions.length) return;
+      if (!decisions.length) return Promise.resolve();
       const decisionsDir = path.join(baseDir, 'decisions');
       mkdirSync(decisionsDir, { recursive: true });
+      const adrWrites = [];
       for (let i = 0; i < decisions.length; i++) {
         const decisionText = decisions[i];
         const adrId = `ADR-${date}-${p2(now.getHours())}${p2(now.getMinutes())}-${String(i + 1).padStart(2, '0')}`;
@@ -735,21 +779,27 @@ ${safeDecisionText}
         try {
           if (apiKey) {
             const relAdr = path.relative(vault, adrPath).replace(/\\/g, '/');
-            tryApiWrite(relAdr, adrContent, ok => {
-              if (!ok) {
-                try { writeFileSync(adrPath, adrContent, 'utf8'); } catch {}
-              }
-            });
+            adrWrites.push(new Promise(resolve => {
+              tryApiWrite(relAdr, adrContent, ok => {
+                if (!ok) {
+                  try { writeFileSync(adrPath, adrContent, 'utf8'); } catch {}
+                }
+                resolve();
+              });
+            }));
           } else {
             writeFileSync(adrPath, adrContent, 'utf8');
           }
         } catch {}
       }
 
-      // Clear the decisions file after reading
-      if (decisionsFile) {
-        try { writeFileSync(decisionsFile, '', 'utf8'); } catch {}
-      }
+      // Clear the decisions file only after the ADR writes have settled, so a
+      // teardown between clear and write can never lose captured decisions.
+      return Promise.allSettled(adrWrites).then(() => {
+        if (decisionsFile) {
+          try { writeFileSync(decisionsFile, '', 'utf8'); } catch {}
+        }
+      });
     }
 
     // --- SessionEnd-only: cleanup journal ---
@@ -766,24 +816,33 @@ ${safeDecisionText}
     }
 
     function finish() {
+      const pending = [];
+
       // Update _current.md on both Stop and SessionEnd
       if (currentPathSafe) {
         try {
           const lastAssistantMsg = readLastAssistantMessage(sessionId);
-          updateCurrentNote(ctx, stateResult, lastAssistantMsg, vault, baseDir, apiKey, apiPort, apiHttps, tryApiWrite);
+          pending.push(updateCurrentNote(ctx, stateResult, lastAssistantMsg, vault, baseDir, apiKey, apiPort, apiHttps, tryApiWrite));
         } catch {}
       }
 
       writeMemorySnapshot();
       if (isSessionEnd) {
-        writeADRs();
+        try { pending.push(writeADRs()); } catch {}
         cleanupJournal();
         cleanupSessionState();
       }
       if (headSha) {
         try { writeFileSync(shaFile, headSha + '\n', 'utf8'); } catch {}
       }
-      process.exit(0);
+
+      // Drain in-flight REST writes before exiting so an abrupt teardown (e.g. the
+      // CLI shutting down for `claude update`) cannot kill the sockets mid-flight.
+      // A hard cap guarantees the hook still exits promptly even if the API stalls.
+      const exit = () => process.exit(0);
+      const cap = setTimeout(exit, 4000);
+      if (typeof cap.unref === 'function') cap.unref();
+      Promise.allSettled(pending).then(() => { clearTimeout(cap); exit(); }, () => { clearTimeout(cap); exit(); });
     }
 
     function writeSessionFilesystem() { writeFileSync(sessionPath, sessionContent, 'utf8'); }
