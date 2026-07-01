@@ -49,8 +49,9 @@ Show the file contents inline in the conversation.
 
 If the file does not exist, say:
 
-> "No activity logged today yet for this project. Use `/obsidian-capture` to
-> save a note or `/obsidian-log` to record a session."
+> "No activity logged today yet for this project. Session notes appear here
+> automatically when Claude Code stops; use `/obsidian-capture` to save a note
+> or `/obsidian-recap` to synthesize a daily recap."
 
 ## Step 5 — Open in Obsidian (optional)
 

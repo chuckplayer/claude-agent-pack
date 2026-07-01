@@ -71,8 +71,8 @@ Twenty-two slash-command entry points are included. Invoke them directly in Clau
 | `/setup-project` | Scaffolds a project with `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` structure, then guides through next steps |
 | `/system-check` | Runs both readiness and update checks in one pass: verifies installation, project scaffolding, and whether agents/skills are current. |
 | `/obsidian` | Help and routing entry point for the Obsidian skill family — dispatches to the right skill based on intent. |
-| `/obsidian-brief` | Synthesizes a context brief from recent session logs and captures for the current project — what was built, decisions made, and open threads. Run before `/implement` to load project context. |
-| `/obsidian-log` | Logs the current session to the Obsidian vault: git branch, recent commits, and uncommitted changes. |
+| `/obsidian-brief` | Synthesizes a context brief from recent session logs and captures for the current project — what was built, decisions made, and open threads. Read-only; run before `/implement` to load project context. |
+| `/obsidian-recap` | Synthesizes a narrative **daily recap** from the day's auto-logged session notes, git history, and current-state note, and writes it to the vault. Defaults to today; accepts a `YYYY-MM-DD` argument. |
 | `/obsidian-capture` | Saves a user-supplied title and body as a timestamped capture note in `Claude/captures/`. |
 | `/obsidian-daily` | Reads and displays today's project daily note (path depends on `OBSIDIAN_PROJECTS_FOLDER`). |
 | `/obsidian-search` | Full-text search across Claude notes in the vault, scoped to the current project by default; pass `--global` to search all projects. Opens the best match in Obsidian if the REST API is available. |
@@ -108,7 +108,7 @@ Default (`OBSIDIAN_PROJECTS_FOLDER=Claude/Projects` when blank):
 
 **Setup:** the installer prompts for your vault path, an optional projects folder, and an optional REST API key. If the key is provided, writes go through the Obsidian Local REST API first (filesystem fallback on any failure). Without a key, writes go directly to the filesystem — Obsidian's file watcher picks them up within seconds either way.
 
-**Manual skills:** use `/obsidian-brief`, `/obsidian-log`, `/obsidian-capture`, `/obsidian-daily`, and `/obsidian-search` at any time regardless of the auto-log hook.
+**Manual skills:** use `/obsidian-brief`, `/obsidian-recap`, `/obsidian-capture`, `/obsidian-daily`, and `/obsidian-search` at any time regardless of the auto-log hook. Session notes are written automatically by the Stop/SessionEnd hooks; `/obsidian-recap` turns a day's worth of them into a readable narrative.
 
 ## Scripts
 
@@ -148,7 +148,7 @@ Use skills as entry points:
 /memory-audit
 /setup-project
 /system-check
-/obsidian-log
+/obsidian-recap
 /obsidian-capture my design decision: keep auth in middleware, not controllers
 /smell
 /smell src/services/OrderService.cs

@@ -35,7 +35,7 @@ for skill_dir in "$SCRIPT_DIR/skills/"*/; do
 done
 
 # Remove skills that were deprecated or merged in a previous version
-deprecated_skills=("agent-plan" "challenge" "check-readiness" "check-updates")
+deprecated_skills=("agent-plan" "challenge" "check-readiness" "check-updates" "obsidian-log")
 deprecated_removed=0
 for name in "${deprecated_skills[@]}"; do
     target="$SKILLS_DIR/$name"

@@ -73,8 +73,9 @@ If no matches are found in the project scope, try the global scope automatically
 
 If no matches found globally, say:
 
-> "No results found for '<term>' in your Claude notes. Try a broader term or
-> check that notes have been written with `/obsidian-log` or `/obsidian-capture`."
+> "No results found for '<term>' in your Claude notes. Try a broader term, or
+> note that session logs are written automatically when Claude Code stops (also
+> `/obsidian-recap` and `/obsidian-capture` write notes you can search)."
 
 ## Step 6 — Open best match (optional)
 
