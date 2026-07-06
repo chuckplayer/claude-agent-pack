@@ -7,10 +7,7 @@ description: >
   *_api_written flag, then always appends the daily note via filesystem.
   Requires: vault_path, write_mode (capture|recap), and content fields. Never
   writes outside the vault's Claude/ directory or the configured projects folder.
-tools:
-  - Bash
-  - Read
-  - Write
+tools: Bash, Read, Write
 model: haiku
 permissionMode: acceptEdits
 version: "1.0.0"

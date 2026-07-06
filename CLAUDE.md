@@ -57,7 +57,9 @@ to challenge that plan. Only after devils-advocate completes should api-designer
   loops over collections, or caching logic
 - **smell-reviewer** after every code change that introduces or modifies classes,
   methods, or files. Skip for documentation-only, config-only, or SQL-migration-only
-  changes with no application logic.
+  changes with no application logic. The `/hotfix` and `/debug` fast paths
+  intentionally skip smell-reviewer for speed -- that exemption is deliberate,
+  not an oversight.
 - Run security-reviewer, performance-reviewer, and smell-reviewer in parallel
   after code-reviewer completes -- they are independent of each other. Omit
   security-reviewer and performance-reviewer when their trigger conditions are
@@ -95,17 +97,13 @@ Before handing off to code-reviewer, every engineer agent must:
 
 ## Built-in agent disambiguation
 
-Claude Code ships two built-in agent types that overlap with pack agents. When both
-are available, always prefer the pack agent -- it carries the full pack conventions
-and memory integration that the built-in lacks.
+Use the built-in `claude-code-guide` agent for Claude Code feature questions
+(how /X works, hooks, MCP, API). Do not answer those inline -- that wastes
+planning tokens.
 
-| Built-in agent | Pack equivalent | Notes |
-|---|---|---|
-| `branch-manager` | `git-engineer` | git-engineer handles all three modes: branch setup, commit, and push/PR |
-| `typescript-engineer` | `frontend-engineer` | frontend-engineer also covers Vue 3, Pinia, React, and other frameworks |
-| `claude-code-guide` | N/A — use built-in directly | Use the built-in for Claude Code feature questions (how /X works, hooks, MCP, API). Do not answer inline with Opus — that wastes planning tokens. |
-
-Never route to `branch-manager` or `typescript-engineer` directly -- use the pack agents.
+If `branch-manager` or `typescript-engineer` appear in the agent list, they are
+stale copies from an earlier pack version -- re-run `install.sh` to remove them.
+Route to `git-engineer` and `frontend-engineer` instead.
 
 ## Worktree policy
 See `skills/implement/SKILL.md` for the full worktree branching and isolation rules.

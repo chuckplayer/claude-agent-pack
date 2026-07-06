@@ -8,7 +8,7 @@ description: >
   Warnings are advisory only. Read-only -- never modifies files.
 tools: Bash, Glob, Grep, Read
 model: haiku
-permissionMode: plan
+permissionMode: default
 version: "1.0.0"
 ---
 

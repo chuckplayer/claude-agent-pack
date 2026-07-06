@@ -45,6 +45,18 @@ for name in "${deprecated_skills[@]}"; do
         deprecated_removed=$((deprecated_removed + 1))
     fi
 done
+
+# Remove agents that were renamed or superseded in a previous version
+# (branch-manager -> git-engineer, typescript-engineer -> frontend-engineer)
+deprecated_agents=("branch-manager" "typescript-engineer")
+for name in "${deprecated_agents[@]}"; do
+    target="$AGENTS_DIR/$name.md"
+    if [ -f "$target" ]; then
+        rm -f "$target"
+        echo "  [rm] agent:  $name (deprecated)"
+        deprecated_removed=$((deprecated_removed + 1))
+    fi
+done
 [ "$deprecated_removed" -gt 0 ] && echo ""
 
 # Optional: Obsidian vault integration
