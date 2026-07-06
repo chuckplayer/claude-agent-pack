@@ -58,6 +58,6 @@ which row fits.
   Obsidian write operations on the same vault must not run in parallel; the
   daily note append has a single owner.
 - **OBSIDIAN_VAULT_PATH not set** — If the user has not configured the vault
-  path, all four skills will detect this and prompt them to run `install.sh`.
+  path, all five skills will detect this and prompt them to run `install.sh`.
   Route to whichever skill the user intended — it will handle the missing env
   var gracefully.
