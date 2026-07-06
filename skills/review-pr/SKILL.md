@@ -54,6 +54,16 @@ After all reviewers complete, produce a consolidated report:
 
 Group by severity (Critical → Major → Minor). Include the source reviewer for each finding.
 
+Map each reviewer's severity vocabulary into the three buckets:
+
+| Bucket | code-reviewer / smell-reviewer | security-reviewer | performance-reviewer |
+|---|---|---|---|
+| Critical | Critical | Critical, High | — |
+| Major | Warning | Medium | High |
+| Minor / Advisory | Suggestion | Low | Medium, Low |
+
+(security High maps to Critical because it blocks merge-reviewer; performance findings are always advisory, so even High is Major at most.)
+
 ## 5. Recommend next steps
 
 - If there are Critical findings: recommend routing back to the responsible engineer before merging.

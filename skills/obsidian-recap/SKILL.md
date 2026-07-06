@@ -134,49 +134,15 @@ Grounding rules:
 ### 5a. REST API attempt (skip if `OBSIDIAN_REST_API_KEY` is empty)
 
 If the key is set, attempt the PUT — try PowerShell first, curl fallback — using
-the same pattern as `/obsidian-capture` step 3a. Substitute `$vaultRel` with the
-recap path above and `$body` with the recap markdown from step 4. The result
-sets `apiWritten` to `true` or `false`.
+**exactly the pattern in `/obsidian-capture` step 3a** (read
+`skills/obsidian-capture/SKILL.md` if you need the code). The pattern is the
+single source of truth for the REST write; do not improvise a different one.
+Substitute:
 
-*PowerShell (Windows PS5.1 or PS7, or macOS/Linux with `pwsh`):*
-```powershell
-$key    = $env:OBSIDIAN_REST_API_KEY
-$port   = if ($env:OBSIDIAN_REST_API_PORT) { $env:OBSIDIAN_REST_API_PORT } else { "27124" }
-$scheme = if ($env:OBSIDIAN_REST_API_HTTPS -eq 'false') { 'http' } else { 'https' }
-$vaultRel = "<effective_folder>/<project_slug>/recaps/<YYYY-MM-DD>.md"
-$url    = "${scheme}://127.0.0.1:${port}/vault/${vaultRel}"
-$body   = @"<recap markdown content>"@
-$irm = @{ Method='Put'; Uri=$url; Body=$body; ContentType='text/markdown'; TimeoutSec=5
-          Headers=@{"Authorization"="Bearer $key";"Content-Type"="text/markdown"} }
-try {
-    if ($PSVersionTable.PSVersion.Major -ge 7) {
-        Invoke-RestMethod @irm -SkipCertificateCheck
-    } else {
-        [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-RestMethod @irm
-    }
-    $apiWritten = $true
-} catch {
-    $apiWritten = $false
-}
-```
+- `$vaultRel` / `VAULT_REL` → `<effective_folder>/<project_slug>/recaps/<YYYY-MM-DD>.md`
+- `$body` / `BODY` → the recap markdown from step 4
 
-*curl fallback (macOS/Linux without `pwsh`):*
-```bash
-KEY="$OBSIDIAN_REST_API_KEY"
-PORT="${OBSIDIAN_REST_API_PORT:-27124}"
-SCHEME=$([ "$OBSIDIAN_REST_API_HTTPS" = "false" ] && echo "http" || echo "https")
-VAULT_REL="<effective_folder>/<project_slug>/recaps/<YYYY-MM-DD>.md"
-BODY='<recap markdown content>'
-STATUS=$(curl -sk -X PUT \
-  -H "Authorization: Bearer $KEY" \
-  -H "Content-Type: text/markdown" \
-  --data-binary "$BODY" \
-  -w "%{http_code}" -o /dev/null \
-  "${SCHEME}://127.0.0.1:${PORT}/vault/${VAULT_REL}")
-[ "${STATUS:-0}" -ge 200 ] && [ "${STATUS:-0}" -lt 300 ] && apiWritten=true || apiWritten=false
-```
+The result sets `apiWritten` to `true` or `false`.
 
 - If `apiWritten` is `true`: dispatch obsidian-writer with `recap_api_written: true`
   (it will skip the recap file write and only append the daily note).

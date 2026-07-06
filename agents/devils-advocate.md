@@ -117,8 +117,8 @@ If set, invoke the **obsidian-writer** agent for each written memory file with:
 - `write_mode`: `capture`
 - `vault_path`: value of `OBSIDIAN_VAULT_PATH`
 - `cli_mode`: value of `OBSIDIAN_CLI_MODE` (default `"filesystem"`)
-- `rest_api_port`: value of `OBSIDIAN_REST_API_PORT` (default `27123`)
-- `rest_api_https`: value of `OBSIDIAN_REST_API_HTTPS` (default `"false"`)
+- `rest_api_port`: value of `OBSIDIAN_REST_API_PORT` (default `27124`)
+- `rest_api_https`: value of `OBSIDIAN_REST_API_HTTPS` (default `"true"`)
 - `projects_folder`: value of `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
 - `title`: the memory file's description (from frontmatter) or its filename
 - `body`: full content of the memory file (frontmatter + body)

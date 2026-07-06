@@ -35,7 +35,7 @@ Run the full agent pipeline for the task the user described:
 
    **Worktree base:** The `isolation: "worktree"` parameter creates each worktree from the current feature branch's HEAD — NOT from `main` or `master`. This ensures the engineer starts from the same commits the developer is working on. Never pass a base branch of `main` to engineer agents.
 
-   When each agent completes, the worktree path and branch name are both returned. Collect both — pass the **branch names** to merge-reviewer in step 10 and retain the **worktree paths** for cleanup in step 10a.
+   When each agent completes, the worktree path and branch name are both returned. Collect both — pass the **branch names** to merge-reviewer in step 10 and retain the **worktree paths** in case the pipeline fails or is abandoned before merge-reviewer runs (step 10a).
 
    > **Test requirement:** Per CLAUDE.md, every engineer must verify existing tests pass and flag coverage gaps before handing off. Do not proceed to code-reviewer if an engineer reports failing tests.
 
@@ -59,26 +59,20 @@ Run the full agent pipeline for the task the user described:
 
     **If merge-reviewer returns PASS:** the changes are committed to the feature branch. Proceed to step 10a.
 
-10a. **Worktree cleanup** — after merge-reviewer returns PASS, clean up all worktrees created in step 5.
-
-    For each worktree path collected in step 5, verify it still exists and remove it:
+10a. **Worktree cleanup verification** — merge-reviewer owns worktree cleanup on the PASS path (its Step 0a removes each worktree, deletes its branch, and prunes). After a PASS, just verify nothing was left behind:
     ```bash
-    git worktree remove <worktree-path> --force
-    ```
-
-    Then delete each temporary worktree branch:
-    ```bash
-    git branch -d <worktree-branch>
-    ```
-
-    Finally, prune any stale worktree references:
-    ```bash
+    git worktree list
     git worktree prune
     ```
 
-    If a worktree path no longer exists (already cleaned up by the platform), skip the `git worktree remove` for that path and proceed to branch deletion.
+    **Only if the pipeline failed or was abandoned before merge-reviewer ran** (or merge-reviewer stopped early on a merge conflict), clean up manually using the worktree paths and branch names collected in step 5:
+    ```bash
+    git worktree remove <worktree-path> --force
+    git branch -D <worktree-branch>
+    git worktree prune
+    ```
 
-    Do not skip cleanup. Stale worktrees and branches accumulate in the repository and confuse future pipelines.
+    If a worktree path no longer exists, skip the `git worktree remove` for that path and proceed to branch deletion. Do not skip this step on failure — stale worktrees and branches accumulate in the repository and confuse future pipelines.
 
 10b. **Obsidian capture** — after worktrees are cleaned up, record what was shipped.
      Check if `OBSIDIAN_VAULT_PATH` is set (PowerShell: `$env:OBSIDIAN_VAULT_PATH`).

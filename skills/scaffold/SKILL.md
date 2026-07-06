@@ -75,26 +75,22 @@ Final gate. Pass the worktree branch names from steps 4–6 and a summary of all
 If PASS: proceed to step 9a.
 If FAIL: retry up to 2 cycles, routing findings back to the responsible engineer. New worktrees on retry are also created from the feature branch. Collect new paths/branches and pass them to the next merge-reviewer invocation.
 
-## 9a. Worktree cleanup
+## 9a. Worktree cleanup verification
 
-After merge-reviewer returns PASS, clean up all worktrees created in steps 4–6.
-
-For each worktree path collected, verify it still exists and remove it:
+merge-reviewer owns worktree cleanup on the PASS path (its Step 0a removes each worktree, deletes its branch, and prunes). After a PASS, just verify nothing was left behind:
 ```bash
-git worktree remove <worktree-path> --force
-```
-
-Then delete each temporary worktree branch:
-```bash
-git branch -d <worktree-branch>
-```
-
-Finally, prune any stale worktree references:
-```bash
+git worktree list
 git worktree prune
 ```
 
-If a worktree path no longer exists, skip the `git worktree remove` for that path and proceed to branch deletion. Do not skip cleanup — stale worktrees accumulate and confuse future pipelines.
+**Only if the pipeline failed or was abandoned before merge-reviewer ran** (or merge-reviewer stopped early on a merge conflict), clean up manually using the worktree paths and branch names collected in steps 4–6:
+```bash
+git worktree remove <worktree-path> --force
+git branch -D <worktree-branch>
+git worktree prune
+```
+
+If a worktree path no longer exists, skip the `git worktree remove` for that path and proceed to branch deletion. Do not skip cleanup on failure — stale worktrees accumulate and confuse future pipelines.
 
 ## 10. git-engineer — push and PR
 

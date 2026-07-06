@@ -179,7 +179,7 @@ git diff --cached --stat
 Draft a commit message that:
 - Starts with a concise imperative summary (50 chars max)
 - Lists the key changes in bullet points
-- Appends `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
+- Appends `Co-Authored-By: Claude <noreply@anthropic.com>`
 
 Then commit:
 
