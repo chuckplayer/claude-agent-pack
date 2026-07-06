@@ -56,6 +56,7 @@ If frontend-engineer or mcp-engineer made changes, run **ts-linter** immediately
 Always. Pass the changed files and the root cause context. This is a non-negotiable safety gate even in a hotfix.
 
 - Skip **security-reviewer** and **performance-reviewer** unless the fix touches auth, data access, secrets, or a critical hot path. State your reasoning.
+- **smell-reviewer is intentionally skipped** in the hotfix pipeline — structural review of a ≤3-file targeted fix is not worth the latency. This is a deliberate exemption from the "smell-reviewer runs on every code change" rule in CLAUDE.md.
 
 ## 6. merge-reviewer
 

@@ -32,8 +32,8 @@ Map linter failure messages to actionable fixes:
 |---|---|
 | Missing required field: `name` | Add `name: <value>` to the frontmatter. For agents, this is the agent's identifier. For skills, it matches the slash command name. |
 | Missing required field: `description` | Add `description: >` followed by a multi-line description, or `description: "..."` for a single-line value. The description is the routing contract — make it specific. |
-| Unknown frontmatter field: `<field>` | Remove the `<field>` line. Only `name`, `description`, `model`, `effort`, `tools`, `permissionMode`, and `version` are valid for agents; only `name`, `description`, `model`, and `effort` are valid for skills. |
-| Description exceeds 1536 characters | Shorten the description. Remove repeated information — trigger phrases, exclusions, and the core purpose should each appear once. |
+| Unknown frontmatter field: `<field>` | Remove the `<field>` line. Only `name`, `description`, `tools`, `model`, `effort`, `permissionMode`, and `version` are valid for agents; only `name`, `description`, `license`, `compatibility`, `metadata`, and `allowed-tools` are valid for skills. |
+| Description exceeds the limit (1536 characters for agents, 1024 for skills) | Shorten the description. Remove repeated information — trigger phrases, exclusions, and the core purpose should each appear once. |
 | Missing body content | The file has frontmatter but no body. Add at minimum one section (`## ...`) explaining what the agent or skill does. |
 | Body is too short | Expand the body. Agent files must contain behavioral instructions, not just a title. |
 
