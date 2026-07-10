@@ -50,7 +50,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Twenty-three slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Twenty-four slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -77,6 +77,7 @@ Twenty-three slash-command entry points are included. Invoke them directly in Cl
 | `/obsidian-capture` | Saves a user-supplied title and body as a timestamped capture note in `Claude/captures/`. |
 | `/obsidian-daily` | Reads and displays today's project daily note (path depends on `OBSIDIAN_PROJECTS_FOLDER`). |
 | `/obsidian-search` | Full-text search across Claude notes in the vault, scoped to the current project by default; pass `--global` to search all projects. Opens the best match in Obsidian if the REST API is available. |
+| `/devops-github` | Read and create GitHub PRs/issues via the `gh` CLI for repos configured in `GITHUB_ORG`/`GITHUB_REPOS`. Strict repo targeting (never guesses); write operations always preview and require confirmation. |
 
 ## Obsidian Vault Integration
 
