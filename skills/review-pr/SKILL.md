@@ -9,7 +9,10 @@ Run a focused multi-reviewer pass on a set of changed files or an open pull requ
 
 ## 1. Determine the change set
 
-- If the user supplied a **PR number**, run `gh pr diff <number>` to get the diff and `gh pr view <number>` to get the title, description, and author.
+- If the user supplied a **PR number**, first resolve which platform it's on, using the same signals as `/devops`: repo name matching `GITHUB_REPOS`, project name matching `AZURE_DEVOPS_PROJECTS`, "work item"/"board" language, or the local git remote's host. If signals conflict or neither is present, ask directly rather than guessing.
+
+  - **GitHub PR:** Before fetching anything, apply devops-github's setup verification and repo-targeting steps (`skills/devops-github/SKILL.md` §1–2) — confirm `gh` is installed and authenticated, and resolve the target repo from `GITHUB_REPOS`/local git remote. Then run `gh pr diff <number> --repo <org>/<repo>` for the diff and `gh pr view <number> --repo <org>/<repo>` for the title, description, and author.
+  - **Azure DevOps PR:** Apply devops-azure's setup verification and org/project-resolution steps (`skills/devops-azure/SKILL.md` §1, §3–4) — confirm `az` and the `devops` extension are installed and authenticated, and resolve the org (PR IDs are org-scoped, so per devops-azure §2 only the org is strictly required). Fetch metadata with `az repos pr show --id <number> --org https://dev.azure.com/<org>`. The `az` CLI has no direct diff command — read the source/target branches from that output, `git fetch` both, and run `git diff <target>...<source>` locally to get the diff.
 - If the user supplied **file paths**, use those directly.
 - If neither was supplied, run `git diff main...HEAD --name-only` (or `git diff HEAD --name-only` if on main) to discover the changed files. Confirm the list with the user before proceeding.
 
@@ -74,6 +77,7 @@ Map each reviewer's severity vocabulary into the three buckets:
 
 - **No PR number and no files supplied:** Running `git diff main...HEAD --name-only` on a fresh branch returns nothing. Confirm with the user that the branch has commits before proceeding.
 - **Skipping security-reviewer for API changes:** Even small endpoint changes can introduce authorization gaps. When in doubt, include security-reviewer — it is faster to run it than to explain why you didn't.
-- **Reviewing stale diffs:** If the PR has been updated since the user last looked at it, run `gh pr diff <number>` fresh rather than relying on a diff the user pasted. Cached diffs miss new commits.
+- **Reviewing stale diffs:** If the PR has been updated since the user last looked at it, re-fetch the diff (`gh pr diff <number>` or the `git diff` reconstructed from Azure DevOps branches) rather than relying on a diff the user pasted. Cached diffs miss new commits.
 - **Conflating review with implementation:** This skill surfaces findings — it does not fix them. If the user asks you to fix a Critical finding during review, pause and confirm whether they want to switch to /implement or /debug.
-- **gh CLI not authenticated:** If `gh pr diff` fails with an auth error, ask the user to run `gh auth login` and retry. Do not try to work around it by parsing the URL manually.
+- **Auth/setup failures, ambiguous repo or project targeting:** Don't troubleshoot these here — they're devops-github's and devops-azure's concern. Follow their gotchas sections (`skills/devops-github/SKILL.md`, `skills/devops-azure/SKILL.md`) instead of improvising a workaround.
+- **Azure DevOps diff reconstruction fails (branch not found locally):** `git fetch` the source/target refs from the PR's remote (`az repos pr show` output includes the repository) before diffing — don't assume they're already present locally.
