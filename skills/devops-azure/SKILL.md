@@ -14,9 +14,17 @@ Check, in order:
 1. **`az` CLI installed?** Run `az --version`. If missing, stop and direct the user to install it (https://learn.microsoft.com/cli/azure/install-azure-cli).
 2. **`devops` extension installed?** Run `az extension show --name azure-devops`. If missing, install it with `az extension add --name azure-devops` (ask before installing).
 3. **Authenticated?** Run `az account show`. If not logged in, walk the user through `az login` interactively. Once org/project targeting is resolved (steps 2–3 below), optionally set defaults for convenience with `az devops configure --defaults organization=<org> project=<project>` — do not do this before targeting is confirmed.
-4. **Env vars set?** Check `AZURE_DEVOPS_ORG` (single value) and `AZURE_DEVOPS_PROJECTS` (comma-delimited list, e.g. `AZURE_DEVOPS_PROJECTS=ReFac,AmLINK-Teams`). If unset, ask the user for the org and project(s) they want to work with for this session — do not hardcode any org/project name into this file.
+4. **Env vars set?** Check `AZURE_DEVOPS_ORG` (single value) and `AZURE_DEVOPS_PROJECTS` (comma-delimited list, e.g. `AZURE_DEVOPS_PROJECTS=ReFac,AmLINK-Teams`). If unset, ask the user for the org and project(s) they want to work with — do not hardcode any org/project name into this file.
 
 Report each check's result clearly before proceeding.
+
+## 1a. Persisting or changing AZURE_DEVOPS_ORG/AZURE_DEVOPS_PROJECTS
+
+These values change more often than a one-time install (switching projects, adding one), so persistence is handled by a standalone script rather than the installer: `scripts/set-env.sh` writes into `~/.claude/settings.json`'s `env` object (the same file the Obsidian integration uses), which works identically across macOS, Linux, and Windows — unlike a shell profile, which differs by shell and OS.
+
+- After confirming a value with the user (new session-only value, or a change to an existing one), ask whether to persist it. If yes: `bash scripts/set-env.sh AZURE_DEVOPS_ORG=<org> AZURE_DEVOPS_PROJECTS=<ProjectA,ProjectB>`.
+- Never hand-edit `~/.claude/settings.json` directly or write shell-profile export lines (`.zshrc`, `.bash_profile`, PowerShell `$PROFILE`) to persist these — always go through `scripts/set-env.sh` so the write is consistent and safe across platforms.
+- A session-only value (user declines persistence) just needs `export AZURE_DEVOPS_ORG=...`/`$env:AZURE_DEVOPS_ORG=...` for the current shell, or simply proceeding without setting the env var and passing `--org`/`--project` explicitly for this run.
 
 ## 2. Classify the operation before resolving a project
 

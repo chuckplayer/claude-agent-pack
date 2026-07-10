@@ -116,7 +116,7 @@ Default (`OBSIDIAN_PROJECTS_FOLDER=Claude/Projects` when blank):
 
 ## Scripts
 
-Seven utility scripts are included in `scripts/`.
+Eight utility scripts are included in `scripts/`.
 
 | Script | What it does |
 |---|---|
@@ -124,6 +124,7 @@ Seven utility scripts are included in `scripts/`.
 | `check-readiness` | Verifies Claude Code is installed, all agents and skills are installed, and the target project has full scaffolding |
 | `check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated |
 | `lint-agents` | Validates all agent and skill files for required frontmatter fields, description length, and body content |
+| `set-env` | Writes one or more `KEY=VALUE` pairs into `~/.claude/settings.json`'s `env` object (node-first, python fallback) — used by `/devops-github` and `/devops-azure` to persist config that changes more often than a one-time install, without relying on a shell profile |
 | `obsidian-stop-hook` | Auto-log hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on Stop and SessionEnd; writes the session note and daily note; tries REST API when `OBSIDIAN_REST_API_KEY` is set, falls back to filesystem |
 | `obsidian-prompt-hook` | Prompt capture hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on UserPromptSubmit; appends each user prompt to a per-session journal for inclusion in the session log |
 | `obsidian-agent-hook` | Agent completion hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on SubagentStop; records which agents ran during the session for inclusion in the session log |

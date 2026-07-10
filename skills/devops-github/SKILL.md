@@ -13,9 +13,17 @@ Check, in order:
 
 1. **`gh` CLI installed?** Run `gh --version`. If missing, stop and direct the user to install it (https://cli.github.com).
 2. **Authenticated?** Run `gh auth status`. If not logged in, walk the user through `gh auth login` interactively — do not attempt to script credentials or store a PAT in plaintext. Let `gh` handle the browser/token flow natively.
-3. **Env vars set?** Check `GITHUB_ORG` and `GITHUB_REPOS` (comma-delimited list, e.g. `GITHUB_REPOS=repo-a,repo-b`). If unset, ask the user for the org and repo(s) they want to work with for this session — do not hardcode any org/repo name into this file.
+3. **Env vars set?** Check `GITHUB_ORG` and `GITHUB_REPOS` (comma-delimited list, e.g. `GITHUB_REPOS=repo-a,repo-b`). If unset, ask the user for the org and repo(s) they want to work with — do not hardcode any org/repo name into this file.
 
 Report each check's result clearly before proceeding.
+
+## 1a. Persisting or changing GITHUB_ORG/GITHUB_REPOS
+
+These values change more often than a one-time install (switching projects, adding a repo), so persistence is handled by a standalone script rather than the installer: `scripts/set-env.sh` writes into `~/.claude/settings.json`'s `env` object (the same file the Obsidian integration uses), which works identically across macOS, Linux, and Windows — unlike a shell profile, which differs by shell and OS.
+
+- After confirming a value with the user (new session-only value, or a change to an existing one), ask whether to persist it. If yes: `bash scripts/set-env.sh GITHUB_ORG=<org> GITHUB_REPOS=<repo-a,repo-b>`.
+- Never hand-edit `~/.claude/settings.json` directly or write shell-profile export lines (`.zshrc`, `.bash_profile`, PowerShell `$PROFILE`) to persist these — always go through `scripts/set-env.sh` so the write is consistent and safe across platforms.
+- A session-only value (user declines persistence) just needs `export GITHUB_ORG=...`/`$env:GITHUB_ORG=...` for the current shell, or simply proceeding without setting the env var at all and passing `--repo <org>/<repo>` explicitly for this run.
 
 ## 2. Resolve the target repo — never guess
 
