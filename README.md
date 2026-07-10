@@ -50,7 +50,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Twenty-four slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Twenty-five slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -78,6 +78,7 @@ Twenty-four slash-command entry points are included. Invoke them directly in Cla
 | `/obsidian-daily` | Reads and displays today's project daily note (path depends on `OBSIDIAN_PROJECTS_FOLDER`). |
 | `/obsidian-search` | Full-text search across Claude notes in the vault, scoped to the current project by default; pass `--global` to search all projects. Opens the best match in Obsidian if the REST API is available. |
 | `/devops-github` | Read and create GitHub PRs/issues via the `gh` CLI for repos configured in `GITHUB_ORG`/`GITHUB_REPOS`. Strict repo targeting (never guesses); write operations always preview and require confirmation. |
+| `/devops-azure` | Read and create Azure DevOps work items/PRs via the `az` CLI (`devops` extension) for the org/projects configured in `AZURE_DEVOPS_ORG`/`AZURE_DEVOPS_PROJECTS`. Discovers work item type/field schemas at runtime per project; strict targeting and write-operation preview+confirm, same as `/devops-github`. |
 
 ## Obsidian Vault Integration
 
