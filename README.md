@@ -114,6 +114,37 @@ Default (`OBSIDIAN_PROJECTS_FOLDER=Claude/Projects` when blank):
 
 **Manual skills:** use `/obsidian-brief`, `/obsidian-recap`, `/obsidian-capture`, `/obsidian-daily`, and `/obsidian-search` at any time regardless of the auto-log hook. Session notes are written automatically by the Stop/SessionEnd hooks; `/obsidian-recap` turns a day's worth of them into a readable narrative.
 
+## DevOps CLI Setup
+
+`/devops-github` and `/devops-azure` shell out to the `gh` and `az` CLIs directly — no MCP server required. Install whichever you need for your platform below, then invoke the skill: it walks through auth and env var setup itself (`GITHUB_ORG`/`GITHUB_REPOS`, `AZURE_DEVOPS_ORG`/`AZURE_DEVOPS_PROJECTS`), and persists your choice via `scripts/set-env.sh` (see [Scripts](#scripts)) rather than a shell profile, so it works the same way on macOS and Windows.
+
+### GitHub CLI (`gh`)
+
+| Platform | Install |
+|---|---|
+| macOS | `brew install gh` |
+| Windows | `winget install --id GitHub.cli` (or `choco install gh`) |
+
+Then authenticate once:
+
+```bash
+gh auth login
+```
+
+### Azure DevOps CLI (`az` + `devops` extension)
+
+| Platform | Install |
+|---|---|
+| macOS | `brew install azure-cli` |
+| Windows | `winget install --id Microsoft.AzureCLI` (or the MSI at https://aka.ms/installazurecliwindows) |
+
+Then add the `devops` extension and authenticate once:
+
+```bash
+az extension add --name azure-devops
+az login
+```
+
 ## Scripts
 
 Eight utility scripts are included in `scripts/`.
