@@ -33,9 +33,28 @@ Run the full agent pipeline for the task the user described:
    - Schema, migrations, SQL: **database-engineer**
    - Run csharp-engineer and frontend-engineer in parallel if both are needed and there are no shared files between them.
 
-   **Worktree base:** The `isolation: "worktree"` parameter creates each worktree from the current feature branch's HEAD — NOT from `main` or `master`. This ensures the engineer starts from the same commits the developer is working on. Never pass a base branch of `main` to engineer agents.
+   **Worktree base:** The `isolation: "worktree"` parameter only creates each worktree from the current feature branch's HEAD if `worktree.baseRef` is set to `"head"` in settings.json. If that setting is unset or `"fresh"`, the harness bases the worktree on local/origin `main` instead — silently, regardless of what branch you're actually on. Do not assume the setting is correct; verify with step 5b below.
 
    When each agent completes, the worktree path and branch name are both returned. Collect both — pass the **branch names** to merge-reviewer in step 10 and retain the **worktree paths** in case the pipeline fails or is abandoned before merge-reviewer runs (step 10a).
+
+5b. **Verify worktree base** — immediately after each engineer agent returns from an `isolation: "worktree"` call, before ts-linter or code-reviewer sees the code, confirm the worktree actually branched from the feature branch:
+
+   ```bash
+   git merge-base --is-ancestor <feature-branch> <worktree-branch>
+   ```
+
+   - **Exit 0:** safe — the worktree contains every commit on `<feature-branch>`. Proceed.
+   - **Non-zero exit:** stale base — the engineer edited files starting from `main`, not `<feature-branch>`, so its diff may be missing feature-branch-only changes to the same files. Stop before continuing the pipeline and repair in place:
+
+     ```bash
+     git -C <worktree-path> diff "$(git -C <worktree-path> merge-base main HEAD)" > /tmp/<worktree-branch>.patch
+     git -C <worktree-path> reset --hard <feature-branch>
+     git -C <worktree-path> apply --3way /tmp/<worktree-branch>.patch
+     ```
+
+     This captures the engineer's full delta (committed and uncommitted) relative to its true starting point, then replays it on the correct base — sidestepping the bad ancestry instead of trying to merge two unrelated histories. If `git apply` reports conflicts, stop and route back to the originating engineer with the conflicting file list; do not resolve conflicts yourself.
+
+   This check exists because `isolation: "worktree"` defaults to basing new worktrees on `main` (see step 5's Worktree base note) — a harness behavior the pack cannot override, only detect and repair after the fact.
 
    > **Test requirement:** Per CLAUDE.md, every engineer must verify existing tests pass and flag coverage gaps before handing off. Do not proceed to code-reviewer if an engineer reports failing tests.
 
@@ -103,7 +122,7 @@ Run the full agent pipeline for the task the user described:
 
     **If merge-reviewer returns FAIL:** begin a retry cycle:
     - Route each failed item back to the agent responsible (e.g., Critical code finding → engineer agent, missing tests → test-engineer).
-    - Engineer agents on retry also use `isolation: "worktree"` and must be created from the feature branch, not main.
+    - Engineer agents on retry also use `isolation: "worktree"`. Re-run step 5b's ancestor check against each new worktree before trusting it — retries are exactly as susceptible to the stale-base problem as the first pass.
     - Add any new worktree paths and branch names to the collected lists.
     - After fixes, re-run steps 6–10 (code-reviewer through merge-reviewer).
     - Allow up to **2 retry cycles** total. If merge-reviewer still returns FAIL after 2 retries, stop and surface the unresolved FAIL report to the user for manual resolution.
@@ -113,7 +132,8 @@ Do not skip steps without stating a reason. State which agents you are skipping 
 
 ## Gotchas
 
-- **Starting on main/master:** The worktree check in step 1 is critical. Engineer agents create worktrees from the current branch — if that branch is main, the worktree is based on main and the merge-reviewer cannot safely commit without polluting the main history. Stop hard if the branch is main.
+- **Starting on main/master:** The worktree check in step 1 is critical. Engineer agents create worktrees from the current branch only when `worktree.baseRef` is `"head"` — if that branch is main, the worktree is based on main and the merge-reviewer cannot safely commit without polluting the main history. Stop hard if the branch is main.
+- **`worktree.baseRef` unset or `"fresh"`:** This is the harness default and it silently bases every engineer worktree on local/origin `main` instead of the feature branch — even when step 1's check passed and the developer is correctly on a feature branch. This is exactly how engineer work has ended up stranded as uncommitted diffs after a "successful" run: the worktree never had the feature branch's commits to begin with. Step 5b's ancestor check exists specifically to catch this; do not skip it, and do not trust the "Worktree base" note in step 5 without it.
 - **Worktrees left behind after failure:** If the pipeline fails or is abandoned mid-run, still execute step 10a cleanup. Stale worktrees are invisible to the user but accumulate in `.git/worktrees` and cause confusing failures on future runs.
 - **Retry cycle confusion:** A retry cycle means routing a specific finding back to the responsible engineer, fixing it, and re-running from code-reviewer (step 6) through merge-reviewer (step 10). Do not re-run the full pipeline from step 1 — git-engineer, tech-lead, and api-designer do not need to re-run.
 - **Parallel engineer agents writing to the same file:** If csharp-engineer and frontend-engineer both need to touch a shared file (e.g., a config file), run them sequentially, not in parallel. Parallel writes to the same file cause merge conflicts in the worktree branches.

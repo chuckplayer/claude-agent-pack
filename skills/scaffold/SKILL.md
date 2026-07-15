@@ -57,6 +57,24 @@ Run **ts-linter** immediately after. Block on FAIL before continuing.
 
 > **Sequencing note:** frontend-engineer must run after csharp-engineer because the frontend depends on the API surface being defined. Do not run them in parallel.
 
+## 6a. Verify worktree base
+
+`isolation: "worktree"` (steps 4–6) only branches from the feature branch's HEAD if `worktree.baseRef` is `"head"` in settings.json. If unset or `"fresh"` (the harness default), it silently bases new worktrees on local/origin `main` instead — regardless of what branch you're on. Before the review pass, verify each worktree branch collected in steps 4–6:
+
+```bash
+git merge-base --is-ancestor <feature-branch> <worktree-branch>
+```
+
+Non-zero exit means the worktree is stale and missing feature-branch-only commits. Repair before continuing:
+
+```bash
+git -C <worktree-path> diff "$(git -C <worktree-path> merge-base main HEAD)" > /tmp/<worktree-branch>.patch
+git -C <worktree-path> reset --hard <feature-branch>
+git -C <worktree-path> apply --3way /tmp/<worktree-branch>.patch
+```
+
+If the patch conflicts, stop and route back to the responsible engineer with the conflicting file list.
+
 ## 7. Review pass
 
 Run in parallel:
@@ -73,7 +91,7 @@ After code-reviewer completes. Cover all new public methods, API endpoints, and 
 Final gate. Pass the worktree branch names from steps 4–6 and a summary of all pipeline stages.
 
 If PASS: proceed to step 9a.
-If FAIL: retry up to 2 cycles, routing findings back to the responsible engineer. New worktrees on retry are also created from the feature branch. Collect new paths/branches and pass them to the next merge-reviewer invocation.
+If FAIL: retry up to 2 cycles, routing findings back to the responsible engineer. Re-run the verification in step 6a against any new worktrees before continuing. Collect new paths/branches and pass them to the next merge-reviewer invocation.
 
 ## 9a. Worktree cleanup verification
 

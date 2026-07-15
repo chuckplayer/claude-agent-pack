@@ -45,7 +45,23 @@ Skip for straightforward extractions, renames, or formatting changes.
 
 ## 5. Engineer agents
 
-Dispatch based on file types, following the plan from tech-lead. Use `isolation: "worktree"` for each engineer. Worktrees are created from the current refactor branch's HEAD — never from `main` or `master`. Collect both the worktree path and branch name returned by each agent for cleanup after merge-reviewer.
+Dispatch based on file types, following the plan from tech-lead. Use `isolation: "worktree"` for each engineer. Worktrees only branch from the current refactor branch's HEAD if `worktree.baseRef` is `"head"` in settings.json — if unset or `"fresh"`, the harness silently bases new worktrees on local/origin `main` instead. Collect both the worktree path and branch name returned by each agent for cleanup after merge-reviewer.
+
+Immediately after each engineer returns, verify the worktree actually branched from the refactor branch:
+
+```bash
+git merge-base --is-ancestor <refactor-branch> <worktree-branch>
+```
+
+If this fails (non-zero exit), the worktree is stale — it started from `main`, not the refactor branch, and its diff may be missing refactor-branch-only changes. Repair before continuing:
+
+```bash
+git -C <worktree-path> diff "$(git -C <worktree-path> merge-base main HEAD)" > /tmp/<worktree-branch>.patch
+git -C <worktree-path> reset --hard <refactor-branch>
+git -C <worktree-path> apply --3way /tmp/<worktree-branch>.patch
+```
+
+If the patch does not apply cleanly, stop and route back to the engineer with the conflicting file list rather than resolving it yourself.
 
 Pass each engineer:
 - The refactor goal and constraints

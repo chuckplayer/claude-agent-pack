@@ -52,7 +52,7 @@ If the worktree branch is NOT `main` or `master`:
 
 > Running inside worktree on branch `<branch>` -- no action needed.
 >
-> **Note:** This worktree was created from the parent working tree's current branch. All changes made here will be isolated to this worktree and merged back into the parent branch by merge-reviewer.
+> **Note:** Worktree provisioning is governed by the harness's `worktree.baseRef` setting, not by this agent. When `baseRef` is `"head"` (the recommended value -- see Hard Constraints), this worktree was branched from the parent working tree's current HEAD. When `baseRef` is `"fresh"` (the harness default if unset), it was branched from local/origin `main` instead, **regardless of what branch the parent working tree is on**. Do not assert to the developer which base was used without checking; merge-reviewer's Step 0 verifies this before merging worktree branches back.
 
 Then stop. Branch creation and pull are handled by the parent working tree.
 
@@ -103,7 +103,7 @@ Confirm success:
 
 > Branch `<type>/<slug>` created. You are now on that branch.
 >
-> **Worktree note:** Engineer agents that run with `isolation: "worktree"` will create their worktrees from this branch's current HEAD. If you have commits on another branch that should be included, merge or rebase them onto this branch before running any engineer agents.
+> **Worktree note:** Engineer agents that run with `isolation: "worktree"` only branch from this branch's current HEAD if `worktree.baseRef` is set to `"head"` in settings.json (global or project). If unset, the harness defaults to `"fresh"` and silently bases new worktrees on local/origin `main` instead -- not this branch. Confirm `worktree.baseRef` is `"head"` before relying on worktree isolation; if you have commits on another branch that should be included, merge or rebase them onto this branch before running any engineer agents.
 
 ### 6. If the developer declines
 
