@@ -35,30 +35,42 @@ If any of this context is missing, run the checks below directly.
 
 ## Step 0 — Merge worktree branches
 
-If one or more worktree branch names were provided, merge each into the current feature branch before running any gate checks:
-
-```bash
-git checkout <feature-branch>
-```
+If one or more worktree branch names were provided, first verify each one actually branched from the feature branch before attempting to merge it — `isolation: "worktree"` only branches from the feature branch's current HEAD when `worktree.baseRef` is `"head"` in settings.json. If that setting is unset or `"fresh"` (the harness default), the worktree was silently based on local/origin `main` instead, regardless of what the calling skill's docs assumed. Do not skip this check on the belief that upstream steps already verified it.
 
 For each worktree branch:
+
 ```bash
-git merge --no-ff <worktree-branch> -m "Merge <worktree-branch> into <feature-branch>"
+git merge-base --is-ancestor <feature-branch> <worktree-branch>
 ```
 
-If any merge produces conflicts (`git status` shows `UU` files), **stop immediately** and output:
+- **Exit 0:** the worktree contains every commit on `<feature-branch>` — safe to merge normally:
 
-```
-FAIL -- merge conflict when integrating worktree branch <branch>.
+  ```bash
+  git checkout <feature-branch>
+  git merge --no-ff <worktree-branch> -m "Merge <worktree-branch> into <feature-branch>"
+  ```
 
-Required actions:
-- Resolve conflicts in: <list of conflicting files>
-- Route back to the appropriate engineer agent for resolution.
-```
+  If this merge produces conflicts (`git status` shows `UU` files), **stop immediately** and output:
 
-Do not proceed to the checklist until all worktree branches are cleanly merged.
+  ```
+  FAIL -- merge conflict when integrating worktree branch <branch>.
 
-**Important:** Worktrees must have been created from the feature branch's HEAD, not from `main` or `master`. If you observe that the worktree branch diverged from main rather than from the current feature branch, note this as a process violation in your output — the implement pipeline will need to be re-run from the correct base. Do not merge worktree branches that are based on `main` into a feature branch that has diverged from main, as this can introduce unintended commits.
+  Required actions:
+  - Resolve conflicts in: <list of conflicting files>
+  - Route back to the appropriate engineer agent for resolution.
+  ```
+
+- **Non-zero exit:** the worktree branch diverged from `main`, not from `<feature-branch>` — a plain `git merge` would merge two unrelated histories and can introduce unintended commits or silently drop the engineer's changes into an unmerged/uncommitted state. Do **not** run `git merge --no-ff` on it. Instead, transplant the engineer's actual file changes onto the feature branch directly:
+
+  ```bash
+  git -C <worktree-path> diff "$(git -C <worktree-path> merge-base main HEAD)" > /tmp/<worktree-branch>.patch
+  git checkout <feature-branch>
+  git apply --3way /tmp/<worktree-branch>.patch
+  ```
+
+  This captures the engineer's full delta (committed and uncommitted) relative to its true starting point and applies it directly — sidestepping the bad ancestry rather than merging incompatible histories. If `git apply` reports conflicts, **stop immediately** and output the same FAIL format as above, with a note that the worktree's base was stale (not a genuine content conflict from concurrent work).
+
+Do not proceed to the checklist until all worktree branches are cleanly integrated by one path or the other.
 
 ## Step 0a — Clean up worktree branches
 

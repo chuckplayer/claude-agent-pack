@@ -70,6 +70,49 @@ else
         "Missing: ${missing_skills[*]}  -- run ./install.sh"
 fi
 
+# Configuration
+echo ""
+echo "-- Configuration"
+json_tool=""
+_try_json_tool() {
+    command -v "$1" &>/dev/null || return 1
+    case "$1" in
+        python*) "$1" -c 'import sys; sys.exit(0)' &>/dev/null 2>&1 || return 1 ;;
+        node)    "$1" -e  'process.exit(0)'         &>/dev/null 2>&1 || return 1 ;;
+    esac
+    json_tool="$1"
+}
+_try_json_tool python3 || _try_json_tool python || _try_json_tool node || true
+
+base_ref=""
+if [ -n "$json_tool" ] && [ -f "$HOME/.claude/settings.json" ]; then
+    if [ "$json_tool" = "node" ]; then
+        base_ref="$(node -e "
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+try{const s=JSON.parse(fs.readFileSync(p,'utf8'));process.stdout.write((s.worktree&&s.worktree.baseRef)||'');}catch(e){}
+" 2>/dev/null || true)"
+    else
+        base_ref="$("$json_tool" - <<'PYEOF' 2>/dev/null || true
+import json, os
+p = os.path.expanduser("~/.claude/settings.json")
+try:
+    s = json.load(open(p))
+    print(s.get("worktree", {}).get("baseRef", ""), end="")
+except Exception:
+    pass
+PYEOF
+)"
+    fi
+fi
+
+if [ "$base_ref" = "head" ]; then
+    check "worktree.baseRef is \"head\"" "ok"
+else
+    check "worktree.baseRef is \"head\"" "fail" \
+        "currently '${base_ref:-unset, defaults to fresh}' -- engineer worktrees (isolation:\"worktree\") will silently base off local/origin main instead of your feature branch. Re-run ./install.sh or add { \"worktree\": { \"baseRef\": \"head\" } } to ~/.claude/settings.json"
+fi
+
 # Project scaffolding
 echo ""
 echo "-- Project ($PROJECT_DIR)"

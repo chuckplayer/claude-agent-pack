@@ -59,6 +59,61 @@ for name in "${deprecated_agents[@]}"; do
 done
 [ "$deprecated_removed" -gt 0 ] && echo ""
 
+# Ensure worktree.baseRef is set so isolation:"worktree" (used by every engineer
+# agent in the pipeline) branches from the current HEAD instead of the harness
+# default ("fresh" -- local/origin main). Without this, engineer worktrees are
+# silently based on main regardless of the feature branch you're working on --
+# see agents/git-engineer.md and skills/implement/SKILL.md step 5b.
+echo ""
+json_tool=""
+_try_json_tool() {
+    command -v "$1" &>/dev/null || return 1
+    case "$1" in
+        python*) "$1" -c 'import sys; sys.exit(0)' &>/dev/null 2>&1 || return 1 ;;
+        node)    "$1" -e  'process.exit(0)'         &>/dev/null 2>&1 || return 1 ;;
+    esac
+    json_tool="$1"
+}
+_try_json_tool python3 || _try_json_tool python || _try_json_tool node || true
+
+if [ -z "$json_tool" ]; then
+    echo "  WARNING: python3 or node is required to set worktree.baseRef -- neither found."
+    echo "           Add \"worktree\": { \"baseRef\": \"head\" } to ~/.claude/settings.json manually."
+else
+    if [ "$json_tool" = "node" ]; then
+        node <<'JSEOF'
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+if(!s.worktree)s.worktree={};
+if(!s.worktree.baseRef){
+  s.worktree.baseRef='head';
+  fs.mkdirSync(path.dirname(p),{recursive:true});
+  fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
+  console.log('  [ok] settings: worktree.baseRef=head');
+}else{
+  console.log('  [skip] worktree.baseRef already set to "'+s.worktree.baseRef+'" -- leaving as-is');
+}
+JSEOF
+    else
+        "$json_tool" <<'PYEOF'
+import json, os
+p = os.path.expanduser("~/.claude/settings.json")
+s = json.load(open(p)) if os.path.exists(p) else {}
+wt = s.setdefault("worktree", {})
+if not wt.get("baseRef"):
+    wt["baseRef"] = "head"
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w") as f:
+        json.dump(s, f, indent=2)
+        f.write("\n")
+    print('  [ok] settings: worktree.baseRef=head')
+else:
+    print('  [skip] worktree.baseRef already set to "%s" -- leaving as-is' % wt["baseRef"])
+PYEOF
+    fi
+fi
+
 # Optional: Obsidian vault integration
 echo ""
 
