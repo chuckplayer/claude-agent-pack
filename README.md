@@ -1,10 +1,10 @@
 # Claude Code Agent Pack
 
-Twenty-one specialized Claude Code subagents for enterprise software development teams, an Obsidian vault integration, and persistent knowledge management.
+Nineteen specialized Claude Code subagents for enterprise software development teams, an Obsidian vault integration, and persistent knowledge management.
 
 ## Why
 
-Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides twenty-one agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
+Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides nineteen agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
 
 Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job, and session context is automatically logged to an Obsidian vault on Stop.
 
@@ -14,6 +14,7 @@ Without orchestration, a single session planning an architecture change, writing
 |---|---|---|
 | tech-lead | Decomposes complex tasks and orchestrates specialist agents | Ambiguous or multi-step tasks spanning multiple files or layers |
 | devils-advocate | Pressure-tests reasoning before implementation begins | New patterns, architectural decisions, irreversible changes |
+| codex-reviewer | Cross-model second opinion via the OpenAI Codex CLI | After devils-advocate, on architectural or irreversible decisions; requires `codex` CLI installed and authenticated |
 | api-designer | Designs REST contracts before implementation begins | Creating or significantly modifying API endpoints |
 | git-engineer | Git lifecycle specialist: branch setup, conventional commits, push, and PR | Before any engineer agent; after merge-reviewer for push/PR |
 | csharp-engineer | C# and .NET implementation | Writing or modifying .cs files |
@@ -200,7 +201,7 @@ Or invoke agents directly in natural language:
 ## Workflow
 
 ```
-task -> git-engineer -> [tech-lead] -> [devils-advocate] -> [api-designer] -> engineer(s) -> [ts-linter] -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> smell-reviewer -> test-engineer -> merge-reviewer -> git-engineer (push/PR)
+task -> git-engineer -> [tech-lead] -> [devils-advocate] -> [codex-reviewer] -> [api-designer] -> engineer(s) -> [ts-linter] -> code-reviewer -> [security-reviewer] -> [performance-reviewer] -> smell-reviewer -> test-engineer -> merge-reviewer -> git-engineer (push/PR)
 ```
 
 Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `git-engineer` is skipped for read-only tasks. `ts-linter` runs only when TypeScript or Vue files were modified. `database-engineer` runs in parallel with engineer agents when schema changes are needed. `security-reviewer` and `performance-reviewer` run when their trigger conditions are met. `smell-reviewer` always runs on code changes and runs in parallel with security-reviewer and performance-reviewer. When invoked through `/implement`, engineer agents run in isolated git worktrees and merge-reviewer commits the result to the feature branch if all gates pass.

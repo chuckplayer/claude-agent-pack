@@ -38,18 +38,33 @@ The devils-advocate will surface unconsidered alternatives, challenge hidden ass
 
 After it completes:
 1. Present the key concerns raised clearly.
-2. Ask: "Proceed with the original plan, revise it, or abandon it?"
-3. If proceeding, note which concerns were accepted as known risks vs. resolved.
+2. If the decision is architectural, irreversible, or spans multiple systems, continue to step 4 for a cross-model check before asking the user to decide.
+3. Otherwise ask: "Proceed with the original plan, revise it, or abandon it?" and note which concerns were accepted as known risks vs. resolved.
 
-## 4. Hand off to implementation
+## 4. codex-reviewer — cross-model second opinion (if warranted)
+
+Invoke when the decision is architectural, irreversible, or spans multiple systems, and the `codex` CLI is available and authenticated. Skip silently (do not block on it) if `codex` is not installed — this step is advisory, not required.
+
+Invoke codex-reviewer with:
+- The full plan or proposal
+- The concerns devils-advocate already raised (so it isn't duplicating ground already covered)
+
+After it completes:
+1. Present its synthesis alongside devils-advocate's findings — call out agreement, divergence, and any new concerns it surfaced.
+2. Ask: "Proceed with the original plan, revise it, or abandon it?"
+3. If proceeding, note which concerns (from either devils-advocate or codex-reviewer) were accepted as known risks vs. resolved.
+
+## 5. Hand off to implementation
 
 If the user is ready to implement:
-- Invoke `/implement` and pass the finalized plan plus any risk notes from step 3.
-- If the user wants to revise the plan first, loop back to step 2 or 3 as needed.
+- Invoke `/implement` and pass the finalized plan plus any risk notes from steps 3–4.
+- If the user wants to revise the plan first, loop back to step 2, 3, or 4 as needed.
 
 ## Gotchas
 
 - **Over-planning paralysis:** If the user keeps asking for "one more round" of devils-advocate without moving toward implementation, surface the pattern and ask directly: "Are there unresolved concerns keeping you from proceeding, or is this ready to implement?" Planning is a means, not an end.
 - **tech-lead and devils-advocate disagree:** When this happens, present both positions clearly and ask the user to decide. Do not pick one silently. The user owns the architectural decision.
+- **devils-advocate and codex-reviewer disagree:** Same rule applies — present both perspectives and let the user decide. Do not treat codex-reviewer as a tiebreaker.
+- **`codex` CLI not installed or not authenticated:** Skip step 4 without asking — it's advisory only, and a missing/broken CLI shouldn't block planning. Mention the skip briefly so the user knows it wasn't silently forgotten.
 - **Skipping plan when the task is genuinely ambiguous:** If a task description is vague and the user says "just implement it," recommend a quick tech-lead decomposition first. A few minutes of planning prevents hours of rework from misunderstood requirements.
 - **Plan becomes stale mid-implementation:** If the user pauses mid-/implement and comes back with changed requirements, return to /plan to re-decompose rather than patching the original plan. Stale plans cause the pipeline to route incorrectly.

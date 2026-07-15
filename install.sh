@@ -519,6 +519,88 @@ PYEOF
     elif [ "$obsidian_setup" = "true" ] && [ -z "$vault_path" ]; then
         echo "  [skip] No vault path provided — skipping Obsidian setup."
     fi
+
+    # Optional: Codex CLI model configuration
+    echo ""
+    if command -v codex &>/dev/null; then
+        # Read existing model setting
+        if [ "$json_tool" = "node" ]; then
+            current_codex_model="$(node -e "
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+try{const s=JSON.parse(fs.readFileSync(p,'utf8'));process.stdout.write((s.env&&s.env.CODEX_CLI_MODEL)||'');}catch(e){}
+" 2>/dev/null || true)"
+        else
+            current_codex_model="$("$json_tool" - <<'PYEOF' 2>/dev/null || true
+import json, os, sys
+p = os.path.expanduser("~/.claude/settings.json")
+try:
+    s = json.load(open(p))
+    sys.stdout.write(s.get("env", {}).get("CODEX_CLI_MODEL", ""))
+except Exception:
+    pass
+PYEOF
+)"
+        fi
+
+        if [ -n "$current_codex_model" ]; then
+            echo "Codex CLI detected (model: $current_codex_model)"
+            read -rp "  Update model? [Enter to keep, new model name, or 'none' for CLI default]: " new_codex_model
+        else
+            echo "Codex CLI detected."
+            read -rp "  Model for codex-reviewer [e.g. o3, o4-mini — Enter for CLI default]: " new_codex_model
+        fi
+
+        if [ "$new_codex_model" = "none" ]; then
+            if [ "$json_tool" = "node" ]; then
+                node <<'JSEOF'
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+if(s.env)delete s.env.CODEX_CLI_MODEL;
+fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
+JSEOF
+            else
+                "$json_tool" - <<'PYEOF'
+import json, os
+p = os.path.expanduser("~/.claude/settings.json")
+s = json.load(open(p)) if os.path.exists(p) else {}
+s.get("env", {}).pop("CODEX_CLI_MODEL", None)
+with open(p, "w") as f:
+    json.dump(s, f, indent=2)
+    f.write("\n")
+PYEOF
+            fi
+            echo "  [ok] env:    CODEX_CLI_MODEL cleared (codex-reviewer will use CLI default)"
+        elif [ -n "$new_codex_model" ]; then
+            if [ "$json_tool" = "node" ]; then
+                node - "$new_codex_model" <<'JSEOF'
+const fs=require('fs'),os=require('os'),path=require('path');
+const p=path.join(os.homedir(),'.claude','settings.json');
+const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+if(!s.env)s.env={};s.env.CODEX_CLI_MODEL=process.argv[2];
+fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
+JSEOF
+            else
+                "$json_tool" - "$new_codex_model" <<'PYEOF'
+import json, os, sys
+p = os.path.expanduser("~/.claude/settings.json")
+s = json.load(open(p)) if os.path.exists(p) else {}
+s.setdefault("env", {})["CODEX_CLI_MODEL"] = sys.argv[1]
+with open(p, "w") as f:
+    json.dump(s, f, indent=2)
+    f.write("\n")
+PYEOF
+            fi
+            echo "  [ok] env:    CODEX_CLI_MODEL=$new_codex_model"
+        elif [ -n "$current_codex_model" ]; then
+            echo "  [ok] env:    CODEX_CLI_MODEL=$current_codex_model (unchanged)"
+        else
+            echo "  [skip] No model set — codex-reviewer will use CLI default"
+        fi
+    else
+        echo "  [skip] Codex CLI not found — codex-reviewer installed but inactive until \`codex\` is in PATH."
+    fi
 fi
 
 echo ""
