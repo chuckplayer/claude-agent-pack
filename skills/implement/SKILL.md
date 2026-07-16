@@ -120,6 +120,8 @@ Run the full agent pipeline for the task the user described:
 
 11. **git-engineer (push/PR mode)** — invoke after merge-reviewer returns PASS. Ask the user whether to push the feature branch and optionally open a pull request. Pass the feature branch name and the commit SHA from merge-reviewer.
 
+    **If merge-reviewer's PASS report flagged mergeability conflicts against the base** (its step 3c advisory), surface them to the user *before* they open the PR — resolving conflicts locally now is cheaper than after GitHub/Azure's automatic review flags them. This is advisory: it does not block the push, but the user should decide whether to rebase/merge the base branch and resolve conflicts first.
+
     **If merge-reviewer returns FAIL:** begin a retry cycle:
     - Route each failed item back to the agent responsible (e.g., Critical code finding → engineer agent, missing tests → test-engineer).
     - Engineer agents on retry also use `isolation: "worktree"`. Re-run step 5b's ancestor check against each new worktree before trusting it — retries are exactly as susceptible to the stale-base problem as the first pass.

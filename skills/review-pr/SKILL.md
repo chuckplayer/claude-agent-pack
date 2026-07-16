@@ -16,6 +16,35 @@ Run a focused multi-reviewer pass on a set of changed files or an open pull requ
 - If the user supplied **file paths**, use those directly.
 - If neither was supplied, run `git diff main...HEAD --name-only` (or `git diff HEAD --name-only` if on main) to discover the changed files. Confirm the list with the user before proceeding.
 
+## 1a. Probe mergeability against the target branch
+
+Advisory check — surfaces merge conflicts *before* the PR reaches GitHub/Azure's automatic review. Run it whenever there is a **branch** to compare (a PR, or a working-tree review off a feature branch). Skip it for loose-file-path reviews with no branch context.
+
+Resolve the two refs:
+
+- **GitHub PR:** target and head come from `gh pr view <number> --repo <org>/<repo> --json baseRefName,headRefName`. Fetch both first — they may not exist locally: `git fetch <remote> <baseRefName> <headRefName>`.
+- **Azure DevOps PR:** you already read the source (head) and target branches from `az repos pr show` in Step 1, and already `git fetch`ed them to reconstruct the diff. Reuse those refs.
+- **Working-tree / branch review:** head is the current branch; the target is the repo default — prefer `origin/HEAD`, falling back to a local `main` then `master`:
+  ```bash
+  base=$(git symbolic-ref -q refs/remotes/origin/HEAD 2>/dev/null | sed 's#^refs/remotes/##')
+  [ -z "$base" ] && for c in main master; do git rev-parse --verify -q "$c" >/dev/null && { base="$c"; break; }; done
+  ```
+
+Probe **without touching the working tree or index** using `git merge-tree` (Git 2.38+):
+
+```bash
+git merge-tree --write-tree --name-only "<target>" "<head>"; echo "exit=$?"
+```
+
+- **exit 0:** merges cleanly — report *Mergeable*.
+- **exit 1:** conflicts — stdout is the synthetic tree OID on line 1, then the conflicting paths. Report those paths.
+- **exit 128 / unknown option:** older Git without `--write-tree`. Fall back to the legacy three-arg form, which always exits 0 but prints conflict hunks to stdout:
+  ```bash
+  git merge-tree "$(git merge-base <target> <head>)" "<target>" "<head>" | grep -q '^<<<<<<<' && echo "CONFLICTS" || echo "CLEAN"
+  ```
+
+Do not run `git merge`/`git merge --abort` to test this — it mutates the working tree and can strand the user mid-merge. `merge-tree` is read-only by design.
+
 ## 2. Classify the change set
 
 Before dispatching reviewers, classify what the changes touch:
@@ -41,6 +70,11 @@ After all reviewers complete, produce a consolidated report:
 
 ```
 ## Review Summary — <PR title or branch name>
+
+### Mergeability
+- <Mergeable into `<target>`, no conflicts.> — OR —
+- <Conflicts with `<target>` in: path/a, path/b. Resolve before merging.> — OR —
+- <Not checked: loose-file review with no branch context.>
 
 ### Critical
 - <finding> [source: code-reviewer | security-reviewer | performance-reviewer | smell-reviewer]
@@ -72,6 +106,7 @@ Map each reviewer's severity vocabulary into the three buckets:
 - If there are Critical findings: recommend routing back to the responsible engineer before merging.
 - If there are only Minor/Advisory findings: surface them and ask the user whether to fix or accept.
 - If no findings: confirm the PR looks clean and suggest merging when ready.
+- If the mergeability probe reported conflicts: call this out prominently even when the code review is clean — a clean review does not mean the branch will merge. Recommend rebasing onto / merging the target branch and resolving conflicts before opening or updating the PR.
 
 ## Gotchas
 
@@ -81,3 +116,5 @@ Map each reviewer's severity vocabulary into the three buckets:
 - **Conflating review with implementation:** This skill surfaces findings — it does not fix them. If the user asks you to fix a Critical finding during review, pause and confirm whether they want to switch to /implement or /debug.
 - **Auth/setup failures, ambiguous repo or project targeting:** Don't troubleshoot these here — they're devops-github's and devops-azure's concern. Follow their gotchas sections (`skills/devops-github/SKILL.md`, `skills/devops-azure/SKILL.md`) instead of improvising a workaround.
 - **Azure DevOps diff reconstruction fails (branch not found locally):** `git fetch` the source/target refs from the PR's remote (`az repos pr show` output includes the repository) before diffing — don't assume they're already present locally.
+- **Mergeability probe on unfetched refs:** `git merge-tree` compares whatever the refs point at locally. If you probe a stale `main` (or a head ref you never fetched), the result is wrong — a phantom conflict or a false "clean". Always `git fetch` both refs immediately before the probe, and probe the remote-tracking ref (`origin/main`), not a stale local `main`.
+- **Reporting mergeability as a code finding:** Conflicts against the target are a *state* of the branch, not a code-quality defect — keep them in the dedicated Mergeability section, not mixed into Critical/Major. A branch can be perfectly written and still conflict because the target moved.
