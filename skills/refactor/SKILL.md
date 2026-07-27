@@ -55,7 +55,6 @@ an `## Obsidian sync request` section, you own the dispatch:
    - `vault_path`: `OBSIDIAN_VAULT_PATH`
    - `projects_folder`: `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
    - `project`: basename of the project directory
-   - `session_api_written`: `false`
    - `title`: the description given on that file's line
    - `body`: full content of the memory file (frontmatter + body)
    - `timestamp`: current datetime in `YYYY-MM-DDThh:mm` format
