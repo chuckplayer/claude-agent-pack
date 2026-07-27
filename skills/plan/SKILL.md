@@ -74,9 +74,6 @@ neither grants `Bash` or `Agent`. When either one ends its output with an
 2. For each memory file listed in that section, dispatch **obsidian-writer** with:
    - `write_mode`: `"capture"`
    - `vault_path`: `OBSIDIAN_VAULT_PATH`
-   - `cli_mode`: `OBSIDIAN_CLI_MODE` (default `"filesystem"`)
-   - `rest_api_port`: `OBSIDIAN_REST_API_PORT` (default `27124`)
-   - `rest_api_https`: `OBSIDIAN_REST_API_HTTPS` (default `"true"`)
    - `projects_folder`: `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
    - `project`: basename of the project directory
    - `session_api_written`: `false`
