@@ -180,9 +180,29 @@ nothing at all.
 
 ### Fallback: read-modify-write
 
-Append the new line to the content read in step 1 and write the full file back with the Write
-tool. Report in the return summary that the CLI was unavailable or unverified and the fallback
-was used, so a persistently broken CLI is visible rather than silently tolerated.
+Take the content **read in step 1** — the snapshot from before the CLI was attempted — append
+the new line to it, and write the full file back with the Write tool.
+
+**Use that snapshot, not a fresh read.** This is what makes the fallback safe to run after a
+partially-successful CLI call: if the CLI actually appended but verification could not confirm it,
+rewriting from the pre-append snapshot replaces the CLI's line rather than adding a second one.
+Re-reading the file first would produce a duplicate entry.
+
+Report in the return summary that the fallback was used and why, so a persistently broken CLI is
+visible rather than silently tolerated.
+
+### Failure cases, all of which must land on the fallback
+
+| Case | Behavior |
+|---|---|
+| Binary not found at any candidate path | Fallback. Expected on machines without the CLI enabled. |
+| Obsidian app not running | `append` errors, verification fails, fallback. |
+| Unrecognized `vault=` | The CLI writes to the *active* vault and reports success; read-back of the absolute path fails, so fallback writes the line correctly to the intended vault. A stray line remains in the other vault — unavoidable, and worth mentioning in the return summary if this is detected. |
+| stdout lacks `Appended to:` | Fallback. |
+| Read-back cannot confirm the line | Fallback, using the step 1 snapshot as above. |
+
+The daily-note append must never fail because the CLI failed. The CLI is an optimization over the
+fallback, never a dependency.
 
 ## Return to calling skill
 
@@ -200,3 +220,6 @@ Report:
 - Never delete, truncate, or overwrite any other vault file. Captures are
   write-once; the recap file is the sole exception to "no overwrite" and only
   for its own dated path.
+- Never let a CLI failure fail the write. Every CLI failure path ends at the
+  filesystem fallback; there is no case where a missing, broken, or unverifiable
+  CLI means the daily note goes un-appended.

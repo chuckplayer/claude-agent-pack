@@ -142,10 +142,10 @@ you wrote none. Do not try to determine whether `OBSIDIAN_VAULT_PATH` is set —
 calling session gates on that and skips the dispatch silently when it is unset.
 
 The calling session dispatches **obsidian-writer** with `write_mode: capture`, the
-title and body read from each listed file, and every vault/transport field
-(`vault_path`, `cli_mode`, `rest_api_port`, `rest_api_https`, `projects_folder`,
-`project`, `timestamp`) resolved from its own environment. If the sync never happens,
-nothing is lost — the project's `memory/` file is the authoritative record.
+title and body read from each listed file, and the remaining fields (`vault_path`,
+`projects_folder`, `project`, `timestamp`, `session_api_written`) resolved from its own
+environment. If the sync never happens, nothing is lost — the project's `memory/` file
+is the authoritative record.
 
 ## Extended Thinking
 
