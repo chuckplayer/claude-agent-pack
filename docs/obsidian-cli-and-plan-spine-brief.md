@@ -84,10 +84,21 @@ next on unverified failure; the filesystem rung is unconditional.
 
 | Rung | Create | Append | Reports its own failures? |
 |---|---|---|---|
-| 1. Obsidian CLI | `create … overwrite` → `Created:` | `append … inline` (leading `
-`) → `Appended to:` | **No** — exit 0 on all errors |
+| 1. Obsidian CLI | `create` → `Created:` (**never** `overwrite` — see below) | `append … inline` with a leading newline escape → `Appended to:` | **No** — exit 0 on all errors |
 | 2. Local REST API | `PUT /vault/<rel>` → 204 | `POST /vault/<rel>` → 204 | Yes — HTTP status |
 | 3. Filesystem | `Write` tool | snapshot rewrite | Yes — `Write` fails loudly |
+
+**`overwrite` is never passed to the CLI.** Because an unrecognized `vault=` is silently ignored,
+a misrouted `create … overwrite` would not merely disclose content to another vault — it would
+*destroy* an unrelated note there. Data loss, not leakage. Without the flag, a misrouted create
+fails harmlessly when the target exists. Two consequences, both deliberate:
+
+- The recap's intentional overwrite of its own dated file cannot use rung 1. Once that file
+  exists, `create` declines and the chain falls through to rung 2's `PUT` or rung 3's `Write`,
+  which replace it safely and report honestly.
+- Capture write-once is enforced *ahead* of the chain, not by it — rung 2's `PUT` is inherently an
+  overwrite and rung 3's `Write` replaces anything. The target path is read first, and on
+  collision a numeric suffix is appended until it is free.
 
 `OBSIDIAN_CLI_MODE` is **not** extended and gains no `cli` value. It stays as-is; the chain is
 unconditional and degrades on its own, so a mode selector would only add a way to misconfigure it.
