@@ -38,11 +38,12 @@ If empty, stop and tell the user:
 > the `env` key."
 
 Also read:
-- `OBSIDIAN_REST_API_KEY` (empty string if unset — key presence gates REST API use)
-- `OBSIDIAN_REST_API_PORT` (default `27124` if unset)
-- `OBSIDIAN_REST_API_HTTPS` (default `"true"` if unset)
 - `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
 - `CLAUDE_PROJECT_DIR` (or fall back to current working directory)
+
+You do not need the REST API variables — `obsidian-writer` owns the transport chain
+(CLI → REST API → filesystem) and reads them from the environment itself. Never pass the
+API key to an agent; it would land in the dispatch payload and the transcript.
 
 ## Step 2 — Determine date and scope
 
@@ -126,29 +127,10 @@ Grounding rules:
 - Wikilinks are vault-relative: strip the `OBSIDIAN_VAULT_PATH` prefix, convert
   backslashes to forward slashes, drop the `.md` extension.
 
-## Step 5 — Write the recap (REST API if key present, filesystem fallback)
+## Step 5 — Dispatch obsidian-writer
 
 **Vault-relative recap path:** `<effective_folder>/<project_slug>/recaps/<YYYY-MM-DD>.md`
 (use forward slashes).
-
-### 5a. REST API attempt (skip if `OBSIDIAN_REST_API_KEY` is empty)
-
-If the key is set, attempt the PUT — try PowerShell first, curl fallback — using
-**exactly the pattern in `/obsidian-capture` step 3a** (read
-`skills/obsidian-capture/SKILL.md` if you need the code). The pattern is the
-single source of truth for the REST write; do not improvise a different one.
-Substitute:
-
-- `$vaultRel` / `VAULT_REL` → `<effective_folder>/<project_slug>/recaps/<YYYY-MM-DD>.md`
-- `$body` / `BODY` → the recap markdown from step 4
-
-The result sets `apiWritten` to `true` or `false`.
-
-- If `apiWritten` is `true`: dispatch obsidian-writer with `recap_api_written: true`
-  (it will skip the recap file write and only append the daily note).
-- If `apiWritten` is `false`: dispatch obsidian-writer normally.
-
-### 5b. Dispatch obsidian-writer
 
 Invoke the **obsidian-writer** agent with:
 
@@ -159,13 +141,15 @@ Invoke the **obsidian-writer** agent with:
 - `date`: target date (`YYYY-MM-DD`)
 - `recap_markdown`: the full markdown from step 4
 - `session_count`: number of session notes read
-- `recap_api_written`: `true` if 5a succeeded, `false` otherwise
+
+Do not attempt the REST API here. obsidian-writer tries the Obsidian CLI, then the REST API,
+then the filesystem, and reports which one succeeded.
 
 ## Step 6 — Confirm
 
 Report the recap path and write method. Example:
 
-> "Daily recap written to `<org>/claude-agent-pack/recaps/2026-07-01.md` (via REST API)"
+> "Daily recap written to `<org>/claude-agent-pack/recaps/2026-07-01.md` (via Obsidian CLI)"
 
 or:
 

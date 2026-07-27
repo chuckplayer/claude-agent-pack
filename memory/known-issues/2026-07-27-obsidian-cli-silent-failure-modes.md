@@ -61,9 +61,28 @@ Step 2 is what catches vault misrouting, and it only works against the absolute 
 confirm a bad write. Using Bash (`cat`, `grep`) would route the check back through the channel
 that fails silently on this machine.
 
-If either check fails, fall through to the filesystem transport. A failed CLI call is safe to
-retry this way: `append` against a missing file errors and creates nothing, so there is no
+If either check fails, fall through to the next transport. A failed CLI call is safe to retry
+this way: `append` against a missing file errors and creates nothing, so there is no
 partial-write state to clean up.
+
+**Two further mitigations for symptom 2, added after security review:**
+
+1. **Never pass `overwrite` to `create`.** A misrouted write with `overwrite` would clobber an
+   unrelated note in whatever vault is active — data loss, not merely disclosure. Without it, a
+   misrouted create fails harmlessly when the target already exists. The cost is that an
+   intentional overwrite (the dated recap file) cannot use the CLI and must fall through to the
+   REST API's `PUT` or a filesystem `Write`.
+2. **Remediate a detected misroute.** When stdout says success but read-back of the absolute path
+   fails, the content landed in another vault — potentially personal, unrelated, or cloud-synced,
+   and containing a full capture body or recap. Delete the stray copy
+   (`delete path="<rel>" permanent`), continue down the chain so the content still reaches the
+   intended vault, and warn prominently in the return summary. Deleting is safe *only* because
+   `overwrite` is never used, so the stray file is known to be new rather than a clobbered
+   original.
+
+Treat a misroute as a **data-disclosure event**. The earlier framing of it as an unavoidable
+"stray line" understated it in two ways: extending the chain to cover file creation means a whole
+document can be misrouted rather than one line, and no remediation existed.
 
 **Revisit trigger:** an Obsidian release note stating that the CLI returns nonzero exit codes on
 error, or that an unrecognized `vault=` is rejected rather than ignored. Re-test with the two
