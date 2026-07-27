@@ -30,7 +30,7 @@ Without orchestration, a single session planning an architecture change, writing
 | smell-reviewer | Structural anti-pattern detection: God classes, long methods, dead code, feature envy, comment smells (TODO/HACK/FIXME/XXX). Offers to record accepted patterns as suppressions in CONVENTIONS.md | After code-reviewer on every code change; parallel with security-reviewer and performance-reviewer |
 | test-engineer | Test generation matching established project patterns | After code-reviewer has completed its review |
 | merge-reviewer | Final pipeline gate -- verifies all stages passed and commits to the feature branch | After test-engineer completes; never merges to main |
-| obsidian-writer | Writes session logs and capture notes to the vault via filesystem; skips the main file when the calling skill already wrote it via REST API and handles only the daily note append | Dispatched by Obsidian skills; never writes outside allowed vault directories |
+| obsidian-writer | Owns the entire vault write chain -- Obsidian CLI, then Local REST API, then filesystem -- verifying each rung before accepting it, and writes both the main note and the daily note append | Dispatched by Obsidian skills; never writes outside allowed vault directories |
 
 ## Installation
 
@@ -51,7 +51,7 @@ This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY
 
 ## Skills
 
-Twenty-six slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Twenty-seven slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
@@ -91,10 +91,15 @@ The installer optionally connects Claude Code to an [Obsidian](https://obsidian.
 
 - `<base>/sessions/YYYY-MM-DD-HHmm-<project>.md` — git branch, last 5 commits, diff stat, uncommitted changes, what was discussed (every prompt you sent), which agents ran, and any decisions Claude recorded
 - `<base>/daily/YYYY-MM-DD.md` — one timestamped line per session linking to the session note, including a compact diff stat (`· 11 files +99 -87`)
+- `<base>/_current.md` — a living per-project state note: where work left off, open threads, and the five most recent sessions. Rewritten on every Stop/SessionEnd and read back into context at the start of the next session by the SessionStart hook
 - `<base>/decisions/<file>.md` — auto-captured when `memory/decisions/` gains a new or changed file; links into the daily note
 - `<base>/memory-snapshot.md` — freeze of `./memory/**/*.md` (recursive) for vault-side search
 
-**How decisions get recorded:** a CLAUDE.md rule instructs Claude to append to `~/.claude/session-decisions.txt` whenever a significant architectural choice is made. The Stop hook reads this file and populates the `## Decisions made` section of the session log, then clears it for the next session.
+Skills write two more, on demand rather than per session: `<base>/recaps/YYYY-MM-DD.md` (`/obsidian-recap`) and `<vault>/Claude/captures/YYYY-MM-DD-HHmm.md` (`/obsidian-capture`, which is always project-independent). Separately, a `PostToolUse` hook mirrors Claude Code's own auto-memory files into `<vault>/Claude/Memory/<project-slug>/` the moment they are written.
+
+**How decisions get recorded:** a CLAUDE.md rule instructs Claude to append to `~/.claude/session-decisions-<session-id>.txt` whenever a significant architectural choice is made. The Stop hook reads this file and populates the `## Decisions made` section of the session log, then clears it for the next session.
+
+**How open threads carry across sessions:** a companion rule instructs Claude to append to `~/.claude/session-state-<session-id>.txt`. A plain line records where work stands, `THREAD: <text>` opens an item that persists across sessions, and `DONE: <text>` resolves a previously recorded one. The Stop hook folds all three into `_current.md`, so the next session starts with the open threads already in context.
 
 Where `<base>` is determined by two env vars set during install:
 
@@ -102,9 +107,10 @@ Where `<base>` is determined by two env vars set during install:
 |---|---|
 | `OBSIDIAN_VAULT_PATH` | Absolute path to your vault (required) |
 | `OBSIDIAN_PROJECTS_FOLDER` | Folder inside the vault for project logs (defaults to `Claude/Projects` if blank) |
-| `OBSIDIAN_REST_API_KEY` | API key for the [Obsidian Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) plugin (optional). When set, writes go through the REST API first with filesystem fallback. When absent, writes go directly to the filesystem. |
+| `OBSIDIAN_REST_API_KEY` | API key for the [Obsidian Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) plugin (optional). When set, the REST API becomes an available transport rung. When absent, that rung is skipped entirely. |
 | `OBSIDIAN_REST_API_PORT` | REST API port (default `27124` when key is set) |
 | `OBSIDIAN_REST_API_HTTPS` | `true`/`false` — whether the REST API uses HTTPS (default `true`) |
+| `OBSIDIAN_CLI_MODE` | Set by the installer to `rest-api` or `filesystem` depending on whether a REST API key was supplied; records which transports are configured |
 
 With `OBSIDIAN_PROJECTS_FOLDER=Projects` and project `agent-pack`:
 `<vault>/Projects/agent-pack/sessions/`, `<vault>/Projects/agent-pack/daily/`
@@ -112,7 +118,14 @@ With `OBSIDIAN_PROJECTS_FOLDER=Projects` and project `agent-pack`:
 Default (`OBSIDIAN_PROJECTS_FOLDER=Claude/Projects` when blank):
 `<vault>/Claude/Projects/agent-pack/sessions/`, `<vault>/Claude/Projects/agent-pack/daily/`
 
-**Setup:** the installer prompts for your vault path, an optional projects folder, and an optional REST API key. If the key is provided, writes go through the Obsidian Local REST API first (filesystem fallback on any failure). Without a key, writes go directly to the filesystem — Obsidian's file watcher picks them up within seconds either way.
+**How writes reach the vault:** there are two write paths, and they use different transports.
+
+- **Skill-driven writes** (`/obsidian-capture`, `/obsidian-recap`) go through the `obsidian-writer` agent, which owns the full chain: **Obsidian CLI → Local REST API → filesystem**, verifying each rung before accepting it and falling through on failure. The CLI rung needs no plugin — the binary ships with the desktop app and is located at runtime, so there is nothing to configure. The CLI returns exit 0 even on failure, so every CLI write is read back before it counts as done. The filesystem rung is unconditional: a vault write never fails because a transport did. Calling skills must not attempt the REST API themselves — that would run ahead of the agent and defeat the CLI-first ordering.
+- **Hook-driven writes** (session notes, daily notes, `_current.md`, memory snapshot) are pure Node.js with no agent in the loop, so they use **REST API → filesystem**: the REST API when `OBSIDIAN_REST_API_KEY` is set, the filesystem otherwise.
+
+Obsidian's file watcher picks up filesystem writes within seconds either way.
+
+**Setup:** the installer prompts for your vault path, an optional projects folder, and an optional REST API key, then registers the Stop, SessionEnd, UserPromptSubmit, SubagentStop, SessionStart, and PostToolUse hooks.
 
 **Manual skills:** use `/obsidian-brief`, `/obsidian-recap`, `/obsidian-capture`, `/obsidian-daily`, and `/obsidian-search` at any time regardless of the auto-log hook. Session notes are written automatically by the Stop/SessionEnd hooks; `/obsidian-recap` turns a day's worth of them into a readable narrative.
 
@@ -149,7 +162,7 @@ az login
 
 ## Scripts
 
-Eight utility scripts are included in `scripts/`.
+Ten utility scripts are included in `scripts/`.
 
 | Script | What it does |
 |---|---|
@@ -158,9 +171,11 @@ Eight utility scripts are included in `scripts/`.
 | `check-updates` | Diffs installed agents and skills against the pack source; flags anything outdated |
 | `lint-agents` | Validates all agent and skill files for required frontmatter fields, description length, and body content |
 | `set-env` | Writes one or more `KEY=VALUE` pairs into `~/.claude/settings.json`'s `env` object (node-first, python fallback) — used by `/devops-github` and `/devops-azure` to persist config that changes more often than a one-time install, without relying on a shell profile |
-| `obsidian-stop-hook` | Auto-log hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on Stop and SessionEnd; writes the session note and daily note; tries REST API when `OBSIDIAN_REST_API_KEY` is set, falls back to filesystem |
+| `obsidian-stop-hook` | Auto-log hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on Stop and SessionEnd; writes the session note, daily note, `_current.md`, and memory snapshot; tries REST API when `OBSIDIAN_REST_API_KEY` is set, falls back to filesystem |
 | `obsidian-prompt-hook` | Prompt capture hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on UserPromptSubmit; appends each user prompt to a per-session journal for inclusion in the session log |
 | `obsidian-agent-hook` | Agent completion hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on SubagentStop; records which agents ran during the session for inclusion in the session log |
+| `obsidian-context-hook` | Context injection hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on SessionStart; prints the project's `_current.md` to stdout so Claude Code loads where you left off and your open threads into context. Read-only |
+| `obsidian-memory-hook` | PostToolUse hook (`.js`, pure Node.js) — installed to `~/.claude/scripts/`; fires on `Write`/`Edit` (matcher-scoped, so it does not run after every tool call); mirrors Claude Code's own auto-memory files (`~/.claude/projects/<project>/memory/*.md`, excluding `MEMORY.md`) into `<vault>/Claude/Memory/<project-slug>/` as they are written. Distinct from the repo `memory/` directory, which the stop hook snapshots on SessionEnd |
 
 ```bash
 bash scripts/setup-project.sh <project>
@@ -213,7 +228,7 @@ The `memory/` directory gives agents a lightweight persistence layer. Decisions,
 
 Memory is committed to version control so the full team shares accumulated context. When the tech-lead records an architectural decision, every future agent session in that codebase picks it up automatically.
 
-**Who writes:** tech-lead (for decisions) and devils-advocate (for challenge sessions). All other agents are read-only.
+**Who writes:** tech-lead (for decisions) and devils-advocate (for challenge sessions). Engineer agents (csharp, frontend, mcp, database) may also write to `memory/known-issues/`, but only for a genuine platform quirk or constraint that is non-obvious, affects future work, and is not already documented. All other agents are read-only.
 
 **File naming:** `YYYY-MM-DD-[decision|challenge]-brief-slug.md` in the appropriate subdirectory.
 
@@ -255,7 +270,7 @@ Agents are updated in-place. Re-running the installer is safe -- it is idempoten
 bash <pack-dir>/uninstall.sh
 ```
 
-The uninstaller removes agents from `~/.claude/agents/`, skills from `~/.claude/skills/`, all three Obsidian hook scripts (`obsidian-stop-hook.js`, `obsidian-prompt-hook.js`, `obsidian-agent-hook.js`) from `~/.claude/scripts/`, and all Obsidian env vars (`OBSIDIAN_VAULT_PATH`, `OBSIDIAN_PROJECTS_FOLDER`, `OBSIDIAN_REST_API_KEY`, `OBSIDIAN_REST_API_PORT`, `OBSIDIAN_REST_API_HTTPS`) from `~/.claude/settings.json` — all after confirmation. Project-level `memory/` directories are not touched.
+The uninstaller removes agents from `~/.claude/agents/`, skills from `~/.claude/skills/`, all five installed Obsidian hook scripts (`obsidian-stop-hook.js`, `obsidian-prompt-hook.js`, `obsidian-agent-hook.js`, `obsidian-context-hook.js`, `obsidian-memory-hook.js`) plus their `settings.json` hook entries, and all Obsidian env vars (`OBSIDIAN_VAULT_PATH`, `OBSIDIAN_PROJECTS_FOLDER`, `OBSIDIAN_CLI_MODE`, `OBSIDIAN_REST_API_KEY`, `OBSIDIAN_REST_API_PORT`, `OBSIDIAN_REST_API_HTTPS`) from `~/.claude/settings.json` — all after confirmation. Project-level `memory/` directories and anything already written to your vault are not touched.
 
 ## Agent Dashboard
 
