@@ -18,6 +18,7 @@ HOOK_STOP_JS="$HOME/.claude/scripts/obsidian-stop-hook.js"
 HOOK_PROMPT_JS="$HOME/.claude/scripts/obsidian-prompt-hook.js"
 HOOK_AGENT_JS="$HOME/.claude/scripts/obsidian-agent-hook.js"
 HOOK_CONTEXT_JS="$HOME/.claude/scripts/obsidian-context-hook.js"
+HOOK_MEMORY_JS="$HOME/.claude/scripts/obsidian-memory-hook.js"
 
 if [ -f "$SETTINGS" ] && command -v python3 &>/dev/null; then
     has_obsidian_env=$(python3 - "$SETTINGS" <<'PYEOF'
@@ -34,7 +35,7 @@ PYEOF
     [ "$has_obsidian_env" = "yes" ] && remove_obsidian_env=true
 fi
 
-if [ -f "$HOOK_SH" ] || [ -f "$HOOK_STOP_JS" ] || [ -f "$HOOK_PROMPT_JS" ] || [ -f "$HOOK_AGENT_JS" ] || [ -f "$HOOK_CONTEXT_JS" ]; then
+if [ -f "$HOOK_SH" ] || [ -f "$HOOK_STOP_JS" ] || [ -f "$HOOK_PROMPT_JS" ] || [ -f "$HOOK_AGENT_JS" ] || [ -f "$HOOK_CONTEXT_JS" ] || [ -f "$HOOK_MEMORY_JS" ]; then
     remove_obsidian_hooks=true
 fi
 
@@ -69,7 +70,7 @@ echo ""
 for path in "${to_remove_agents[@]}"; do echo "  agent: $(basename "$path")"; done
 for path in "${to_remove_skills[@]}"; do echo "  skill: $(basename "$path")"; done
 [ "$remove_obsidian_env" = true ] && echo "  env:   OBSIDIAN_VAULT_PATH, OBSIDIAN_CLI_MODE, OBSIDIAN_REST_API_PORT, OBSIDIAN_REST_API_KEY, OBSIDIAN_PROJECTS_FOLDER (~/.claude/settings.json)"
-[ "$remove_obsidian_hooks" = true ] && echo "  hook:  obsidian hook scripts (~/.claude/scripts/obsidian-{stop,prompt,agent,context}-hook.js)"
+[ "$remove_obsidian_hooks" = true ] && echo "  hook:  obsidian hook scripts (~/.claude/scripts/obsidian-{stop,prompt,agent,context,memory}-hook.js)"
 
 echo ""
 read -p "Remove these? [y/N] " response
@@ -108,7 +109,7 @@ PYEOF
 fi
 
 if [ "$remove_obsidian_hooks" = true ]; then
-    rm -f "$HOOK_SH" "$HOOK_STOP_JS" "$HOOK_PROMPT_JS" "$HOOK_AGENT_JS" "$HOOK_CONTEXT_JS"
+    rm -f "$HOOK_SH" "$HOOK_STOP_JS" "$HOOK_PROMPT_JS" "$HOOK_AGENT_JS" "$HOOK_CONTEXT_JS" "$HOOK_MEMORY_JS"
     # Remove all Obsidian hook entries and the decisions permission from settings.json
     if [ -f "$SETTINGS" ] && command -v python3 &>/dev/null; then
         python3 - "$SETTINGS" <<'PYEOF'
@@ -117,14 +118,14 @@ p = sys.argv[1]
 with open(p) as f:
     s = json.load(f)
 hooks = s.get("hooks", {})
-markers = ['obsidian-stop-hook', 'obsidian-prompt-hook', 'obsidian-agent-hook', 'obsidian-context-hook']
+markers = ['obsidian-stop-hook', 'obsidian-prompt-hook', 'obsidian-agent-hook', 'obsidian-context-hook', 'obsidian-memory-hook']
 def is_obsidian(entry):
     return isinstance(entry, dict) and any(
         m in h.get('command', '')
         for h in entry.get('hooks', [])
         for m in markers
     )
-for key in ("Stop", "SessionEnd", "UserPromptSubmit", "SubagentStop", "SessionStart"):
+for key in ("Stop", "SessionEnd", "UserPromptSubmit", "SubagentStop", "SessionStart", "PostToolUse"):
     old = hooks.get(key, [])
     new = [h for h in old if not is_obsidian(h)]
     if new != old:
@@ -132,6 +133,9 @@ for key in ("Stop", "SessionEnd", "UserPromptSubmit", "SubagentStop", "SessionSt
             hooks[key] = new
         else:
             del hooks[key]
+# Drop any hook key left holding an empty list (cruft from earlier versions).
+for key in [k for k, v in hooks.items() if isinstance(v, list) and not v]:
+    del hooks[key]
 if not hooks:
     s.pop("hooks", None)
 allow = s.get("permissions", {}).get("allow", [])

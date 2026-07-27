@@ -33,8 +33,17 @@ process.stdin.on('close', () => {
     let content;
     try { content = readFileSync(filePath, 'utf8'); } catch { process.exit(0); }
 
-    // Mirror to vault: Claude/Memory/<filename>
-    const targetDir = path.join(vault, 'Claude', 'Memory');
+    // Project slug — same derivation as the stop and context hooks, so the folder
+    // name matches the one used under the projects folder. Namespacing by project
+    // is required: memory filenames are generic and collide across projects.
+    const projectDir = (process.env.CLAUDE_PROJECT_DIR || payload.cwd || process.cwd())
+      .replace(/[\r\n]/g, '');
+    const rawName = path.basename(projectDir).replace(/[\r\n:#{}|>`]/g, '');
+    const slug = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '').slice(0, 30) || 'unknown';
+
+    // Mirror to vault: Claude/Memory/<project-slug>/<filename>
+    const targetDir = path.join(vault, 'Claude', 'Memory', slug);
     const targetPath = path.join(targetDir, basename);
 
     // Security guard: must stay inside vault/Claude/

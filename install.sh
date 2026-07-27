@@ -211,9 +211,9 @@ const fs=require('fs'),os=require('os'),path=require('path');
 const p=path.join(os.homedir(),'.claude','settings.json');
 const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
 if(s.env){['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS','OBSIDIAN_PROJECTS_FOLDER','OBSIDIAN_REST_API_KEY'].forEach(k=>delete s.env[k]);}
-const obsidianMarkers=['obsidian-stop-hook','obsidian-prompt-hook','obsidian-agent-hook','obsidian-context-hook'];
+const obsidianMarkers=['obsidian-stop-hook','obsidian-prompt-hook','obsidian-agent-hook','obsidian-context-hook','obsidian-memory-hook'];
 const isObsidian=e=>e&&Array.isArray(e.hooks)&&e.hooks.some(h=>obsidianMarkers.some(m=>h.command&&h.command.includes(m)));
-['Stop','SessionEnd','UserPromptSubmit','SubagentStop','SessionStart'].forEach(k=>{
+['Stop','SessionEnd','UserPromptSubmit','SubagentStop','SessionStart','PostToolUse'].forEach(k=>{
   if(s.hooks&&s.hooks[k]){s.hooks[k]=s.hooks[k].filter(e=>!isObsidian(e));if(!s.hooks[k].length)delete s.hooks[k];}
 });
 if(s.permissions&&s.permissions.allow){
@@ -229,10 +229,10 @@ p = os.path.expanduser("~/.claude/settings.json")
 s = json.load(open(p)) if os.path.exists(p) else {}
 for k in ['OBSIDIAN_VAULT_PATH','OBSIDIAN_CLI_MODE','OBSIDIAN_REST_API_PORT','OBSIDIAN_REST_API_HTTPS','OBSIDIAN_PROJECTS_FOLDER','OBSIDIAN_REST_API_KEY']:
     s.get('env', {}).pop(k, None)
-markers = ['obsidian-stop-hook', 'obsidian-prompt-hook', 'obsidian-agent-hook', 'obsidian-context-hook']
+markers = ['obsidian-stop-hook', 'obsidian-prompt-hook', 'obsidian-agent-hook', 'obsidian-context-hook', 'obsidian-memory-hook']
 def is_obsidian(e):
     return any(m in h.get('command', '') for h in e.get('hooks', []) for m in markers)
-for key in ('Stop', 'SessionEnd', 'UserPromptSubmit', 'SubagentStop', 'SessionStart'):
+for key in ('Stop', 'SessionEnd', 'UserPromptSubmit', 'SubagentStop', 'SessionStart', 'PostToolUse'):
     if key in s.get('hooks', {}):
         s['hooks'][key] = [e for e in s['hooks'][key] if not is_obsidian(e)]
         if not s['hooks'][key]:
@@ -416,13 +416,14 @@ PYEOF
             echo "  [ok] env:    OBSIDIAN_PROJECTS_FOLDER=$projects_folder (default)"
         fi
 
-        # Install hook scripts (stop, prompt journal, agent tracker, context loader)
+        # Install hook scripts (stop, prompt journal, agent tracker, context loader, memory mirror)
         mkdir -p "$HOME/.claude/scripts"
         cp "$SCRIPT_DIR/scripts/obsidian-stop-hook.js"    "$HOME/.claude/scripts/"
         cp "$SCRIPT_DIR/scripts/obsidian-prompt-hook.js"  "$HOME/.claude/scripts/"
         cp "$SCRIPT_DIR/scripts/obsidian-agent-hook.js"   "$HOME/.claude/scripts/"
         cp "$SCRIPT_DIR/scripts/obsidian-context-hook.js" "$HOME/.claude/scripts/"
-        echo "  [ok] hook:   obsidian hook scripts installed (stop, prompt, agent, context)"
+        cp "$SCRIPT_DIR/scripts/obsidian-memory-hook.js"  "$HOME/.claude/scripts/"
+        echo "  [ok] hook:   obsidian hook scripts installed (stop, prompt, agent, context, memory)"
 
         # Build hook commands. Pure Node.js — works identically on Windows and macOS/Linux.
         # Use `type -P` to find the actual node binary; `command -v` may return an alias.
@@ -439,45 +440,55 @@ PYEOF
                 prompt_js="$(cygpath -w "$HOME/.claude/scripts/obsidian-prompt-hook.js")"
                 agent_js="$(cygpath -w "$HOME/.claude/scripts/obsidian-agent-hook.js")"
                 context_js="$(cygpath -w "$HOME/.claude/scripts/obsidian-context-hook.js")"
+                memory_js="$(cygpath -w "$HOME/.claude/scripts/obsidian-memory-hook.js")"
             else
                 node_cmd="$node_posix"
                 stop_js="$HOME/.claude/scripts/obsidian-stop-hook.js"
                 prompt_js="$HOME/.claude/scripts/obsidian-prompt-hook.js"
                 agent_js="$HOME/.claude/scripts/obsidian-agent-hook.js"
                 context_js="$HOME/.claude/scripts/obsidian-context-hook.js"
+                memory_js="$HOME/.claude/scripts/obsidian-memory-hook.js"
             fi
             stop_cmd="\"${node_cmd}\" \"${stop_js}\""
             session_end_cmd="\"${node_cmd}\" \"${stop_js}\" \"SessionEnd\""
             prompt_cmd="\"${node_cmd}\" \"${prompt_js}\""
             agent_cmd="\"${node_cmd}\" \"${agent_js}\""
             context_cmd="\"${node_cmd}\" \"${context_js}\""
+            memory_cmd="\"${node_cmd}\" \"${memory_js}\""
         else
             echo "  WARNING: node not found — Obsidian hooks not registered."
             echo "           Install Node.js and re-run install.sh to enable auto-logging."
             stop_cmd=""
         fi
 
-        # Register all four hooks, replacing any existing obsidian entries.
+        # Register all six hooks, replacing any existing obsidian entries.
         # Stop/SessionEnd: auto-log on every response and at session end.
         # UserPromptSubmit: journal user prompts for "What was discussed" section.
         # SubagentStop: track which agents completed for "Agents invoked" section.
+        # SessionStart: load the project's _current.md back into context.
+        # PostToolUse (Write|Edit): mirror auto-memory writes to the vault.
         if [ -n "$stop_cmd" ]; then
         if [ "$json_tool" = "node" ]; then
-            node - "$stop_cmd" "$session_end_cmd" "$prompt_cmd" "$agent_cmd" "$context_cmd" <<'JSEOF'
+            node - "$stop_cmd" "$session_end_cmd" "$prompt_cmd" "$agent_cmd" "$context_cmd" "$memory_cmd" <<'JSEOF'
 const fs=require('fs'),os=require('os'),path=require('path');
 const p=path.join(os.homedir(),'.claude','settings.json');
 const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
 if(!s.hooks)s.hooks={};
-const [,, stopCmd, sessionEndCmd, promptCmd, agentCmd, contextCmd]=process.argv;
-const setHook=(k,cmd,marker)=>{
+const [,, stopCmd, sessionEndCmd, promptCmd, agentCmd, contextCmd, memoryCmd]=process.argv;
+// matcher is optional: event hooks take none, tool hooks (PostToolUse) require one
+// so the command does not run after every single tool call.
+const setHook=(k,cmd,marker,matcher)=>{
   s.hooks[k]=(s.hooks[k]||[]).filter(e=>!(e&&Array.isArray(e.hooks)&&e.hooks.some(h=>h.command&&h.command.includes(marker))));
-  s.hooks[k].push({hooks:[{type:'command',command:cmd}]});
+  s.hooks[k].push(matcher?{matcher,hooks:[{type:'command',command:cmd}]}:{hooks:[{type:'command',command:cmd}]});
 };
 setHook('Stop',       stopCmd,       'obsidian-stop-hook');
 setHook('SessionEnd', sessionEndCmd, 'obsidian-stop-hook');
 setHook('UserPromptSubmit', promptCmd, 'obsidian-prompt-hook');
 setHook('SubagentStop',     agentCmd,  'obsidian-agent-hook');
 setHook('SessionStart',     contextCmd, 'obsidian-context-hook');
+setHook('PostToolUse',      memoryCmd, 'obsidian-memory-hook', 'Write|Edit');
+// Drop any hook key left holding an empty array (cruft from earlier versions).
+Object.keys(s.hooks).forEach(k=>{if(Array.isArray(s.hooks[k])&&!s.hooks[k].length)delete s.hooks[k];});
 if(!s.permissions)s.permissions={};
 if(!s.permissions.allow)s.permissions.allow=[];
 const decPerm='Bash(echo *session-decisions*)';
@@ -485,21 +496,30 @@ if(!s.permissions.allow.includes(decPerm))s.permissions.allow.push(decPerm);
 fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
 JSEOF
         else
-            "$json_tool" - "$stop_cmd" "$session_end_cmd" "$prompt_cmd" "$agent_cmd" "$context_cmd" <<'PYEOF'
+            "$json_tool" - "$stop_cmd" "$session_end_cmd" "$prompt_cmd" "$agent_cmd" "$context_cmd" "$memory_cmd" <<'PYEOF'
 import json, os, sys
 p = os.path.expanduser("~/.claude/settings.json")
 s = json.load(open(p)) if os.path.exists(p) else {}
 hooks = s.setdefault("hooks", {})
-stop_cmd, session_end_cmd, prompt_cmd, agent_cmd, context_cmd = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
-def set_hook(key, cmd, marker):
+stop_cmd, session_end_cmd, prompt_cmd, agent_cmd, context_cmd, memory_cmd = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
+# matcher is optional: event hooks take none, tool hooks (PostToolUse) require one
+# so the command does not run after every single tool call.
+def set_hook(key, cmd, marker, matcher=None):
     entries = [e for e in hooks.get(key, []) if not any(marker in h.get('command', '') for h in e.get('hooks', []))]
-    entries.append({"hooks": [{"type": "command", "command": cmd}]})
+    entry = {"hooks": [{"type": "command", "command": cmd}]}
+    if matcher:
+        entry = {"matcher": matcher, "hooks": entry["hooks"]}
+    entries.append(entry)
     hooks[key] = entries
 set_hook("Stop",            stop_cmd,        "obsidian-stop-hook")
 set_hook("SessionEnd",      session_end_cmd, "obsidian-stop-hook")
 set_hook("UserPromptSubmit", prompt_cmd,     "obsidian-prompt-hook")
 set_hook("SubagentStop",    agent_cmd,       "obsidian-agent-hook")
 set_hook("SessionStart",    context_cmd,     "obsidian-context-hook")
+set_hook("PostToolUse",     memory_cmd,      "obsidian-memory-hook", "Write|Edit")
+# Drop any hook key left holding an empty list (cruft from earlier versions).
+for k in [k for k, v in hooks.items() if isinstance(v, list) and not v]:
+    del hooks[k]
 perms = s.setdefault("permissions", {})
 allow = perms.setdefault("allow", [])
 dec_perm = "Bash(echo *session-decisions*)"
@@ -514,7 +534,7 @@ PYEOF
         if [ $? -ne 0 ]; then
             echo "  ERROR: failed to update ~/.claude/settings.json"
         fi
-        echo "  [ok] hook:   Stop, SessionEnd, UserPromptSubmit, SubagentStop, SessionStart hooks registered"
+        echo "  [ok] hook:   Stop, SessionEnd, UserPromptSubmit, SubagentStop, SessionStart, PostToolUse hooks registered"
         fi
     elif [ "$obsidian_setup" = "true" ] && [ -z "$vault_path" ]; then
         echo "  [skip] No vault path provided — skipping Obsidian setup."
