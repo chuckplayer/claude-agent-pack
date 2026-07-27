@@ -43,6 +43,29 @@ Invoke if tech-lead flags the refactor as:
 
 Skip for straightforward extractions, renames, or formatting changes.
 
+## 4a. Obsidian sync requests
+
+tech-lead (step 3) and devils-advocate (step 4) write memory files but cannot reach the
+vault themselves — neither grants `Bash` or `Agent`. When either one ends its output with
+an `## Obsidian sync request` section, you own the dispatch:
+
+1. Check `$env:OBSIDIAN_VAULT_PATH`. If empty, skip silently — do not tell the user.
+2. For each memory file listed in that section, dispatch **obsidian-writer** with:
+   - `write_mode`: `"capture"`
+   - `vault_path`: `OBSIDIAN_VAULT_PATH`
+   - `cli_mode`: `OBSIDIAN_CLI_MODE` (default `"filesystem"`)
+   - `rest_api_port`: `OBSIDIAN_REST_API_PORT` (default `27124`)
+   - `rest_api_https`: `OBSIDIAN_REST_API_HTTPS` (default `"true"`)
+   - `projects_folder`: `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
+   - `project`: basename of the project directory
+   - `session_api_written`: `false`
+   - `title`: the description given on that file's line
+   - `body`: full content of the memory file (frontmatter + body)
+   - `timestamp`: current datetime in `YYYY-MM-DDThh:mm` format
+
+If obsidian-writer errors or the vault directory is missing, continue — the project's
+`memory/` file is the authoritative record. Never block the refactor on a failed sync.
+
 ## 5. Engineer agents
 
 Dispatch based on file types, following the plan from tech-lead. Use `isolation: "worktree"` for each engineer. Worktrees only branch from the current refactor branch's HEAD if `worktree.baseRef` is `"head"` in settings.json — if unset or `"fresh"`, the harness silently bases new worktrees on local/origin `main` instead. Collect both the worktree path and branch name returned by each agent for cleanup after merge-reviewer.

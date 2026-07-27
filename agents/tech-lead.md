@@ -123,24 +123,29 @@ If the decision deviates from CONVENTIONS.md for a specific scope, set `Override
 
 Direct all dispatched agents to check `memory/**/*.md` before acting, filtering by status.
 
-### Obsidian sync
+### Obsidian sync request
 
-After writing any memory file to `./memory/`, check whether `OBSIDIAN_VAULT_PATH` is set
-(`bash -c 'echo $OBSIDIAN_VAULT_PATH'` or `$env:OBSIDIAN_VAULT_PATH` on Windows).
+You cannot reach the Obsidian vault yourself: your tool grant includes neither
+`Bash` (to read `OBSIDIAN_VAULT_PATH`) nor `Agent` (to dispatch obsidian-writer).
+Consistent with "you do not dispatch agents yourself," surface the request instead.
 
-If set, invoke the **obsidian-writer** agent for each written memory file with:
-- `write_mode`: `capture`
-- `vault_path`: value of `OBSIDIAN_VAULT_PATH`
-- `cli_mode`: value of `OBSIDIAN_CLI_MODE` (default `"filesystem"`)
-- `rest_api_port`: value of `OBSIDIAN_REST_API_PORT` (default `27124`)
-- `rest_api_https`: value of `OBSIDIAN_REST_API_HTTPS` (default `"true"`)
-- `projects_folder`: value of `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
-- `title`: the memory file's description (from frontmatter) or its filename
-- `body`: full content of the memory file (frontmatter + body)
-- `project`: basename of `CLAUDE_PROJECT_DIR` or current working directory
-- `timestamp`: current datetime in `YYYY-MM-DDThh:mm` format
+After writing any memory file to `./memory/`, emit this as the final section of your
+output — one line per file written:
 
-If obsidian-writer is unavailable or errors, continue — the project's `memory/` file is the authoritative record.
+```
+## Obsidian sync request
+- `memory/<subdir>/<filename>.md` — <the file's frontmatter description, or its filename>
+```
+
+Emit the section whenever you wrote at least one memory file; omit it entirely when
+you wrote none. Do not try to determine whether `OBSIDIAN_VAULT_PATH` is set — the
+calling session gates on that and skips the dispatch silently when it is unset.
+
+The calling session dispatches **obsidian-writer** with `write_mode: capture`, the
+title and body read from each listed file, and every vault/transport field
+(`vault_path`, `cli_mode`, `rest_api_port`, `rest_api_https`, `projects_folder`,
+`project`, `timestamp`) resolved from its own environment. If the sync never happens,
+nothing is lost — the project's `memory/` file is the authoritative record.
 
 ## Extended Thinking
 

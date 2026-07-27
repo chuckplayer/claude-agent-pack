@@ -19,6 +19,13 @@ Run the full agent pipeline for the task the user described:
 
 3. **devils-advocate** — invoke before implementation if the task introduces a new pattern, a new dependency, or an irreversible architectural change. Skip for small bug fixes and established patterns.
 
+3a. **Obsidian sync requests** — tech-lead (step 2) and devils-advocate (step 3) write memory files to `./memory/` but cannot reach the vault themselves; neither grants `Bash` or `Agent`. If either one's output ends with an `## Obsidian sync request` section, you own the dispatch:
+
+   - Check `$env:OBSIDIAN_VAULT_PATH`. If empty, skip silently.
+   - For each memory file listed, dispatch **obsidian-writer** with the same field set as step 10b (`write_mode: "capture"`, `session_api_written: false`, all vault/transport values from the environment), using the description on that file's line as `title` and the file's full content (frontmatter + body) as `body`.
+
+   Do this before invoking any engineer — the point is that the decision is searchable at write time, not at session end. If obsidian-writer errors, continue; the `memory/` file is the authoritative record.
+
 4. **api-designer** — invoke before engineer agents if the task creates or significantly modifies API endpoints. Skip for internal refactors that do not change the API surface.
 
 5. **Engineer agents** — before invoking each engineer, check for model overrides from earlier planning stages:
