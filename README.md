@@ -72,6 +72,7 @@ Twenty-six slash-command entry points are included. Invoke them directly in Clau
 | `/lint-agents` | Validates all agent and skill files for required frontmatter fields and body content; interprets failures with specific fix instructions. |
 | `/setup-project` | Scaffolds a project with `CLAUDE.md`, `docs/CONVENTIONS.md`, `docs/MEMORY-WRITING.md`, and the `memory/` structure, then guides through next steps |
 | `/system-check` | Runs both readiness and update checks in one pass: verifies installation, project scaffolding, and whether agents/skills are current. |
+| `/pack-review` | Compares the pack against the current Claude Code release: version-diffs, carries forward open items by their revisit trigger, verifies pack changes against actual diffs, and writes a dated review doc to `docs/`. Asks before committing. Read-only apart from its own review doc. |
 | `/obsidian` | Help and routing entry point for the Obsidian skill family — dispatches to the right skill based on intent. |
 | `/obsidian-brief` | Synthesizes a context brief from recent session logs and captures for the current project — what was built, decisions made, and open threads. Read-only; run before `/implement` to load project context. |
 | `/obsidian-recap` | Synthesizes a narrative **daily recap** from the day's auto-logged session notes, git history, and current-state note, and writes it to the vault. Defaults to today; accepts a `YYYY-MM-DD` argument. |
