@@ -26,10 +26,12 @@ If empty, stop and tell the user:
 > the `env` key."
 
 Also read:
-- `OBSIDIAN_REST_API_KEY` (empty string if unset — key presence gates REST API use)
-- `OBSIDIAN_REST_API_PORT` (default `27124` if unset)
-- `OBSIDIAN_REST_API_HTTPS` (default `"true"` if unset)
 - `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset — used for daily note routing)
+
+You do not need the REST API variables. `obsidian-writer` owns the transport chain
+(CLI → REST API → filesystem) and reads `OBSIDIAN_REST_API_KEY`, `OBSIDIAN_REST_API_PORT`,
+and `OBSIDIAN_REST_API_HTTPS` from the environment itself. Never pass the API key to an
+agent — it would end up in the dispatch payload and the transcript.
 
 ## Step 2 — Collect content
 
@@ -38,76 +40,7 @@ Ask the user: "What do you want to capture?"
 Accept a title and body, or just body text (title will default to the first
 line of the body if not provided separately).
 
-## Step 3 — Write capture file (REST API if key present, filesystem fallback)
-
-### 3a. REST API attempt (skip if `OBSIDIAN_REST_API_KEY` is empty)
-
-If the key is set, attempt to write the capture file via PowerShell.
-
-**Vault-relative capture path** (always): `Claude/captures/<YYYY-MM-DD>-<HHmm>.md`
-
-**Build the capture markdown** (same format obsidian-writer would produce):
-```markdown
----
-type: claude/capture
-project: <project>
-date: <YYYY-MM-DD>
-captured_at: <YYYY-MM-DDThh:mm>
-tags: [claude, capture]
----
-
-## <title>
-
-<body>
-```
-
-**Attempt the PUT — try PowerShell first, curl fallback:**
-
-*PowerShell (Windows PS5.1 or PS7, or macOS/Linux with `pwsh` installed):*
-```powershell
-$key    = $env:OBSIDIAN_REST_API_KEY
-$port   = if ($env:OBSIDIAN_REST_API_PORT) { $env:OBSIDIAN_REST_API_PORT } else { "27124" }
-$scheme = if ($env:OBSIDIAN_REST_API_HTTPS -eq 'false') { 'http' } else { 'https' }
-$vaultRel = "Claude/captures/<YYYY-MM-DD>-<HHmm>.md"
-$url    = "${scheme}://127.0.0.1:${port}/vault/${vaultRel}"
-$body   = @"<capture markdown content>"@
-$irm = @{ Method='Put'; Uri=$url; Body=$body; ContentType='text/markdown'; TimeoutSec=5
-          Headers=@{"Authorization"="Bearer $key";"Content-Type"="text/markdown"} }
-try {
-    if ($PSVersionTable.PSVersion.Major -ge 7) {
-        Invoke-RestMethod @irm -SkipCertificateCheck
-    } else {
-        [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-RestMethod @irm
-    }
-    $apiWritten = $true
-} catch {
-    $apiWritten = $false
-}
-```
-
-*If PowerShell tool is unavailable (macOS/Linux without `pwsh`), use curl via Bash:*
-```bash
-KEY="$OBSIDIAN_REST_API_KEY"
-PORT="${OBSIDIAN_REST_API_PORT:-27124}"
-SCHEME=$([ "$OBSIDIAN_REST_API_HTTPS" = "false" ] && echo "http" || echo "https")
-VAULT_REL="Claude/captures/<YYYY-MM-DD>-<HHmm>.md"
-BODY='<capture markdown content>'
-STATUS=$(curl -sk -X PUT \
-  -H "Authorization: Bearer $KEY" \
-  -H "Content-Type: text/markdown" \
-  --data-binary "$BODY" \
-  -w "%{http_code}" -o /dev/null \
-  "${SCHEME}://127.0.0.1:${PORT}/vault/${VAULT_REL}")
-[ "${STATUS:-0}" -ge 200 ] && [ "${STATUS:-0}" -lt 300 ] && apiWritten=true || apiWritten=false
-```
-
-- If `$apiWritten` is `$true`: dispatch obsidian-writer with `session_api_written: true`
-  (obsidian-writer will skip capture file creation and only append the daily note)
-- If `$apiWritten` is `$false`: dispatch obsidian-writer normally
-
-### 3b. Dispatch obsidian-writer
+## Step 3 — Dispatch obsidian-writer
 
 Invoke the **obsidian-writer** agent with:
 
@@ -118,23 +51,31 @@ Invoke the **obsidian-writer** agent with:
 - `body`: user's body text
 - `project`: basename of current working directory
 - `timestamp`: current datetime in `YYYY-MM-DDThh:mm` format
-- `session_api_written`: `true` if 3a succeeded, `false` otherwise
+
+That is the whole step. Do not attempt the REST API here — obsidian-writer tries the Obsidian
+CLI, then the REST API, then the filesystem, and reports which one succeeded. Building the
+capture markdown, choosing a transport, and verifying the write are all its job.
 
 ## Step 4 — Confirm
 
-Report the file path and write method. Example:
+Report the file path and the transport obsidian-writer reported. Example:
 
-> "Captured to `Claude/captures/2026-05-14-1430.md` (via REST API)"
+> "Captured to `Claude/captures/2026-05-14-1430.md` (via Obsidian CLI)"
 
 or:
 
-> "Captured to `Claude/captures/2026-05-14-1430.md` (filesystem)"
+> "Captured to `Claude/captures/2026-05-14-1430.md` (filesystem — CLI and REST API unavailable)"
+
+Pass the transport through rather than guessing it. If obsidian-writer reports it degraded to
+the filesystem, say why in the same line — a silent permanent degradation is invisible otherwise.
 
 ## Gotchas
 
 - Capture files always go to `Claude/captures/` — they are not project-scoped.
-- If `OBSIDIAN_REST_API_KEY` is missing: skip step 3a entirely and dispatch
-  obsidian-writer with `session_api_written: false`.
-- The daily note append is always handled by obsidian-writer (filesystem).
+- **Do not attempt the REST API in this skill.** It used to, and that duplicated transport
+  logic in every calling skill. obsidian-writer owns the whole chain now; a REST attempt here
+  would run *before* the dispatch and so defeat the CLI-first ordering entirely.
+- Never pass `OBSIDIAN_REST_API_KEY` to obsidian-writer. It reads the key from the environment
+  precisely so the secret stays out of the dispatch payload and the transcript.
 - If obsidian-writer reports the vault directory doesn't exist, tell the user
   to verify the path in `~/.claude/settings.json`.

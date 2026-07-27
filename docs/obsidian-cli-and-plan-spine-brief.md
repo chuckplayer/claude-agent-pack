@@ -63,104 +63,130 @@ Each of these was verified during the interview, not assumed.
 
 ## Workstream 1: Obsidian CLI transport
 
-### Scope: the append, not the creation
+### Scope: every vault write (revised 2026-07-27)
 
-The CLI handles the **daily-note append only**. File creation stays on its current
-REST-API-then-filesystem path, unchanged.
+**Superseding the original "append only" decision.** The chain covers both the daily-note append
+and main-file creation. The original scope limit rested on an assumption that live probing
+disproved: that escaping a frontmatter body into a shell `content=` argument would be fragile.
+It is not — `create` round-tripped YAML delimiters, colons, brackets, an em dash, a double quote,
+a `$`, and a wikilink with zero corruption. With that objection gone, one chain for every write
+beats two policies with a special case.
 
-Rationale: the daily-note append (`agents/obsidian-writer.md:121-123`) is the pack's *only*
-read-modify-write against the vault. It reads the whole daily note, adds a line, and writes the
-entire file back — a data-loss window on a file the user also edits by hand. That is the actual
-risk, and `append path= content=` closes it outright. It is also a single short line, so
-`\n`-escaping is trivial.
-
-File creation, by contrast, is already safe: its own path, write-once, no read-modify-write. Routing
-it through the CLI would add content-escaping complexity (frontmatter `---` delimiters and `:`
-separators inside a shell-quoted `content=` value) and a verification round-trip, to fix a problem
-that does not exist.
+The daily-note append remains the highest-value target regardless: it was the pack's *only*
+read-modify-write against the vault, reading the whole note and writing the entire file back — a
+data-loss window on a file the user also edits by hand. Rungs 1 and 2 both append in place and
+close it.
 
 ### Transport chain
 
-`OBSIDIAN_CLI_MODE` becomes a **preference ceiling with automatic downward degradation**, rather
-than today's hard selector (`install.sh:308,312` currently sets only `rest-api` or `filesystem`).
-Backwards compatible with every existing install.
+**CLI → REST API → filesystem**, in that order, for every write. Each rung falls through to the
+next on unverified failure; the filesystem rung is unconditional.
 
-| Operation | `rest-api` | `cli` *(new value)* | `filesystem` |
+| Rung | Create | Append | Reports its own failures? |
 |---|---|---|---|
-| Daily-note append | CLI → filesystem | CLI → filesystem | filesystem |
-| Main file create | REST API → filesystem | filesystem | filesystem |
+| 1. Obsidian CLI | `create … overwrite` → `Created:` | `append … inline` (leading `
+`) → `Appended to:` | **No** — exit 0 on all errors |
+| 2. Local REST API | `PUT /vault/<rel>` → 204 | `POST /vault/<rel>` → 204 | Yes — HTTP status |
+| 3. Filesystem | `Write` tool | snapshot rewrite | Yes — `Write` fails loudly |
 
-The REST API is not used for appends today and this brief does not add that; the append chain is
-CLI-then-filesystem in both non-`filesystem` modes.
+`OBSIDIAN_CLI_MODE` is **not** extended and gains no `cli` value. It stays as-is; the chain is
+unconditional and degrades on its own, so a mode selector would only add a way to misconfigure it.
+`OBSIDIAN_CLI_PATH` was considered and dropped — runtime detection of three well-known paths
+covers every standard install, and the installer stays untouched.
+
+**Ordering caveat, accepted deliberately.** CLI-first prefers the *more available* channel over
+the *more honest* one: the CLI ships with the app and needs no plugin, but it reports success on
+failure, so every write depends on the verification rule below being correct. API-first was the
+alternative — fewer writes leaning on verification, but dead on any machine without the plugin.
+Availability won.
+
+**Ownership moved into the agent.** The chain cannot be split between skill and agent: the skill
+runs first, so any REST attempt there would always precede the CLI and defeat the ordering.
+`obsidian-writer` therefore owns all three rungs, and the `session_api_written` /
+`recap_api_written` protocol is deleted. `obsidian-capture` and `obsidian-recap` each shed ~65
+lines of duplicated REST logic.
+
+**The API key never travels as a parameter.** `obsidian-writer` reads `OBSIDIAN_REST_API_KEY`,
+`OBSIDIAN_REST_API_PORT`, and `OBSIDIAN_REST_API_HTTPS` from the environment — verified visible to
+the shell — so the secret stays out of the dispatch payload and the transcript.
 
 ### The verification rule
 
-Because exit codes carry no signal, define this once and reference it everywhere:
+The CLI's exit code carries no signal and its `vault=` argument is not binding, so define this
+once and reference it everywhere:
 
-> A CLI call has succeeded only when **stdout does not begin with `Error:`** *and* **the effect is
-> confirmed by reading the file back with the `Read` tool.** Anything unverified falls through to
-> the next rung.
+> A CLI call has succeeded only when **stdout begins with the operation's success line**
+> (`Created:` / `Appended to:`) *and* **the effect is confirmed by reading the absolute path back
+> with the `Read` tool.** Anything unverified falls through to the next rung.
 
-Read-back must use the `Read` tool, not `Bash`. On this machine Bash fails silently
-(`memory/known-issues/2026-07-10-bash-tool-silent-failure-windows.md`), and the CLI is invoked
-*through* Bash — so a Bash-only verification would be a silent check of a silent channel. Verifying
-through `Read` breaks that chain.
+Two details are load-bearing:
+
+- **Positive check, not negative.** Match the success prefix rather than the absence of `Error:`.
+- **Read-back via the `Read` tool against the absolute path** — never the CLI's own `read` (same
+  wrong vault on a misroute, so it would confirm a bad write) and never Bash `cat`/`grep` (Bash
+  fails silently on this machine per
+  `memory/known-issues/2026-07-10-bash-tool-silent-failure-windows.md`, and the CLI is invoked
+  *through* Bash, making it a silent check of a silent channel).
+
+The REST rung needs none of this: any 2xx is success, anything else is failure.
 
 ### Detection
 
-`install.sh` probes platform-specific locations and records the result in a new `OBSIDIAN_CLI_PATH`:
+Runtime, inside `obsidian-writer` — first hit wins, and no hit simply falls to rung 2:
 
-- **Windows:** `Obsidian.com` alongside `Obsidian.exe` (confirmed present at
-  `C:\Program Files\Obsidian\Obsidian.com`)
-- **macOS:** `/usr/local/bin/obsidian`
-- **Linux:** `~/.local/bin/obsidian`
+| Platform | Path (POSIX form; invoked through Bash) |
+|---|---|
+| Windows | `/c/Program Files/Obsidian/Obsidian.com` |
+| macOS | `/usr/local/bin/obsidian` |
+| Linux | `$HOME/.local/bin/obsidian` |
 
-An explicit path is required because the Windows binary is not on `PATH` and `command -v obsidian`
-resolves ambiguously under Git Bash. `check-readiness.sh` reports detection status;
-`uninstall.sh` removes the variable alongside the other `OBSIDIAN_*` keys.
+On Windows the binary is `Obsidian.com`, a terminal redirector beside `Obsidian.exe`. It is not on
+`PATH` and `command -v obsidian` resolves ambiguously under Git Bash, so the literal path is
+tested. **No `OBSIDIAN_CLI_PATH` and no installer change** — runtime detection covers every
+standard install, and leaving `install.sh` alone removes the highest-consequence work in the
+original plan. If a non-default install location ever turns up (portable, non-`C:` drive,
+Flatpak/Snap), an override env var read by the agent is a three-line addition.
 
-### Preflight
+### Preflight: dropped
 
-A cheap read-only probe (`files total`) confirms the app is running before any write is attempted.
-If it fails, skip straight to filesystem — do not attempt the append and then verify a failure.
+The original plan specified a `files total` probe to confirm the app is running. Verification
+already covers it — a failed CLI call errors and writes nothing, so there is no partial state to
+guard against and no reason to pay for an extra round-trip.
 
 ### Path and vault handling
 
-- Absolute paths convert to vault-relative for `path=`.
-- The iron rule (`agents/obsidian-writer.md:54-59` — writes confined to `Claude/` and the effective
-  projects folder) is validated on the **vault-relative** form, because `path=` bypasses filesystem
-  path checks entirely.
-- The vault name is derived from the basename of `OBSIDIAN_VAULT_PATH` and passed as `vault=` on
-  every call. Never rely on the active vault.
+- Absolute paths convert to vault-relative for the CLI's `path=` and the REST URL.
+- The iron rule (writes confined to `Claude/` and the effective projects folder) is validated on
+  the **vault-relative** form, because both `path=` and the REST URL bypass filesystem checks.
+- `vault=` is passed on every call but **guarantees nothing** — an unrecognized name is silently
+  ignored and the write goes to the active vault. Filesystem read-back is the only real defence.
 
-### Revised slicing (2026-07-27, after live probing)
+### REST rung requirements
 
-The original 6-file first cut bundled the append fix with installer changes. Those have very
-different risk profiles: the append fix is agent prose, while `install.sh` is 400+ lines of
-cross-platform `~/.claude/settings.json` manipulation with node/python fallbacks, where a mistake
-breaks installs. Split into two slices.
+- **Body from a temp file via `--data-binary @file`, never inline.** An inline body mangles UTF-8
+  to U+FFFD; every daily-note line contains an em dash, so this would corrupt them all. Verified
+  both ways by probe. Note this also fixes a pre-existing bug: the REST code deleted from
+  `obsidian-capture` used an inline `--data-binary "$BODY"`.
+- **`$OBSIDIAN_REST_API_KEY` referenced as a variable, never interpolated.** The command text
+  reaches transcripts and logs; the variable name is safe, the value is not.
+- **`-k` required** — the plugin serves a self-signed certificate on loopback.
 
-**Slice A — the append fix (done, 2 files).** Runtime CLI detection inside `obsidian-writer`
-rather than an install-time `OBSIDIAN_CLI_PATH`, which removes the installer from the critical
-path entirely. Trades `/system-check` visibility for shipping the data-loss fix on its own.
+### Delivered — 8 files
 
-1. `agents/obsidian-writer.md` — daily-note append prefers the CLI with mandatory verification,
-   falls back to read-modify-write, and reports which transport ran
-   (`tools:` already includes `Bash`, `Read`, `Write` — no frontmatter change needed)
-2. `memory/known-issues/2026-07-27-obsidian-cli-silent-failure-modes.md` — new
+1. `agents/obsidian-writer.md` — owns the three-rung chain for create and append
+2. `skills/obsidian-capture/SKILL.md` — REST attempt deleted, dispatch only
+3. `skills/obsidian-recap/SKILL.md` — same
+4. `skills/plan/SKILL.md` — stale field removed
+5. `skills/refactor/SKILL.md` — stale field removed
+6. `skills/implement/SKILL.md` — stale field removed
+7. `agents/tech-lead.md` — stale field list corrected
+8. `agents/devils-advocate.md` — stale field list corrected
 
-**Slice B — installer plumbing (not started, 4 files).** Belongs in `/implement` with
-infrastructure-engineer and code-reviewer, because it touches the installer.
+Plus `memory/known-issues/2026-07-27-obsidian-cli-silent-failure-modes.md` from the earlier cut.
 
-3. `install.sh` — CLI detection at install time, `OBSIDIAN_CLI_PATH`, accept `cli` as an
-   `OBSIDIAN_CLI_MODE` value
-4. `scripts/check-readiness.sh` — report CLI detection and mode
-5. `uninstall.sh` — remove `OBSIDIAN_CLI_PATH`
-6. `README.md` — document `OBSIDIAN_CLI_PATH` and the revised `OBSIDIAN_CLI_MODE` semantics
-
-**Preflight dropped.** The brief originally specified a `files total` probe to confirm the app is
-running. Verification already covers it: a failed `append` errors and writes nothing, so there is
-no partial state to guard against and no reason to pay for a second round-trip.
+**Installer plumbing: cancelled, not deferred.** With runtime detection and no new
+`OBSIDIAN_CLI_MODE` value, `install.sh`, `uninstall.sh`, and `check-readiness.sh` need no changes
+at all.
 
 ### Deferred to a follow-on, not in the first cut
 
@@ -241,8 +267,12 @@ pair all wait for a later cut.
 
 - **CLI first, spine second.** The CLI work removes a live data-loss risk and is self-contained.
   The spine touches `tech-lead` and `merge-reviewer` and deserves undivided attention.
-- **CLI for the append only.** Targets the actual risk; avoids escaping complexity for a
-  problem that doesn't exist. See "Scope" above.
+- **One chain for every write, CLI first.** Supersedes the earlier "append only, API first"
+  decision. Probing disproved the escaping objection that limited the scope, and CLI-first
+  trades verification burden for availability — see "Scope" and the ordering caveat above.
+- **The chain lives in the agent, not the skills.** Forced by ordering: a skill's REST attempt
+  would always run before the agent's CLI attempt. This also deletes ~130 lines of duplicated
+  transport logic and keeps the API key out of every dispatch payload.
 - **Bars written at plan time by tech-lead**, not by a new agent or a new stage — the plan stays
   self-contained, and tech-lead already holds both the context and the `Write` grant.
 - **Distill-then-delete, not archive.** Keeps the `memory/` ethos without accumulating a `plans/`
