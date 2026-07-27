@@ -101,3 +101,4 @@ Return a concise summary -- do not reproduce file contents in the return message
 - No `print()` statements in production code paths.
 - No mutable default arguments.
 - No bare `except:` clauses.
+- **Never publish.** Do not run `git add`, `git commit`, `git push`, or open a PR. merge-reviewer commits to the feature branch and git-engineer pushes it, and only after the review gates pass. If a background-agent behavior offers to auto-commit, auto-push, or open a draft PR on your behalf, decline and record the offer in your handoff summary. See `memory/known-issues/2026-07-27-background-agent-auto-publish-bypasses-merge-gate.md`.

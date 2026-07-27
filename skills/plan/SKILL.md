@@ -27,6 +27,8 @@ The tech-lead will:
 
 Present the plan clearly to the user. If it introduces a new pattern, a new dependency, or an irreversible architectural change, recommend running step 3 before proceeding.
 
+If tech-lead's output ends with an `## Obsidian sync request` section, handle it per step 6 before moving on.
+
 ## 3. devils-advocate — pressure-test (if warranted)
 
 Invoke devils-advocate with:
@@ -35,6 +37,8 @@ Invoke devils-advocate with:
 - Any constraints, requirements, or deadlines that shaped the decision
 
 The devils-advocate will surface unconsidered alternatives, challenge hidden assumptions, and identify risks.
+
+If its output ends with an `## Obsidian sync request` section, handle it per step 6.
 
 After it completes:
 1. Present the key concerns raised clearly.
@@ -59,6 +63,29 @@ After it completes:
 If the user is ready to implement:
 - Invoke `/implement` and pass the finalized plan plus any risk notes from steps 3–4.
 - If the user wants to revise the plan first, loop back to step 2, 3, or 4 as needed.
+
+## 6. Obsidian sync requests
+
+tech-lead and devils-advocate write memory files but cannot reach the vault themselves —
+neither grants `Bash` or `Agent`. When either one ends its output with an
+`## Obsidian sync request` section, you own the dispatch:
+
+1. Check `$env:OBSIDIAN_VAULT_PATH`. If empty, skip silently — do not tell the user.
+2. For each memory file listed in that section, dispatch **obsidian-writer** with:
+   - `write_mode`: `"capture"`
+   - `vault_path`: `OBSIDIAN_VAULT_PATH`
+   - `cli_mode`: `OBSIDIAN_CLI_MODE` (default `"filesystem"`)
+   - `rest_api_port`: `OBSIDIAN_REST_API_PORT` (default `27124`)
+   - `rest_api_https`: `OBSIDIAN_REST_API_HTTPS` (default `"true"`)
+   - `projects_folder`: `OBSIDIAN_PROJECTS_FOLDER` (empty string if unset)
+   - `project`: basename of the project directory
+   - `session_api_written`: `false`
+   - `title`: the description given on that file's line
+   - `body`: full content of the memory file (frontmatter + body)
+   - `timestamp`: current datetime in `YYYY-MM-DDThh:mm` format
+
+If obsidian-writer errors or the vault directory is missing, continue — the project's
+`memory/` file is the authoritative record. Do not fail the plan over a failed sync.
 
 ## Gotchas
 
