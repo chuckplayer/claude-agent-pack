@@ -32,8 +32,13 @@ Each of these was verified during the interview, not assumed.
   no `docs/`, and possibly no git.
 - **The Obsidian CLI always exits 0, even on error.** Probed on 2026-07-27: a bogus command, a
   missing file, and a path-traversal attempt each printed `Error: …` to stdout and returned exit 0.
-  Exit-code-driven fallback is impossible. See
-  `memory/known-issues/2026-07-27-obsidian-cli-exit-zero-on-error.md` (created by workstream 1).
+  Exit-code-driven fallback is impossible.
+- **An unrecognized `vault=` is silently ignored and the write goes to the active vault.**
+  Probed 2026-07-27: `append vault="NoSuchVault" …` printed `Appended to:` and wrote into the real
+  vault. This invalidates the mitigation originally recorded in this brief ("pass `vault=`
+  explicitly") — passing it correctly protects nothing, because a wrong value does not fail.
+  Filesystem read-back against the absolute path is the only defence. Both failure modes are
+  documented in `memory/known-issues/2026-07-27-obsidian-cli-silent-failure-modes.md`.
 - **The CLI requires the Obsidian desktop app to be running.** The filesystem rung is mandatory,
   not a courtesy.
 - **`vault=` targets by name; the pack only knows `OBSIDIAN_VAULT_PATH` (a path).** Multi-vault
@@ -128,15 +133,34 @@ If it fails, skip straight to filesystem — do not attempt the append and then 
 - The vault name is derived from the basename of `OBSIDIAN_VAULT_PATH` and passed as `vault=` on
   every call. Never rely on the active vault.
 
-### First cut — 6 files
+### Revised slicing (2026-07-27, after live probing)
 
-1. `agents/obsidian-writer.md` — append step becomes CLI-first with verification and fallback
-   (`tools:` already includes `Bash`, `Read`, `Write`; no frontmatter change needed)
-2. `install.sh` — CLI detection, `OBSIDIAN_CLI_PATH`, accept `cli` as an `OBSIDIAN_CLI_MODE` value
-3. `scripts/check-readiness.sh` — report CLI detection and mode
-4. `uninstall.sh` — remove `OBSIDIAN_CLI_PATH`
-5. `memory/known-issues/2026-07-27-obsidian-cli-exit-zero-on-error.md` — new
+The original 6-file first cut bundled the append fix with installer changes. Those have very
+different risk profiles: the append fix is agent prose, while `install.sh` is 400+ lines of
+cross-platform `~/.claude/settings.json` manipulation with node/python fallbacks, where a mistake
+breaks installs. Split into two slices.
+
+**Slice A — the append fix (done, 2 files).** Runtime CLI detection inside `obsidian-writer`
+rather than an install-time `OBSIDIAN_CLI_PATH`, which removes the installer from the critical
+path entirely. Trades `/system-check` visibility for shipping the data-loss fix on its own.
+
+1. `agents/obsidian-writer.md` — daily-note append prefers the CLI with mandatory verification,
+   falls back to read-modify-write, and reports which transport ran
+   (`tools:` already includes `Bash`, `Read`, `Write` — no frontmatter change needed)
+2. `memory/known-issues/2026-07-27-obsidian-cli-silent-failure-modes.md` — new
+
+**Slice B — installer plumbing (not started, 4 files).** Belongs in `/implement` with
+infrastructure-engineer and code-reviewer, because it touches the installer.
+
+3. `install.sh` — CLI detection at install time, `OBSIDIAN_CLI_PATH`, accept `cli` as an
+   `OBSIDIAN_CLI_MODE` value
+4. `scripts/check-readiness.sh` — report CLI detection and mode
+5. `uninstall.sh` — remove `OBSIDIAN_CLI_PATH`
 6. `README.md` — document `OBSIDIAN_CLI_PATH` and the revised `OBSIDIAN_CLI_MODE` semantics
+
+**Preflight dropped.** The brief originally specified a `files total` probe to confirm the app is
+running. Verification already covers it: a failed `append` errors and writes nothing, so there is
+no partial state to guard against and no reason to pay for a second round-trip.
 
 ### Deferred to a follow-on, not in the first cut
 
@@ -244,8 +268,9 @@ pair all wait for a later cut.
 - **Weak bars.** A planner writing acceptance criteria may produce unfalsifiable ones, and
   `devils-advocate` — the only agent that would catch that — is itself conditional. Accepted for
   the first cut; the fix if it bites is a bars-specific check in merge-reviewer.
-- **Multi-vault misrouting** if vault-name derivation is wrong. Mitigated by passing `vault=`
-  explicitly on every call.
+- **Multi-vault misrouting.** Worse than first assessed: a wrong `vault=` does not fail, it
+  silently writes to the active vault. Mitigated *only* by reading back the absolute filesystem
+  path — passing `vault=` is necessary but proves nothing on its own.
 - **`docs/plans/` may collide** with an existing convention in a consuming repo. Mitigated by the
   overridable CONVENTIONS.md key.
 - **Verification includes an install step.** Editing agents in this repo changes nothing until

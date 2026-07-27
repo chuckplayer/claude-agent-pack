@@ -4,7 +4,8 @@ description: >
   Invoke when an Obsidian skill needs to write a capture note or a daily recap
   to the vault. Handles filesystem writes; REST API writes are attempted by the
   calling skill before dispatch. Creates or skips the main note file based on the
-  *_api_written flag, then always appends the daily note via filesystem.
+  *_api_written flag, then appends the daily note via the Obsidian CLI when it is
+  available and verifiable, falling back to a filesystem read-modify-write.
   Requires: vault_path, write_mode (capture|recap), and content fields. Never
   writes outside the vault's Claude/ directory or the configured projects folder.
 tools: Bash, Read, Write
@@ -71,7 +72,12 @@ If any computed target path does not start with an allowed root, stop and report
    was already written via REST API by the calling skill:
    - `write_mode: "capture"` → skip when `session_api_written` is `true`.
    - `write_mode: "recap"` → skip when `recap_api_written` is `true`.
-5. Read the daily note with the Read tool, append the new entry, write it back.
+5. Append to the daily note — via the Obsidian CLI when available, otherwise by
+   read-modify-write. See **Daily note append** below.
+
+Main-file writes always use the Write tool. Do not route them through the CLI:
+the file is write-once at its own path, so there is nothing to gain, and escaping
+frontmatter into a shell `content=` argument only adds ways to fail.
 
 ## File paths and content
 
@@ -118,18 +124,73 @@ today's — recaps may be generated for a past date.
 Wikilinks must use forward slashes, relative to vault root, no `.md` extension.
 Example: `[[<org>/claude-agent-pack/recaps/2026-07-01]]`
 
-1. Read the existing daily note (it may not exist yet).
-2. If missing: create it with `# <YYYY-MM-DD>\n\n<new line>`.
-3. If it exists: append the new line at the end and write the full file back.
-4. **Recap de-duplication:** in `recap` mode, if the daily note already contains
-   a `**recap**` line for this date, leave it in place (do not append a second).
-   The overwritten recap file is authoritative; one daily-note link is enough.
+1. Read the existing daily note with the Read tool (it may not exist yet).
+2. **If missing:** create it with the Write tool as `# <YYYY-MM-DD>\n\n<new line>` and stop —
+   the CLI cannot append to a file that does not exist.
+3. **Recap de-duplication:** in `recap` mode, if the daily note already contains a `**recap**`
+   line for this date, leave it in place and stop (do not append a second). The overwritten
+   recap file is authoritative; one daily-note link is enough.
+4. **If it exists:** append the line — preferring the CLI, falling back to read-modify-write.
+
+### Preferred: append via the Obsidian CLI
+
+The CLI appends in place, so a concurrent hand-edit cannot be lost. The fallback rewrites the
+whole file, which can silently discard edits made between the read and the write. Prefer the CLI
+whenever it is available.
+
+Locate the binary (first hit wins; if none exist, go straight to the fallback):
+
+| Platform | Path to test (POSIX form — you invoke this through Bash) |
+|---|---|
+| Windows | `/c/Program Files/Obsidian/Obsidian.com` |
+| macOS | `/usr/local/bin/obsidian` |
+| Linux | `$HOME/.local/bin/obsidian` |
+
+On Windows the binary is `Obsidian.com` (a terminal redirector installed beside `Obsidian.exe`),
+it is **not** on `PATH`, and `command -v obsidian` resolves ambiguously under Git Bash — so test
+the literal path above rather than relying on `command -v`. Quote it; the path contains a space.
+
+Derive the **vault-relative** path by stripping `vault_path` from the absolute daily-note path
+and converting to forward slashes. Re-check it against the iron rule above — `path=` bypasses
+filesystem checks entirely, so this validation cannot be delegated to the CLI.
+
+```bash
+"<cli-binary>" append vault="<basename of vault_path>" path="<vault-relative-path>" content="\n<the line>" inline
+```
+
+`inline` with a leading `\n` is required. Without `inline` the CLI inserts a blank line before
+the content, which turns the daily note's tight list into a loose one and renders differently.
+
+**Then verify — this is mandatory, not defensive padding.** The CLI returns exit 0 on every
+error and silently ignores an unrecognized `vault=`, writing to whatever vault is active
+instead. Both failure modes are documented in
+`memory/known-issues/2026-07-27-obsidian-cli-silent-failure-modes.md`. The append succeeded only
+when **both** hold:
+
+1. stdout begins with `Appended to:` — check for that prefix, not merely the absence of `Error:`
+2. reading the **absolute** daily-note path with the **Read tool** shows the new line
+
+Check 2 is what catches a write sent to the wrong vault, and it only works against the absolute
+path. Never verify with the CLI's own `read` (same wrong vault, so it would confirm a bad write)
+and never with Bash `cat`/`grep` (see [[2026-07-10-bash-tool-silent-failure-windows]] — that
+channel can fail silently, making it a silent check of a silent channel).
+
+If either check fails, fall back. Nothing needs cleaning up first: a failed `append` writes
+nothing at all.
+
+### Fallback: read-modify-write
+
+Append the new line to the content read in step 1 and write the full file back with the Write
+tool. Report in the return summary that the CLI was unavailable or unverified and the fallback
+was used, so a persistently broken CLI is visible rather than silently tolerated.
 
 ## Return to calling skill
 
 Report:
 - The vault-relative path of the written file
-- That the daily note was updated
+- That the daily note was updated, and which transport did it (`cli` or `filesystem`)
+- If the CLI was attempted and rejected, one line on why — binary not found, app not
+  running, stdout lacked `Appended to:`, or read-back did not show the line
 
 ## Hard Constraints
 
