@@ -3,6 +3,59 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# --- Non-interactive support -------------------------------------------------
+# Every prompt below goes through `prompt`, never a bare `read`. Two reasons:
+#
+# 1. Under `set -e`, a `read` that hits EOF returns non-zero and aborts the script
+#    on the spot. With no TTY (a tool call, CI, or any `bash install.sh | ...`)
+#    that killed the run at the first prompt -- after the agent/skill copies had
+#    already printed their [ok] lines, so the output looked like a completed
+#    install while the Obsidian hook scripts were never copied.
+# 2. `--yes` lets a configured machine re-install unattended, keeping its existing
+#    vault settings, which is the common case when only a hook script changed.
+#
+# An empty reply means "take the default", which is what every call site's
+# ${var:-default} already assumed -- so behaviour with a TTY is unchanged.
+ASSUME_DEFAULTS=0
+for _arg in "$@"; do
+    case "$_arg" in
+        -y|--yes|--non-interactive)
+            ASSUME_DEFAULTS=1
+            ;;
+        -h|--help)
+            echo "Usage: bash install.sh [--yes]"
+            echo
+            echo "  --yes, -y   Accept the default at every prompt (keeps existing"
+            echo "              Obsidian settings). Implied when stdin is not a TTY."
+            echo "  --help, -h  Show this message."
+            exit 0
+            ;;
+        *)
+            echo "ERROR: unknown option '$_arg' (try --help)" >&2
+            exit 1
+            ;;
+    esac
+done
+
+if [ "$ASSUME_DEFAULTS" = "0" ] && [ ! -t 0 ]; then
+    ASSUME_DEFAULTS=1
+    echo "No TTY on stdin -- running non-interactively, taking the default at every prompt."
+    echo "Re-run in a terminal to change any setting."
+    echo
+fi
+
+# prompt <varname> <prompt-text>
+# Sets <varname> to the user's reply, or empty when non-interactive. Never fails.
+prompt() {
+    local __var="$1" __text="$2" __reply=""
+    if [ "$ASSUME_DEFAULTS" = "1" ]; then
+        printf '%s[default]\n' "$__text"
+    else
+        read -rp "$__text" __reply || __reply=""
+    fi
+    printf -v "$__var" '%s' "$__reply"
+}
+
 CLAUDE_DIR="$HOME/.claude"
 if [ ! -d "$CLAUDE_DIR" ]; then
     echo "ERROR: Claude Code directory not found at $CLAUDE_DIR"
@@ -202,7 +255,7 @@ PYEOF
 
     if [ -n "$current_vault" ]; then
         echo "Obsidian integration is active (vault: $current_vault)"
-        read -rp "  Keep Obsidian integration? [Y/n] " keep_response
+        prompt keep_response "  Keep Obsidian integration? [Y/n] "
         if [ "$keep_response" = "n" ] || [ "$keep_response" = "N" ]; then
             # Remove all Obsidian env vars and all hook entries from settings.json
             if [ "$json_tool" = "node" ]; then
@@ -247,26 +300,26 @@ PYEOF
             echo "  [rm] Obsidian integration removed from ~/.claude/settings.json"
         else
             # Confirm or update the vault path (Enter keeps the current value)
-            read -rp "  Vault path [$current_vault]: " new_vault
+            prompt new_vault "  Vault path [$current_vault]: "
             vault_path="${new_vault:-$current_vault}"
             _pf_default="${current_projects_folder:-Claude/Projects}"
-            read -rp "  Projects folder in vault [$_pf_default]: " new_pf
+            prompt new_pf "  Projects folder in vault [$_pf_default]: "
             projects_folder="${new_pf:-$_pf_default}"
             if [ -n "$current_api_key" ]; then
-                read -rp "  REST API key [keep existing, blank to remove]: " new_key
+                prompt new_key "  REST API key [Enter to keep existing]: "
             else
-                read -rp "  REST API key (optional, leave blank for filesystem writes): " new_key
+                prompt new_key "  REST API key (optional, leave blank for filesystem writes): "
             fi
             rest_api_key="${new_key:-$current_api_key}"
             obsidian_setup=true
         fi
     else
-        read -rp "Set up Obsidian vault integration? [y/N] " obsidian_response
+        prompt obsidian_response "Set up Obsidian vault integration? [y/N] "
         if [ "$obsidian_response" = "y" ] || [ "$obsidian_response" = "Y" ]; then
-            read -rp "  Obsidian vault path (absolute path to your vault directory): " vault_path
-            read -rp "  Projects folder in vault [Claude/Projects]: " projects_folder
+            prompt vault_path "  Obsidian vault path (absolute path to your vault directory): "
+            prompt projects_folder "  Projects folder in vault [Claude/Projects]: "
             projects_folder="${projects_folder:-Claude/Projects}"
-            read -rp "  REST API key (optional, leave blank for filesystem writes): " rest_api_key
+            prompt rest_api_key "  REST API key (optional, leave blank for filesystem writes): "
             obsidian_setup=true
         fi
     fi
@@ -565,10 +618,10 @@ PYEOF
 
         if [ -n "$current_codex_model" ]; then
             echo "Codex CLI detected (model: $current_codex_model)"
-            read -rp "  Update model? [Enter to keep, new model name, or 'none' for CLI default]: " new_codex_model
+            prompt new_codex_model "  Update model? [Enter to keep, new model name, or 'none' for CLI default]: "
         else
             echo "Codex CLI detected."
-            read -rp "  Model for codex-reviewer [e.g. o3, o4-mini — Enter for CLI default]: " new_codex_model
+            prompt new_codex_model "  Model for codex-reviewer [e.g. o3, o4-mini — Enter for CLI default]: "
         fi
 
         if [ "$new_codex_model" = "none" ]; then
