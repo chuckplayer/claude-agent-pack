@@ -1,7 +1,76 @@
 # Design Brief: Obsidian CLI Transport + Durable Plan Spine
 
 **Date:** 2026-07-27
-**Status:** approved, not yet implemented
+**Status:** workstream 1 shipped (`66b60c1`); workstream 2 approved, specified, not started
+
+---
+
+## Pickup state — as of 2026-07-29 (end of day)
+
+Written here rather than relying on `_current.md`: the thread mechanism that would normally
+carry this has a live bug (item 1 below), so a committed doc is the only trustworthy handoff.
+Worth noting the irony — the artifact that would give in-flight work a durable home is
+precisely what workstream 2 builds.
+
+### Workstream 1 — closed
+
+Shipped at `66b60c1`, diff-verified in `docs/claude-agent-pack-review-2026-07-28.md`. Two
+follow-ons were **deliberately dropped on 2026-07-29, not deferred:**
+
+- **Exercise the transport end-to-end** — declined. The chain had never been run once as a
+  full CLI → REST → filesystem exercise. Accepted as-is.
+- **Rotate `OBSIDIAN_REST_API_KEY`** — declined, no need.
+
+Two items inside this brief are now stale and should be read as void: the **`OBSIDIAN_CLI_PATH`
+installer plumbing** (already superseded by "Installer plumbing: cancelled, not deferred"
+below), and the deferred read-side item for **`wiki-linter`**, which no longer exists — the
+wiki family was retired from the pack and purged from `~/.claude` on 2026-07-29 (`4fd18f1`).
+
+### Next session — in order
+
+1. **Fix the `DONE:` ordering bug in `scripts/obsidian-stop-hook.js:257-283`.** DONE removals
+   are applied before THREAD additions, and the session-state file accumulates all session
+   (it is only deleted at SessionEnd). So a file containing both `THREAD: X` and `DONE: X`
+   removes X and then re-adds it — **a thread opened and closed in the same session can never
+   close.** Fix is a single pass in file order so a later `DONE:` beats an earlier `THREAD:`.
+   Do this first; workstream 2 is multi-session work tracked through that backlog.
+
+   Consequence to expect: three threads will still show open in `_current.md` tomorrow despite
+   being finished today — non-interactive `install.sh` and the ADO brief update (both
+   `d3214f9`), and the `/spec-intake` vs `/interview-me` scope check (`0bbb0bf`). They are
+   done. Clear them once the bug is fixed.
+
+2. **Workstream 2, first cut — 8 files, all of which already exist.** Verified 2026-07-29 that
+   nothing has begun: no `docs/plans/`, no acceptance-bar language, and no `PROPOSED`/`SHIPPED`
+   in any target file. So it is 8 edits plus one `mkdir` in `setup-project.sh`. Route through
+   `/implement`. The load-bearing pair is `tech-lead` (writes the plan and its bars) and
+   `merge-reviewer` (gates on them, verifies distillation, flips `SHIPPED`, deletes); the other
+   six files are plumbing and docs.
+
+3. **Open, low value:** re-run the `pack-review` redundancy pass against *installed* routing
+   surface rather than repo files. The 2026-07-29 pass assessed 19 agents / 27 skills while the
+   machine was routing 32 items. The drift is now cleaned, so a re-run would likely reach the
+   same conclusion — this is about `pack-review` step 6 reading the right surface, not about a
+   suspected collision.
+
+4. **Constraint to honour when workstream 2's successor lands:** the `/interview-me` step 6
+   edit must ship in the *same cut* as `/spec-intake`, never before, or the hand-off offers a
+   slash command that is not installed. See `docs/ado-delivery-pipeline-brief.md`.
+
+### Recommended amendment to the first cut
+
+**The enforcement path should have a test, not just prose.** `merge-reviewer`'s gate being
+correct is the entire premise of this cut, and "if a plan exists, enforce it" is currently a
+sentence in a markdown file with nothing verifying it fires. The pack produced the write-only
+failure **four** times before this brief was written — the session-state file nothing read back,
+the unreachable Obsidian dispatch fixed in `cbf44ca`, the `session-*-unknown.txt` orphans, and
+the `DONE:` bug above. Every one of them failed in exactly the way an untested gate fails:
+silently, while looking installed. This is not in the 8-file scope as written; decide
+explicitly whether to add it rather than letting it pass by default.
+
+---
+
+**Original status:** approved, not yet implemented
 **Origin:** interview session comparing the pack against two external references — a "software factory" pipeline diagram and [simoncorry/foundry](https://github.com/simoncorry/foundry)
 
 Two independent workstreams, documented together, built in order. They share no files.
@@ -205,9 +274,10 @@ The CLI also replaces work the pack currently does by hand on the **read** side.
 because the ask was the write chain, but worth recording:
 
 - `/obsidian-search` — `search query= format=json` and `search:context` instead of glob-and-grep
-- `wiki-linter` — `orphans`, `unresolved`, and `backlinks` natively instead of deriving them
-  (conditional: a wiki vault is not necessarily an Obsidian vault). Foundry pays a Node script,
-  `check-wiki-pointers.js`, for the same result.
+- ~~`wiki-linter` — `orphans`, `unresolved`, and `backlinks` natively instead of deriving them~~
+  **Void as of 2026-07-29:** the wiki skill family and its three agents were retired from the
+  pack (`d11bfb1`, 2026-05-16) and purged from `~/.claude` in `4fd18f1`. There is no
+  `wiki-linter` to improve.
 - `property:set` / `property:read` — frontmatter edits without rewriting the file
 - `daily:path` — respects the user's Daily Notes plugin config, though the pack deliberately uses
   its own per-project daily structure
