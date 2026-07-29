@@ -1,13 +1,20 @@
 # Design Brief: ADO Delivery Pipeline (Stages 0–4)
 
-**Date:** 2026-07-27
-**Status:** design settled on four points, not yet specified in full, not implemented
+**Date:** 2026-07-27 (revised 2026-07-29 — proposed additions cut from 4 skills + 1 agent to 3 skills + 1 agent + 2 modes on existing skills; see Scope revision)
+**Status:** design settled on six points, not yet specified in full, not implemented
 **Origin:** reading `<internal-repo>/docs/<delivery-playbook>.docx` — a BA/PM playbook
 derived from the <internal-repo> Claims module build (June–July 2026), and mapping its five stages against
 what the pack actually covers today.
 
-**Blocked on:** workstream 2 of `obsidian-cli-and-plan-spine-brief.md` (the durable plan spine).
-See Sequencing.
+**Blocked on:** workstream 2 of `obsidian-cli-and-plan-spine-brief.md` (the durable plan spine),
+for two independent reasons — the shared CONVENTIONS.md path key, and `/backlog` reading the plan's
+acceptance bars rather than authoring its own. See Sequencing.
+
+**Note the chain is serial, not a parallel expansion:** workstream 2 → `/spec-intake` →
+`/backlog` → `/implement` work-item mode → `/verify-spec`, each needing its predecessor's artifact
+to exist before its own shape can be designed. Any slippage in workstream 2 pushes all of it, and
+workstream 2 has not started as of 2026-07-29 (`docs/plans/` does not exist and no plan-path key
+appears in `docs/CONVENTIONS.md`).
 
 ---
 
@@ -32,7 +39,7 @@ subsequent day produce twenty story-level commits.
 | **0 — Ground truth** (spec of record, field inventory, traceability matrix, exemplar) | `/interview-me` produces a design brief only | None of the three durable artifacts exist |
 | **1 — Plan + adversarial review** | `/plan` → tech-lead → devils-advocate → codex-reviewer; `memory/decisions/` as decision log | **Covered.** Closely matches the playbook |
 | **2 — Backlog decomposition** | `devops-azure` creates one work item at a time with preview-and-confirm | Largest gap. No decomposition, points-by-analogy, parallel grouping, or completeness audit |
-| **3 — Parallel execution** | `/implement` runs one story's agent chain | Partial. No work-item-driven entry, board hygiene, or multi-story fan-out |
+| **3 — Parallel execution** | `/implement` runs one story's agent chain | Partial. No work-item-driven entry or board hygiene. Multi-story fan-out is **out of scope by decision**, not a gap — see Scope revision |
 | **4 — Verify against spec** | `/review-pr` reviews a diff | No coverage. Nothing walks a traceability matrix |
 
 ### Failure modes from the playbook, checked against the pack
@@ -50,7 +57,19 @@ One is a direct report card on this pack:
 - **"Automatic decision-capture silently failed."** All 193 Claims session logs recorded
   *"Decisions: none captured"* while 29 decision documents were written by hand — undetected for
   the entire project because humans compensated. That is this pack's Obsidian decision hook.
-  Worth a deliberate verification pass; not yet scoped.
+  **Investigated and fixed 2026-07-29 (commit `5410ff8`)** — two independent defects, both
+  silent:
+  1. `~/.claude/current-session-id` is a single global file that every concurrent session
+     overwrites on every prompt submission, and the CLAUDE.md capture command resolved the
+     session id by reading it. Under two or more live sessions, decisions were filed into
+     whichever session last took a turn. Observed directly: the file read one session id and,
+     two minutes later, a different one, while `$CLAUDE_CODE_SESSION_ID` stayed correct
+     throughout. Capture now resolves from the env var, which is per-session and cannot race.
+  2. Nothing ever read `session-decisions-unknown.txt`, the literal filename the command's own
+     fallback wrote to — a write path with no read path. 480 bytes of decisions had been
+     stranded there since 2026-07-01. `readDecisions` now reads every candidate file, merges
+     them, and clears each contributor (it was first-hit-wins, which also dropped decisions
+     silently whenever two files had content).
 
 The fourth — **ambiguous component references** — is a prompting discipline
 (name the exact screen and file area, prefer screenshots to prose) and belongs in
@@ -60,24 +79,107 @@ The fourth — **ambiguous component references** — is a prompting discipline
 
 ## Proposed additions
 
-Four skills and one agent. Shapes are sketched, not specified — each should be re-scoped as the
-one before it lands.
+**Revised 2026-07-29.** Three skills, one agent, and two modes on existing skills. Shapes are
+sketched, not specified — each should be re-scoped as the one before it lands.
 
 1. **`/spec-intake`** — Stage 0. Markdown in; three artifacts out: spec of record, field-level
    inventory, traceability matrix with every row `not started`. Names the exemplar screen.
-2. **`/backlog` + `backlog-architect` agent** — Stage 2. Feature/story/task tree with acceptance
-   criteria, story points estimated by analogy against a named already-delivered epic, and
-   stories grouped by what can run in parallel. Includes a **mandatory second audit pass**
-   ("every story has ≥1 well-defined task; name the ones that don't").
-3. **`/deliver`** — Stage 3. Work-item-driven orchestration over the existing `/implement` chain,
-   per story: assign + In Progress → implement → on merge-reviewer PASS, link PR, mark done, log
-   hours, flip the traceability row.
-4. **`/verify-spec`** — Stage 4. Walks the matrix against delivered code and the field inventory,
+   *Not yet re-examined against `/interview-me`; see Open questions.*
+2. **`/backlog` + `backlog-auditor` agent** — Stage 2, narrowed to reasoning only. Feature/story/
+   task tree, story points estimated by analogy against a named already-delivered epic, and
+   stories grouped by what can run in parallel. **Acceptance criteria are read from the plan
+   spine's acceptance bars, not invented here.** Emits a reviewed tree; does not write to ADO.
+3. **`/verify-spec`** — Stage 4. Walks the matrix against delivered code and the field inventory,
    reports gaps bidirectionally, opens stories for them, emits a stakeholder-readable document.
+4. **Work-item mode on `/implement`** (replaces the proposed `/deliver`) — Stage 3.
+5. **Batch write mode on `devops-azure`** — the only new ADO write surface `/backlog` needs.
+
+`/deliver` as a separate skill is **cancelled, not deferred.** See the two scope decisions below.
 
 ---
 
 ## Decisions settled
+
+### Scope revision (2026-07-29): `/deliver` cancelled, folded into `/implement` as a mode
+
+`/deliver` decomposed into five responsibilities. Four fit `/implement` directly:
+
+| `/deliver` responsibility | Fits `/implement`? |
+|---|---|
+| Read the story from ADO as task input | Yes — a step 0 ahead of git-engineer |
+| Assign + set In Progress | Yes — same step 0 |
+| On merge-reviewer PASS: link PR, mark done, log hours | Yes — a step 10c |
+| Flip the traceability row | Yes — same step 10c |
+| **Fan out across multiple stories** | **No** |
+
+The four that fit are pre-flight input resolution and post-PASS side effects, and `/implement`
+already carries two of the latter — step 10b (Obsidian capture) and step 11 (git-engineer push/PR).
+Mode-gating is an established idiom in the pack: `git-engineer` already runs Modes A/B/C.
+
+**The multi-story fan-out is dropped deliberately.** Three reasons:
+
+- **It contradicts a settled decision.** Dynamic Workflows — the mechanism that does fan-out
+  properly — was declined on 2026-07-27
+  (`memory/decisions/2026-07-27-decision-decline-dynamic-workflows-for-implement.md`). A bespoke
+  fan-out inside `/deliver` reintroduces exactly what that record rejected, minus the engine.
+- **It stacks on an active bug.** `/implement` assumes one feature branch and one merge-reviewer
+  commit; N stories means N branches and N pipelines, each dispatching `isolation: "worktree"`
+  engineers. Worktree misbasing is already the pack's live worktree hazard
+  ([[2026-07-15-worktree-isolation-bases-off-main]]), and concurrency multiplies it.
+- **The playbook's parallelism was human.** Several sessions at once, not a skill fanning out.
+  Notably, that same concurrency pattern is what broke the decision-capture hook — the global
+  `current-session-id` file raced between sessions (fixed 2026-07-29, commit `5410ff8`).
+
+Consequence accepted: the human invokes `/implement` once per story. In exchange the severe
+`/implement`-vs-`/deliver` routing collision disappears rather than being papered over with
+`Do NOT use` prose, and no new skill is added.
+
+### Scope revision (2026-07-29): `/backlog` stays a skill; `devops-azure` gains a batch mode
+
+The alternative considered was folding `/backlog` into `devops-azure` entirely. Rejected — wrong
+seam. Of `/backlog`'s five responsibilities, exactly one is an ADO operation:
+
+| Responsibility | Nature |
+|---|---|
+| Feature/story/task tree | Reasoning |
+| Points by analogy vs. a delivered epic | Reasoning + ADO reads |
+| Group by parallelizability | Reasoning |
+| Completeness audit | Reasoning |
+| Bulk-create the tree | **ADO write** |
+
+`devops-azure` is a CLI-transport skill end to end — setup verification, operation classification,
+targeting, runtime schema discovery, safe writes. It contains no reasoning workflow. Folding
+decomposition into it would put a BA workflow inside an API shell, and worse, would force the
+preview-and-confirm rule to be relaxed *inside the file that owns the rule*
+(`skills/devops-azure/SKILL.md:108`, "even for a one-line comment"). That is the one place a
+deliberate deviation must not happen quietly.
+
+So the split is:
+
+- **`/backlog` owns the reasoning** and emits a reviewed tree artifact.
+- **`devops-azure` gains an explicit batch write mode** — whole-tree preview, one confirmation,
+  **per-item result reporting**, and a hard cap on tree size. Amended once, deliberately, in the
+  file that owns the rule. This supersedes the framing in Open questions below, which treated the
+  60+ confirmations as a rule to work around: it is a safety rule meeting an operation it was
+  never designed for. A mid-run `az` failure leaves a *partially created backlog*, which is worse
+  than either outcome the current rule protects against — so per-item reporting is the load-bearing
+  part, not the single confirmation.
+- **The agent is reframed as `backlog-auditor`, not `backlog-architect`.** The skill decomposes;
+  the agent independently audits the tree ("every story has ≥1 well-defined task; name the ones
+  that don't"). That mirrors `tech-lead → devils-advocate`, an idiom the pack already runs, and
+  keeps the audit genuinely independent rather than self-review by the thing that built the tree.
+
+### Acceptance criteria come from the plan spine, not from `/backlog` (2026-07-29)
+
+Workstream 2 has `tech-lead` writing acceptance bars "concrete enough that a stranger could check
+them," `devils-advocate` pressure-testing them, `test-engineer` writing tests against them, and
+`merge-reviewer` gating on them. If `/backlog` invents its own acceptance criteria, the pack ships
+**two competing definitions of done for the same work** — and because this brief sequences
+`/backlog` after the spine, the collision is guaranteed rather than hypothetical.
+
+`/backlog` therefore reads the bars and attaches them to stories. It does not author criteria.
+This is a second reason the plan spine must land first, independent of the CONVENTIONS.md path key
+argued under Sequencing.
 
 ### Markdown is canonical for every Stage 0 artifact; no committed Office extractor
 
@@ -138,24 +240,39 @@ Path is `docs/traceability/<feature>.md` by default, overridable via a `docs/CON
 Workstream 2 of `obsidian-cli-and-plan-spine-brief.md` lands before any of this. It is already
 approved and specified as an 8-file first cut, and workstream 1 shipped at `66b60c1`.
 
-The reason is the CONVENTIONS.md path key above. Building Stage 0 first means inventing a second
-path convention and then reconciling the two. It also means `/backlog`'s shape can be designed
-against a plan file that actually exists rather than a specified one.
+There are now two reasons, either of which is sufficient:
+
+1. **The CONVENTIONS.md path key above.** Building Stage 0 first means inventing a second path
+   convention and then reconciling the two.
+2. **`/backlog` reads the plan's acceptance bars** rather than authoring criteria (2026-07-29
+   decision above). Building `/backlog` first would mean authoring criteria that the spine then
+   duplicates — the two-definitions-of-done collision.
+
+It also means `/backlog`'s shape can be designed against a plan file that actually exists rather
+than a specified one.
 
 ---
 
 ## Open questions
 
-- **Batch writes conflict with `devops-azure`'s safety rule.** That skill requires preview-and-confirm
-  on every write, explicitly *"even for a one-line comment"* (`skills/devops-azure/SKILL.md:108`).
-  Creating a 20-story backlog under that rule is 60+ confirmations. `/backlog` needs a
-  preview-the-whole-tree-once, confirm-once, execute pattern — a deliberate deviation that should be
-  written down as such, not quietly worked around.
+- **`/spec-intake` vs. `/interview-me` routing.** Different inputs (a document vs. a conversation)
+  but the same delivery stage, so "turn these requirements into something actionable" matches both.
+  Not yet examined — the 2026-07-29 pass covered only `/deliver` and `/backlog`. Needs either
+  explicit `Do NOT use` disambiguation in both descriptions or, as happened with `/deliver`, a
+  finding that it should not be a separate skill at all.
 - **Stage 4 stakeholder output format** — `/visual-explainer` HTML vs. markdown vs. an actual
   `.docx`. Unresolved.
-- **Verifying the decision-capture hook actually captures** — playbook failure mode #3. Not scoped.
-- **Whether `/deliver` fans out across stories in parallel** or runs them sequentially. The playbook
-  ran several at once; the pack's worktree isolation may or may not hold up under that. Untested.
+
+### Closed since the first draft
+
+- **Batch writes vs. `devops-azure`'s safety rule** — resolved by the 2026-07-29 scope revision: an
+  explicit batch write mode in `devops-azure` itself, with per-item result reporting. The original
+  framing (a deviation `/backlog` should document) was the wrong shape; the rule is amended in the
+  file that owns it.
+- **Verifying the decision-capture hook actually captures** — done 2026-07-29, two defects found and
+  fixed. See failure mode #3 above.
+- **Whether `/deliver` fans out across stories in parallel** — moot. `/deliver` is cancelled and the
+  fan-out is dropped by decision.
 
 ---
 
