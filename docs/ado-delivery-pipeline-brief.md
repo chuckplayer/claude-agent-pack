@@ -1,7 +1,7 @@
 # Design Brief: ADO Delivery Pipeline (Stages 0–4)
 
-**Date:** 2026-07-27 (revised 2026-07-29 — proposed additions cut from 4 skills + 1 agent to 3 skills + 1 agent + 2 modes on existing skills; see Scope revision)
-**Status:** design settled on six points, not yet specified in full, not implemented
+**Date:** 2026-07-27 (revised 2026-07-29 — proposed additions cut from 4 skills + 1 agent to 3 skills + 1 agent + 2 modes on existing skills; all three remaining skills scope-checked; see Scope revision)
+**Status:** design settled on nine points; all proposals scope-checked; not yet specified in full, not implemented
 **Origin:** reading `amwins-profac/docs/AI-Assisted-Feature-Delivery-Playbook.docx` — a BA/PM playbook
 derived from the ProFac Claims module build (June–July 2026), and mapping its five stages against
 what the pack actually covers today.
@@ -84,7 +84,9 @@ sketched, not specified — each should be re-scoped as the one before it lands.
 
 1. **`/spec-intake`** — Stage 0. Markdown in; three artifacts out: spec of record, field-level
    inventory, traceability matrix with every row `not started`. Names the exemplar screen.
-   *Not yet re-examined against `/interview-me`; see Open questions.*
+   Accepts **a source document or a completed `/interview-me` brief**, and owns document
+   conversion as its own step 0. Survives the scope check that cancelled `/deliver` — see the
+   2026-07-29 decision below.
 2. **`/backlog` + `backlog-auditor` agent** — Stage 2, narrowed to reasoning only. Feature/story/
    task tree, story points estimated by analogy against a named already-delivered epic, and
    stories grouped by what can run in parallel. **Acceptance criteria are read from the plan
@@ -169,6 +171,62 @@ So the split is:
   that don't"). That mirrors `tech-lead → devils-advocate`, an idiom the pack already runs, and
   keeps the audit genuinely independent rather than self-review by the thing that built the tree.
 
+### Scope check (2026-07-29): `/spec-intake` survives; it composes with `/interview-me`
+
+Run as the third scope check of the day, after `/deliver` (cancelled) and `/backlog` (narrowed).
+`/spec-intake` survives, and the reason `/deliver` did not is instructive: `/deliver`'s
+responsibilities were already-existing `/implement` step *types* — input resolution and post-PASS
+side effects — so folding worked. Nothing here is. `/interview-me` is a question loop with
+termination detection; `/spec-intake` is a document transformer. They share no machinery.
+
+| | `/interview-me` | `/spec-intake` |
+|---|---|---|
+| Input | The user's head — a vague idea | An existing document, or an `/interview-me` brief |
+| Direction | *Pulls* information out | *Ingests* information in |
+| Output | One narrative brief → `docs/<slug>-brief.md` | Three artifacts, matrix included |
+| Durability | Feeds `/plan` or `/implement`, then done | Matrix is load-bearing for Stage 2 *and* Stage 4 |
+| Operator | Whoever has the idea | Explicitly BA/PM |
+
+**Routing rule, stated as a property of the input rather than a judgement about the task:**
+`/interview-me` when the requirements are in a human's head; `/spec-intake` when they are in a
+document. Both descriptions carry this; it is checkable at routing time, unlike "which of these is
+more actionable".
+
+**Coverage gap this closed.** `/verify-spec` cannot run without the traceability matrix, only
+`/spec-intake` produces it, and the original design accepted markdown documents only. So a feature
+whose requirements were never a document — worked out in conversation, which is exactly what
+`/interview-me` is for — would have had no Stage 0 artifact and therefore no Stage 4 verification,
+silently. `/spec-intake` therefore accepts **a source document or a completed `/interview-me`
+brief**, so the two skills chain rather than compete and the "which skill?" question often resolves
+to *both, in order*.
+
+**`/interview-me` asks; it does not auto-route.** Its step 6 hand-offs today (`/plan` vs.
+`/implement`) are inferable from interview state — is the approach settled or not. Whether work
+belongs in the ADO delivery pipeline is **not inferable at all**: it is an organizational fact about
+whether this is a tracked deliverable. Nothing in the interview content answers it, so it must be
+asked. Same step, different mechanism, deliberately.
+
+The ask is gated on step 4's existing termination signals:
+
+- **Signal (b), all branches resolved** → ask: *"Do you want a spec of record and traceability
+  matrix for this, or just build it?"* Names the artifacts rather than the pipeline, because that is
+  what the user is actually choosing between.
+- **Signal (a), user said "let's go" / "implement it"** → do **not** ask. That is literally "do the
+  work now," and asking re-imposes the ceremony they just declined (the skill's own gotcha:
+  *"Don't over-interview"*). But do not drop it silently either — note once that there is no Stage 0
+  artifact, so Stage 4 will not be able to verify this later, then proceed to `/implement`.
+
+Note-and-proceed matches two patterns the pack already runs: `agents/merge-reviewer.md:110` treats a
+missing test command as a warning rather than a block, and the plan spine's gate is explicitly "if a
+plan exists, enforce it" because an unconditional gate would block every small change. **Stage 0
+artifacts follow the same rule: used when present, never mandatory.**
+
+**Sequencing constraint.** The `/interview-me` edit must land in the *same cut* as `/spec-intake`,
+never before. A hand-off that offers a slash command which is not installed is worse than no offer,
+and `/spec-intake` is behind workstream 2. This reverses an earlier lean toward one-directional
+coupling (only `/spec-intake` knowing about `/interview-me`); the discoverability is worth the
+coupling, because a BA who does not know `/spec-intake` exists will not go looking for it.
+
 ### Acceptance criteria come from the plan spine, not from `/backlog` (2026-07-29)
 
 Workstream 2 has `tech-lead` writing acceptance bars "concrete enough that a stranger could check
@@ -210,10 +268,26 @@ Two consequences accepted deliberately:
   specifically so it could go to stakeholders. This is an output problem, and `/visual-explainer`
   likely serves it better than Word.
 
-**Open counter-argument, not resolved:** the playbook is written *for BAs and PMs*, and
+**Counter-argument, resolved 2026-07-29:** the playbook is written *for BAs and PMs*, and
 prerequisite #1's owner is the BA. Requirements arrive from stakeholders as Word and Excel
-regardless. Markdown-canonical moves that boundary-crossing cost onto a human rather than removing
-it. Accepted for now because the cost is small and infrequent; revisit if intake volume grows.
+regardless. Markdown-canonical moved that boundary-crossing cost onto a human rather than removing
+it — and the flow had an undefined middle step:
+
+1. BA receives `requirements.docx`
+2. **???** — someone runs ad-hoc zip extraction and strips `document.xml`
+3. BA invokes `/spec-intake` on the resulting markdown
+
+Step 2 was owned by nobody, and `/spec-intake` rejecting anything but markdown made its precondition
+the hard part of the job. Worth noting who actually exercised the escape hatch when this brief was
+written: a Claude session, not a BA.
+
+**Resolution: `/spec-intake` owns conversion as its step 0** — accepts `.docx`/`.xlsx`/`.md`,
+converts inline when needed, records source path and conversion date in the spec's frontmatter. This
+does **not** reverse the markdown-canonical decision: markdown remains canonical as step 0's
+*output*, and ad-hoc inline conversion inside a skill is still not a maintained script, which is what
+that decision actually prohibited. It only moves the seam from between the human and the skill to
+inside the skill — which the frontmatter requirement above already assumed, since a skill cannot
+record a conversion date for a conversion it never saw.
 
 ### Traceability matrix lives in `docs/`, joined to ADO by work item ID
 
@@ -255,13 +329,12 @@ than a specified one.
 
 ## Open questions
 
-- **`/spec-intake` vs. `/interview-me` routing.** Different inputs (a document vs. a conversation)
-  but the same delivery stage, so "turn these requirements into something actionable" matches both.
-  Not yet examined — the 2026-07-29 pass covered only `/deliver` and `/backlog`. Needs either
-  explicit `Do NOT use` disambiguation in both descriptions or, as happened with `/deliver`, a
-  finding that it should not be a separate skill at all.
 - **Stage 4 stakeholder output format** — `/visual-explainer` HTML vs. markdown vs. an actual
-  `.docx`. Unresolved.
+  `.docx`. Unresolved. Note this is now the *only* proposal-level question left open; every skill in
+  the Proposed additions list has been scope-checked.
+- **Exact wording of `/spec-intake`'s three artifacts.** Shapes are named, formats are not (beyond
+  the matrix being a markdown table). Deliberately deferred until workstream 2's plan file exists,
+  per Sequencing.
 
 ### Closed since the first draft
 
@@ -273,6 +346,12 @@ than a specified one.
   fixed. See failure mode #3 above.
 - **Whether `/deliver` fans out across stories in parallel** — moot. `/deliver` is cancelled and the
   fan-out is dropped by decision.
+- **`/spec-intake` vs. `/interview-me` routing** — resolved 2026-07-29. Not a collision to
+  disambiguate but two skills that compose: routing splits on where the requirements live (head vs.
+  document), `/spec-intake` accepts either a document or an `/interview-me` brief, and
+  `/interview-me` asks rather than auto-routes. See the scope check above.
+- **Who converts the source document** — resolved 2026-07-29. `/spec-intake` step 0 owns it. See the
+  markdown-canonical decision above.
 
 ---
 
