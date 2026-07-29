@@ -87,8 +87,19 @@ for skill_dir in "$SCRIPT_DIR/skills/"*/; do
     echo "  [ok] skill:  $skill_name"
 done
 
-# Remove skills that were deprecated or merged in a previous version
-deprecated_skills=("agent-plan" "challenge" "check-readiness" "check-updates" "obsidian-log")
+# Remove skills that were deprecated or merged in a previous version.
+#
+# IMPORTANT: every removal from skills/ must be added here in the same commit, and
+# to KNOWN_RETIRED_SKILLS in scripts/check-updates.sh. An installed skill stays
+# routable until its directory is deleted -- the router reads ~/.claude, not this
+# repo -- so a skill dropped from the pack keeps being dispatchable indefinitely.
+# This was missed twice: the wiki family (removed 2026-05-16, d11bfb1) and
+# skill-writer (removed 2026-05-25, 3eebfda) stayed live for over two months.
+deprecated_skills=(
+    "agent-plan" "challenge" "check-readiness" "check-updates" "obsidian-log"
+    "skill-writer"                                              # removed 3eebfda
+    "wiki" "wiki-ingest" "wiki-init" "wiki-lint" "wiki-query"    # removed d11bfb1
+)
 deprecated_removed=0
 for name in "${deprecated_skills[@]}"; do
     target="$SKILLS_DIR/$name"
@@ -99,9 +110,14 @@ for name in "${deprecated_skills[@]}"; do
     fi
 done
 
-# Remove agents that were renamed or superseded in a previous version
-# (branch-manager -> git-engineer, typescript-engineer -> frontend-engineer)
-deprecated_agents=("branch-manager" "typescript-engineer")
+# Remove agents that were renamed, superseded, or retired in a previous version.
+# Same rule as deprecated_skills above: add every removal here and to
+# KNOWN_RETIRED_AGENTS in scripts/check-updates.sh, in the same commit.
+deprecated_agents=(
+    "branch-manager"                                             # -> git-engineer
+    "typescript-engineer"                                        # -> frontend-engineer
+    "wiki-ingestor" "wiki-librarian" "wiki-linter"               # removed d11bfb1
+)
 for name in "${deprecated_agents[@]}"; do
     target="$AGENTS_DIR/$name.md"
     if [ -f "$target" ]; then
