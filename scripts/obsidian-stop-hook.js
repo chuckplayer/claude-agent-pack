@@ -66,22 +66,48 @@ function readJournal(sid, overrideJournalDir) {
 }
 
 /**
- * Read captured decisions from per-session or global decisions file.
+ * Candidate decisions files, in read order. Kept as one list so the "does anything
+ * exist" pre-check and the actual read can never disagree about where to look.
+ *
+ * `session-decisions-unknown.txt` is included deliberately: the CLAUDE.md capture
+ * command falls back to that literal name when it cannot resolve a session id, and
+ * for a long time nothing ever read it — decisions written there were lost in place.
  * @param {string} sid
  * @param {string} [overrideDir]
- * @returns {{ file: string|null, decisions: string[] }}
+ * @returns {string[]}
+ */
+function decisionsCandidates(sid, overrideDir) {
+  const base = overrideDir || path.join(os.homedir(), '.claude');
+  return [
+    sid ? path.join(base, `session-decisions-${sid}.txt`) : null,
+    path.join(base, 'session-decisions.txt'),
+    path.join(base, 'session-decisions-unknown.txt'),
+  ].filter(Boolean);
+}
+
+/**
+ * Read captured decisions from every candidate file, not just the first non-empty
+ * one. First-hit-wins silently dropped decisions whenever more than one candidate
+ * had content, and left the loser uncleared so it leaked into later sessions.
+ *
+ * Returns every file that contributed, so the caller clears exactly what it consumed.
+ * @param {string} sid
+ * @param {string} [overrideDir]
+ * @returns {{ files: string[], decisions: string[] }}
  */
 function readDecisions(sid, overrideDir) {
-  const base = overrideDir || path.join(os.homedir(), '.claude');
-  const perSession = path.join(base, `session-decisions-${sid}.txt`);
-  const global_ = path.join(base, 'session-decisions.txt');
-  for (const f of [perSession, global_]) {
+  const files = [];
+  const decisions = [];
+  for (const f of decisionsCandidates(sid, overrideDir)) {
     try {
       const text = readFileSync(f, 'utf8').trim();
-      if (text) return { file: f, decisions: text.split('\n').filter(Boolean) };
+      if (text) {
+        files.push(f);
+        decisions.push(...text.split('\n').filter(Boolean));
+      }
     } catch {}
   }
-  return { file: null, decisions: [] };
+  return { files, decisions };
 }
 
 /**
@@ -94,7 +120,11 @@ function readSessionState(sid, overrideDir) {
   const base = overrideDir || path.join(os.homedir(), '.claude');
   const perSession = sid ? path.join(base, `session-state-${sid}.txt`) : null;
   const global_ = path.join(base, 'session-state.txt');
-  for (const f of [perSession, global_].filter(Boolean)) {
+  // `session-state-unknown.txt` is the CLAUDE.md fallback filename; nothing read it
+  // before, so state written there was stranded. Unlike decisions these are not
+  // merged — session state is one latest-wins blob, so first non-empty still wins.
+  const unknown = path.join(base, 'session-state-unknown.txt');
+  for (const f of [perSession, global_, unknown].filter(Boolean)) {
     try {
       const text = readFileSync(f, 'utf8').trim();
       if (text) return { file: f, content: text };
@@ -596,9 +626,7 @@ function main() {
 
     let hasDecisions = false;
     if (isSessionEnd && sessionId) {
-      const perSession = path.join(os.homedir(), '.claude', `session-decisions-${sessionId}.txt`);
-      const global_ = path.join(os.homedir(), '.claude', 'session-decisions.txt');
-      for (const f of [perSession, global_]) {
+      for (const f of decisionsCandidates(sessionId)) {
         try {
           if (existsSync(f) && readFileSync(f, 'utf8').trim()) { hasDecisions = true; break; }
         } catch {}
@@ -670,12 +698,12 @@ function main() {
     const agentsSection  = `\n## Agents invoked\n${agents.map(a => `- ${a.time} ${a.name}`).join('\n') || '(none)'}\n`;
 
     let decisionsSection = '';
-    let decisionsFile = null;
+    let decisionsFiles = [];
     let decisions = [];
 
     if (isSessionEnd) {
       const decResult = readDecisions(sessionId);
-      decisionsFile = decResult.file;
+      decisionsFiles = decResult.files;
       decisions = decResult.decisions;
       decisionsSection = `\n## Decisions\n${decisions.map((d, i) => `${i + 1}. ${d}`).join('\n') || '(none captured)'}\n`;
     }
@@ -793,11 +821,13 @@ ${safeDecisionText}
         } catch {}
       }
 
-      // Clear the decisions file only after the ADR writes have settled, so a
+      // Clear the decisions files only after the ADR writes have settled, so a
       // teardown between clear and write can never lose captured decisions.
+      // Clears every file that contributed — clearing only one would re-log the
+      // rest on the next session that happens to read them.
       return Promise.allSettled(adrWrites).then(() => {
-        if (decisionsFile) {
-          try { writeFileSync(decisionsFile, '', 'utf8'); } catch {}
+        for (const f of decisionsFiles) {
+          try { writeFileSync(f, '', 'utf8'); } catch {}
         }
       });
     }

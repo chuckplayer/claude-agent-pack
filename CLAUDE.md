@@ -176,8 +176,14 @@ Use standard memory frontmatter: `type: known-issue`, `status: active`,
 When you and the user reach a significant technical decision — an architectural choice, technology selection, pattern adoption, or approach the user explicitly accepts — append a record to `~/.claude/session-decisions.txt` **before moving on**:
 
 ```bash
-echo "[$(date +%H:%M)] <what was decided> — <why in 10 words or fewer>" >> ~/.claude/session-decisions-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]' || echo unknown).txt
+echo "[$(date +%H:%M)] <what was decided> — <why in 10 words or fewer>" >> ~/.claude/session-decisions-${CLAUDE_CODE_SESSION_ID:-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]')}.txt
 ```
+
+**`$CLAUDE_CODE_SESSION_ID` first, always.** `~/.claude/current-session-id` is a single global file
+that *every* concurrent session overwrites on every prompt submission, so reading it resolves to
+whichever session most recently took a turn — not necessarily this one. Under two or more live
+sessions that silently files decisions into another session's log. The env var is per-session and
+cannot race. The file remains only as a fallback for a session where the var is somehow unset.
 
 The Stop hook reads this file after each response and includes it in the session log automatically. You do not need to ask the user's permission — just record it and continue.
 
@@ -192,7 +198,7 @@ Do not call `/obsidian-capture` for this — writing to the decisions file is su
 As significant work progresses or when stopping mid-thread, append lines to the session-state file **before ending your response**:
 
 ```bash
-echo "<where work currently stands>" >> ~/.claude/session-state-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]' || echo unknown).txt
+echo "<where work currently stands>" >> ~/.claude/session-state-${CLAUDE_CODE_SESSION_ID:-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]')}.txt
 ```
 
 Three line types are supported in the same file:
@@ -203,16 +209,19 @@ Three line types are supported in the same file:
 
 ```bash
 # Plain progress note
-echo "Implemented auth service; wiring to controller next" >> ~/.claude/session-state-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]' || echo unknown).txt
+echo "Implemented auth service; wiring to controller next" >> ~/.claude/session-state-${CLAUDE_CODE_SESSION_ID:-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]')}.txt
 
 # Open thread
-echo "THREAD: Add rate limiting to /api/orders endpoint" >> ~/.claude/session-state-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]' || echo unknown).txt
+echo "THREAD: Add rate limiting to /api/orders endpoint" >> ~/.claude/session-state-${CLAUDE_CODE_SESSION_ID:-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]')}.txt
 
 # Resolve a thread (case-insensitive match against stored thread text)
-echo "DONE: Add rate limiting to /api/orders endpoint" >> ~/.claude/session-state-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]' || echo unknown).txt
+echo "DONE: Add rate limiting to /api/orders endpoint" >> ~/.claude/session-state-${CLAUDE_CODE_SESSION_ID:-$(cat ~/.claude/current-session-id 2>/dev/null | tr -d '[:space:]')}.txt
 ```
 
 The Stop hook folds this file into the project's `_current.md` automatically at session end. No skill invocation needed.
+
+The same `$CLAUDE_CODE_SESSION_ID`-first rule applies here as for decision capture above, and for the
+same reason — `current-session-id` races between concurrent sessions.
 
 **What counts:** unfinished multi-session work, blocked items, "we stopped here because X", open questions that need follow-up next session.
 

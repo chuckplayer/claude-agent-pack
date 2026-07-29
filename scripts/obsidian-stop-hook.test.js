@@ -333,54 +333,94 @@ test('per-session file found and returned when it has content', () => {
   fs.writeFileSync(path.join(tmpDir, `session-decisions-${sid}.txt`), decContent, 'utf8');
 
   const result = readDecisions(sid, tmpDir);
-  assert.strictEqual(result.file, path.join(tmpDir, `session-decisions-${sid}.txt`));
+  assert.deepStrictEqual(result.files, [path.join(tmpDir, `session-decisions-${sid}.txt`)]);
   assert.strictEqual(result.decisions.length, 2);
   assert.ok(result.decisions[0].includes('repository pattern'));
   assert.ok(result.decisions[1].includes('Vue 3'));
 });
 
-test('global fallback used when per-session file is absent', () => {
+test('global file read when per-session file is absent', () => {
   const sid = 'abc456';
   const decContent = '[11:00] Deploy to Azure — existing infrastructure\n';
   fs.writeFileSync(path.join(tmpDir, 'session-decisions.txt'), decContent, 'utf8');
 
   const result = readDecisions(sid, tmpDir);
-  assert.strictEqual(result.file, path.join(tmpDir, 'session-decisions.txt'));
+  assert.deepStrictEqual(result.files, [path.join(tmpDir, 'session-decisions.txt')]);
   assert.strictEqual(result.decisions.length, 1);
 });
 
-test('global fallback used when per-session file is empty', () => {
+test('global file read when per-session file is empty', () => {
   const sid = 'abc789';
   fs.writeFileSync(path.join(tmpDir, `session-decisions-${sid}.txt`), '', 'utf8');
   fs.writeFileSync(path.join(tmpDir, 'session-decisions.txt'), '[12:00] Use EF Core — ORM already in stack\n', 'utf8');
 
   const result = readDecisions(sid, tmpDir);
-  assert.strictEqual(result.file, path.join(tmpDir, 'session-decisions.txt'));
+  assert.deepStrictEqual(result.files, [path.join(tmpDir, 'session-decisions.txt')]);
   assert.strictEqual(result.decisions.length, 1);
 });
 
-test('per-session file takes precedence over global file when both exist', () => {
+test('per-session and global are BOTH read, per-session first — neither is dropped', () => {
   const sid = 'priority-test';
   fs.writeFileSync(path.join(tmpDir, `session-decisions-${sid}.txt`), '[09:00] Session-specific decision\n', 'utf8');
   fs.writeFileSync(path.join(tmpDir, 'session-decisions.txt'), '[09:30] Global decision\n', 'utf8');
 
   const result = readDecisions(sid, tmpDir);
+  assert.strictEqual(result.decisions.length, 2);
   assert.ok(result.decisions[0].includes('Session-specific'));
+  assert.ok(result.decisions[1].includes('Global decision'));
+  assert.strictEqual(result.files.length, 2);
 });
 
-test('neither file exists returns null file and empty decisions', () => {
-  const result = readDecisions('no-files', tmpDir);
-  assert.strictEqual(result.file, null);
+test('unknown-fallback file is read — regression: it was write-only and lost decisions', () => {
+  const sid = 'has-no-own-file';
+  fs.writeFileSync(path.join(tmpDir, 'session-decisions-unknown.txt'), '[13:00] Orphaned decision — session id never resolved\n', 'utf8');
+
+  const result = readDecisions(sid, tmpDir);
+  assert.deepStrictEqual(result.files, [path.join(tmpDir, 'session-decisions-unknown.txt')]);
+  assert.strictEqual(result.decisions.length, 1);
+  assert.ok(result.decisions[0].includes('Orphaned decision'));
+});
+
+test('all three sources merge in order and every contributing file is returned', () => {
+  const sid = 'all-three';
+  fs.writeFileSync(path.join(tmpDir, `session-decisions-${sid}.txt`), '[01:00] A\n', 'utf8');
+  fs.writeFileSync(path.join(tmpDir, 'session-decisions.txt'), '[02:00] B\n', 'utf8');
+  fs.writeFileSync(path.join(tmpDir, 'session-decisions-unknown.txt'), '[03:00] C\n', 'utf8');
+
+  const result = readDecisions(sid, tmpDir);
+  assert.strictEqual(result.decisions.length, 3);
+  assert.ok(result.decisions[0].endsWith('A'));
+  assert.ok(result.decisions[1].endsWith('B'));
+  assert.ok(result.decisions[2].endsWith('C'));
+  assert.deepStrictEqual(result.files, [
+    path.join(tmpDir, `session-decisions-${sid}.txt`),
+    path.join(tmpDir, 'session-decisions.txt'),
+    path.join(tmpDir, 'session-decisions-unknown.txt'),
+  ]);
+});
+
+test('empty sid does not read a bare session-decisions-.txt path', () => {
+  fs.writeFileSync(path.join(tmpDir, 'session-decisions-.txt'), '[04:00] Bare-suffix file\n', 'utf8');
+
+  const result = readDecisions('', tmpDir);
+  assert.deepStrictEqual(result.files, []);
   assert.deepStrictEqual(result.decisions, []);
 });
 
-test('both files empty returns null file and empty decisions', () => {
+test('no files exist returns empty files and empty decisions', () => {
+  const result = readDecisions('no-files', tmpDir);
+  assert.deepStrictEqual(result.files, []);
+  assert.deepStrictEqual(result.decisions, []);
+});
+
+test('all files empty returns empty files and empty decisions', () => {
   const sid = 'both-empty';
   fs.writeFileSync(path.join(tmpDir, `session-decisions-${sid}.txt`), '', 'utf8');
   fs.writeFileSync(path.join(tmpDir, 'session-decisions.txt'), '', 'utf8');
+  fs.writeFileSync(path.join(tmpDir, 'session-decisions-unknown.txt'), '', 'utf8');
 
   const result = readDecisions(sid, tmpDir);
-  assert.strictEqual(result.file, null);
+  assert.deepStrictEqual(result.files, []);
   assert.deepStrictEqual(result.decisions, []);
 });
 
@@ -400,7 +440,7 @@ test('global file with whitespace-only content falls through to no result', () =
   fs.writeFileSync(path.join(tmpDir, 'session-decisions.txt'), '   \n  \n', 'utf8');
 
   const result = readDecisions(sid, tmpDir);
-  assert.strictEqual(result.file, null);
+  assert.deepStrictEqual(result.files, []);
   assert.deepStrictEqual(result.decisions, []);
 });
 
@@ -443,6 +483,23 @@ test('null sid skips per-session file and tries global only', () => {
   fs.writeFileSync(path.join(tmpDir, 'session-state.txt'), 'Only global\n', 'utf8');
   const result = readSessionState(null, tmpDir);
   assert.ok(result.content.includes('Only global'));
+});
+
+test('unknown-fallback state file is read — regression: it was write-only', () => {
+  const sid = 'state-no-own-file';
+  fs.writeFileSync(path.join(tmpDir, 'session-state-unknown.txt'), 'Stranded state line\n', 'utf8');
+  const result = readSessionState(sid, tmpDir);
+  assert.strictEqual(result.file, path.join(tmpDir, 'session-state-unknown.txt'));
+  assert.ok(result.content.includes('Stranded state line'));
+});
+
+test('per-session state still wins over the unknown-fallback file', () => {
+  const sid = 'state-precedence';
+  fs.writeFileSync(path.join(tmpDir, `session-state-${sid}.txt`), 'Mine\n', 'utf8');
+  fs.writeFileSync(path.join(tmpDir, 'session-state-unknown.txt'), 'Stranded\n', 'utf8');
+  const result = readSessionState(sid, tmpDir);
+  assert.ok(result.content.includes('Mine'));
+  assert.ok(!result.content.includes('Stranded'));
 });
 
 // ---------------------------------------------------------------------------
