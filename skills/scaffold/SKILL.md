@@ -91,6 +91,14 @@ After code-reviewer completes. Cover all new public methods, API endpoints, and 
 
 ## 9. merge-reviewer
 
+> **No plan governs a scaffold run, deliberately.** This skill passes no `plan_id`, so
+> merge-reviewer's gate 4a reports "not applicable" and neither the acceptance bars nor the
+> `## Deviations` checks apply. Plan consumption is opt-in per invocation, and this skill never
+> invokes tech-lead at all — its dependency order (contract → schema → backend → frontend) *is* the
+> plan, expressed as the skill's own steps rather than as an artifact. **Do not add `plan_id`
+> handling here** without first deciding who writes the plan, since there is currently no planner in
+> this pipeline to write one.
+
 Final gate. Pass the worktree branch names from steps 4–6 and a summary of all pipeline stages.
 
 If PASS: proceed to step 9a.

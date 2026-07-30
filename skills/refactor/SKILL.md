@@ -106,6 +106,15 @@ After code-reviewer. Focus on:
 
 ## 8. merge-reviewer
 
+> **No plan governs a refactor run, deliberately — and this one is worth understanding.** This skill
+> passes no `plan_id`, so merge-reviewer's gate 4a reports "not applicable". Note that step 3 *always*
+> invokes tech-lead, so a planner does run here — but it is dispatched for blast-radius analysis, not
+> instructed to write a plan file, and tech-lead writes one only when told to. That is deliberate: if
+> tech-lead wrote a plan unconditionally, every refactor would acquire acceptance bars and a gate
+> enforcing them, and this skill's steps say nothing about producing or maintaining either. **Do not
+> instruct tech-lead to write a plan here** without also deciding who fills `## Deviations` and who
+> answers for the bars.
+
 Final gate. Pass the worktree branch names and a summary of all stages. merge-reviewer will merge worktree branches into the refactor branch, clean up worktrees and temporary branches, then run the gate checklist.
 
 If PASS: push and optionally open a PR. Note in the PR description that this is a pure refactor with no behavior change.
