@@ -115,6 +115,56 @@ If `branch-manager` or `typescript-engineer` appear in the agent list, they are
 stale copies from an earlier pack version -- re-run `install.sh` to remove them.
 Route to `git-engineer` and `frontend-engineer` instead.
 
+## Plan spine
+
+Complex work can carry a **durable plan file** that downstream stages act on and can fail against.
+Without it, a plan lives in chat and dies there: nothing checks it off and no stage can be blocked
+by it.
+
+**The artifact.** `<plan_dir>/<plan-id>.md`, where `plan_dir` comes from the
+`- **Plan directory:**` key in `docs/CONVENTIONS.md` and defaults to `docs/plans` (no trailing
+slash — that exact string is the fallback value both the writer and the gate use). Frontmatter
+carries `plan_id`, `branch`, `origin_skill`, and `created`. The body is a narrative half for the
+human and a working-memory half for the agents, the latter holding `## Acceptance bars` — each bar
+a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `tests`, `manual`, or
+`files`.
+
+**Who does what:**
+
+- **tech-lead** writes the plan and its bars — but **only when the invoking skill instructs it**,
+  never unconditionally. It applies a guard rejecting unsafe and placeholder plan-directory values,
+  because its `Write` tool creates parent directories, so an unguarded config value could write
+  outside the repo. **The guard table in `agents/tech-lead.md` is the single authority on what is
+  rejected — do not restate the conditions here or anywhere else.** An enumeration copied into a
+  second file goes stale the first time the table grows a row, and a stale list that reads as
+  authoritative is worse than a pointer.
+- **devils-advocate** pressure-tests the bars in the plan file, editing in place. It is the only
+  check on bar quality; tech-lead both writes the bars and is measured by them.
+- **Engineers never write the plan file.** They run under `isolation: "worktree"` and would
+  conflict on the one file every stage depends on. They surface; the lead session writes.
+- **test-engineer** maps evidence to every bar id and reports it in its handoff. This is the only
+  point where a bar is connected to something real.
+- **merge-reviewer** enforces the bars in gate 4a — an extension of the existing test-coverage
+  gate, not a new gate. It does **not** flip a status field and does **not** delete the plan.
+
+**Consumption is opt-in per invocation.** A stage acts on a plan only when a skill hands it an
+explicit `plan_id` and path. **Nothing ever globs the plan directory.** This is a safety property,
+not a style preference: five skills dispatch merge-reviewer, so a directory-glob trigger would let
+an unrelated `/hotfix` run enforce — and previously even delete — a plan belonging to different
+work, producing a confident verdict about the wrong thing.
+
+`/plan` and `/implement` pass a `plan_id`. **`/hotfix`, `/debug`, `/scaffold`, and `/refactor`
+deliberately do not**, so they are exempt from plan enforcement *by construction* rather than by
+rule, and their SKILL.md files need no plan-related logic. `/scaffold` never invokes tech-lead at
+all. Do not add plan handling to any of the four without also deciding who owns the artifact for
+that path.
+
+**Plans are committed and never deleted.** The plan lands in the same commit as the implementation
+so a reviewer can read intended shape against what was built. An accumulating `docs/plans/` is the
+intended end state, exactly as `memory/decisions/` accumulates — a kept plan is the record of what
+a change meant to do. A plan whose work is never implemented simply stays in the tree; because
+consumption is opt-in, it is inert and needs no cleanup.
+
 ## Worktree policy
 See `skills/implement/SKILL.md` for the full worktree branching and isolation rules.
 

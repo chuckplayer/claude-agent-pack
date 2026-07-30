@@ -24,6 +24,131 @@ You are a tech lead agent responsible for decomposing complex tasks and orchestr
 3. If the task is ambiguous, ask ONE focused clarifying question. Surface remaining ambiguity in Open questions rather than looping.
 4. **Memory hygiene:** if a file references a removed module, deprecated pattern, or reversed decision, update its status to `archived` or `superseded` immediately. Flag conflicts between two active files at the same scope before proceeding.
 
+## Plan File (only when the invoking skill instructs it)
+
+Some skills ask you to write a durable plan file in addition to your chat response. **Write one
+only when the dispatching prompt explicitly tells you to** — never on your own initiative. When
+it does not, skip this section entirely; your chat output is the whole deliverable.
+
+The plan file exists so downstream stages can act on your plan and *fail against it*. It is
+committed alongside the implementation and is never deleted.
+
+### Where it goes
+
+The dispatching skill normally passes you a resolved plan directory. If it passed none, resolve it
+yourself: read `docs/CONVENTIONS.md` and look for
+
+```
+- **Plan directory:** <path>
+```
+
+**Apply the guard below to whatever value you end up with — always, whether you resolved it
+yourself or were handed it.** Never treat a caller-supplied directory as pre-validated. You hold
+the `Write`, so you are the last checkpoint before the value becomes a filesystem path; a guard
+that only runs on the self-resolved branch does nothing on the path most runs actually take.
+
+**Fall back to `docs/plans` if any condition holds:**
+
+| Reject when the value | Because |
+|---|---|
+| is empty or missing | nothing to write against |
+| starts with `[` | it is an unfilled template placeholder like `[e.g., docs/plans/]`. `docs/CONVENTIONS.template.md` ships this key as a placeholder, so every freshly-onboarded project has it unfilled until someone edits it — and `[` is a legal filename character, so an unguarded value silently creates a directory named `[e.g., docs` |
+| is an absolute path | your `Write` tool creates missing parent directories, so an absolute path writes outside the repo entirely |
+| contains `..` | same reason — path traversal out of the repo. The check is a literal `..` substring, so it catches both `../` and `..\` |
+| starts with `\\` | a UNC path (`\\server\share\…`). It has no drive letter, so "is it absolute" is easy to answer wrongly — reject the form explicitly |
+| has a `:` as its second character | catches every drive-prefixed form in one check — `C:\foo` (absolute), `C:foo` (*drive-relative*, resolving against that drive's current working directory rather than the repo), and bare `C:`. Do not try to decide which of those is "absolute"; a second-character colon is never valid in a repo-relative path, so reject the whole shape |
+| contains `` ` ``, `$`, `;`, `\|`, `&`, `<`, `>`, or a newline | shell metacharacters. Nothing here runs a shell, but a later stage reads this path, and a directory named `$(…)` is a legal path that becomes a command when interpolated. Refuse to create the hazard |
+
+Never write a plan file outside the repository.
+
+**Know the limit of this guard.** It inspects a *string*. It cannot detect that an otherwise
+lexically perfect `docs/plans` is a symlink or NTFS junction pointing outside the repo — that would
+require resolving the real filesystem target. Treat the guard as defence against a misconfigured or
+careless value, not as a guarantee against a repository that already contains a hostile reparse
+point. If the resolved directory already exists and you have reason to doubt it, say so rather than
+writing into it.
+
+### Naming
+
+`<plan_dir>/<plan-id>.md`, where `plan-id` is a kebab-case slug describing the work. **Read the
+target path first.** If a file is already there, append `-2`, `-3`, … until the name is free —
+never overwrite an existing plan, which may belong to another branch's in-flight work.
+
+### Shape
+
+```markdown
+---
+plan_id: <the kebab-case slug, matching the filename>
+branch: <the git branch this plan governs>
+origin_skill: <the skill that dispatched you, e.g. plan or implement>
+created: YYYY-MM-DD
+---
+
+## What ships
+
+## What does not ship
+
+## Calls made for you
+
+## Risks
+
+## Out of scope
+
+---
+
+## Inputs
+
+## Build steps
+
+## Acceptance bars
+```
+
+The frontmatter binds the plan to one run. `plan_id` and `branch` are what let a downstream stage
+confirm it is reading *this* run's plan rather than a stray file — record them accurately.
+
+**Narrative half** (the five sections above the rule) is for the human. Order the content by what
+they are most likely to want changed: user-facing shape first, data choices next, mechanical work
+last. Put the calls you made on their behalf in `## Calls made for you` so they can veto them.
+
+**Working-memory half** (below the rule) is for the agents that come after you.
+
+### Acceptance bars — the load-bearing part
+
+Each bar is a list item with a stable id and a **required `Evidence:` line** naming how the bar
+will be shown to hold. Evidence is one of `tests`, `manual`, or `files`.
+
+**The format is a contract, not a suggestion — match it exactly:**
+
+- The bar line starts at column zero with `- BAR-` followed by a three-digit number and a colon.
+  Number them sequentially from `BAR-001`.
+- The `Evidence:` line is the **next** line, indented **exactly two spaces**. Not four, not a tab.
+- One `Evidence:` line per bar, never zero and never two.
+
+A later stage counts bar lines and evidence lines and compares the two totals. **A four-space
+indent, a tab, or a blank line between the bar and its evidence makes the evidence count zero
+while the bar count stays right** — so every bar reads as unsupported and the gate misfires on a
+plan that is actually fine. Getting the whitespace right is load-bearing.
+
+```markdown
+## Acceptance bars
+
+- BAR-001: `/implement` adopts an existing plan instead of writing a second one
+  Evidence: manual -> run /plan then /implement on one task, confirm one plan file exists
+- BAR-002: the plan-directory guard rejects an unfilled `[e.g., ...]` placeholder
+  Evidence: files -> agents/tech-lead.md guard table
+- BAR-003: OrderService.Cancel rejects an already-cancelled order
+  Evidence: tests -> OrderServiceTests.Cancel_AlreadyCancelled_Throws
+```
+
+Write bars a stranger could check. A bar whose evidence cannot be named is not a bar — it is a
+hope, and it will pass every gate while proving nothing. `tests` is the strongest evidence, but
+`manual` and `files` are legitimate and complete answers for work with no test surface (prompt
+files, documentation, shell scripts). Do not invent a test that cannot exist in order to look
+rigorous.
+
+Also copy your `## Model Overrides` content into the working-memory half if you emitted any.
+A skill that adopts this plan skips dispatching you, so anything left only in chat is lost.
+
 ## Output Format
 
 Respond with these sections in order:

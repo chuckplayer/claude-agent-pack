@@ -1,6 +1,6 @@
 ---
 name: obsidian-cli-silent-failure-modes
-description: The official Obsidian CLI returns exit 0 on every error and silently ignores an unrecognized vault= argument, writing to the active vault instead -- so neither exit codes nor vault targeting can be trusted
+description: The official Obsidian CLI returns exit 0 on every error, silently ignores an unrecognized vault= argument and writes to the active vault instead, and creates a 0-byte file when content= is large while still reporting Created -- so neither exit codes, vault targeting, nor success messages can be trusted
 metadata:
   type: known-issue
   status: active
@@ -45,6 +45,34 @@ Consequence: `vault=` is a hint, not a guarantee, and passing it correctly prote
 A typo, a renamed vault, or a stale `OBSIDIAN_VAULT_PATH` basename does not fail — it silently
 writes to whichever vault happens to be active. For a multi-vault user this means notes land in
 the wrong vault with a success message.
+
+## Symptom 3: large `content=` writes a 0-byte file and reports `Created`
+
+Observed live on 2026-07-30, not by probe — during a real capture of a ~23 KB memory file.
+
+```
+$ Obsidian.com create path="Claude/captures/2026-07-30-1056.md" content="<~23KB>"
+Created: Claude/captures/2026-07-30-1056.md
+```
+
+The file was created and was **0 bytes**. Success prefix present, exit 0, no error text, no
+content. The write was retried on the REST API rung and succeeded (HTTP 204, 23,807 bytes
+verified on disk), so nothing was lost.
+
+Root cause is content passed through a command-line argument: the payload exceeds what argv can
+carry, and the CLI neither errors nor truncates visibly — it creates the file and writes nothing.
+No exact threshold has been established. Do not assume one; assume any multi-kilobyte `content=`
+may do this.
+
+**This is the first live confirmation that the verification rule below earns its place.** Both
+halves were required: the stdout prefix check passed (`Created:` was printed), and only the
+filesystem read-back caught the emptiness. A chain trusting either signal alone would have
+recorded a successful capture of an empty file — the write-only failure mode, arriving through the
+one transport that reports success unconditionally.
+
+Note the interaction with symptom 2's remediation: a 0-byte file is indistinguishable at a glance
+from a misroute, and both are detected by the same read-back. Treat an empty read-back as
+"unverified" and fall through, whatever the cause.
 
 ## Workaround
 
