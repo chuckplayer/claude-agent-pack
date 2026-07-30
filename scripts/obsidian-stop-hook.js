@@ -257,28 +257,32 @@ function buildCurrentNote(ctx, stateData, lastAssistantMsg) {
   // --- Open threads ---
   let threads = existing.threads.slice(); // copy
 
-  // Apply DONE: removals — all comparisons are case-insensitive
+  // Apply THREAD: and DONE: directives in FILE ORDER, in a single pass.
+  //
+  // Order matters and must not be batched by directive type. The session-state file
+  // accumulates for the whole session (it is only deleted at SessionEnd), so a single
+  // file routinely holds both `THREAD: X` and a later `DONE: X`. Applying all removals
+  // before all additions removed X and then re-added it, meaning a thread opened and
+  // closed in the same session could never close. In file order, a later DONE beats an
+  // earlier THREAD (closed), and a later THREAD beats an earlier DONE (reopened).
+  //
+  // All comparisons are case-insensitive. Both directive payloads get identical
+  // sanitizing so a DONE: still matches the thread text a THREAD: produced.
   if (stateData.content) {
-    const doneLines = stateData.content.split('\n')
-      .filter(l => l.trim().startsWith('DONE:'))
-      .map(l => l.trim().slice('DONE:'.length).trim().toLowerCase());
-    for (const doneKey of doneLines) {
-      threads = threads.filter(t => t.text.toLowerCase() !== doneKey);
-    }
-
-    // Add new THREAD: lines — dedup is also case-insensitive; sanitize text
-    const newThreadLines = stateData.content.split('\n')
-      .filter(l => l.trim().startsWith('THREAD:'))
-      .map(l => {
-        const raw = l.trim().slice('THREAD:'.length).trim();
-        // Sanitize externally-sourced thread text
-        return raw.replace(/[\r\n]+/g, ' ').replace(/^---$/gm, '\\---');
-      })
-      .filter(Boolean);
-    for (const threadText of newThreadLines) {
-      const exists = threads.some(t => t.text.toLowerCase() === threadText.toLowerCase());
-      if (!exists) {
-        threads.push({ date: nowDate, text: threadText });
+    const sanitize = raw => raw.replace(/[\r\n]+/g, ' ').replace(/^---$/gm, '\\---');
+    for (const line of stateData.content.split('\n')) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('THREAD:')) {
+        const threadText = sanitize(trimmed.slice('THREAD:'.length).trim());
+        if (!threadText) continue;
+        const exists = threads.some(t => t.text.toLowerCase() === threadText.toLowerCase());
+        if (!exists) {
+          threads.push({ date: nowDate, text: threadText });
+        }
+      } else if (trimmed.startsWith('DONE:')) {
+        const doneKey = sanitize(trimmed.slice('DONE:'.length).trim()).toLowerCase();
+        if (!doneKey) continue;
+        threads = threads.filter(t => t.text.toLowerCase() !== doneKey);
       }
     }
   }
