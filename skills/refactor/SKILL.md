@@ -69,10 +69,13 @@ Dispatch based on file types, following the plan from tech-lead. Use `isolation:
 Immediately after each engineer returns, verify the worktree actually branched from the refactor branch:
 
 ```bash
-git merge-base --is-ancestor <refactor-branch> <worktree-branch>
+git merge-base --is-ancestor <refactor-branch> <worktree-branch>   # correct base?
+git log --oneline <refactor-branch>..<worktree-branch>             # any commits at all?
 ```
 
-If this fails (non-zero exit), the worktree is stale — it started from `main`, not the refactor branch, and its diff may be missing refactor-branch-only changes. Repair before continuing:
+**An empty commit list is also a failure, even when ancestry passes.** Engineers are told not to commit — merge-reviewer owns commits — so a worktree branch routinely has zero commits while the work sits uncommitted. `merge-base --is-ancestor` is trivially satisfied then, so this check passes and merge-reviewer's later `git merge --no-ff` merges nothing while reporting success, silently stranding the work. If the commit list is empty, check `git -C <worktree-path> status --short`: modifications mean use the repair recipe below (it captures uncommitted changes by design); a clean worktree means the engineer changed nothing, which is a finding in its own right.
+
+If ancestry fails (non-zero exit), the worktree is stale — it started from `main`, not the refactor branch, and its diff may be missing refactor-branch-only changes. Repair before continuing:
 
 ```bash
 git -C <worktree-path> diff "$(git -C <worktree-path> merge-base main HEAD)" > /tmp/<worktree-branch>.patch

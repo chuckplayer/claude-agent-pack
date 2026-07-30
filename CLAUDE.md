@@ -80,15 +80,28 @@ implementation.
   test-engineer completes. Verifies all required stages passed and commits
   to the feature branch if clean. Never merges to main.
 
-## Engineer responsibilities (csharp-engineer, frontend-engineer, mcp-engineer, database-engineer)
+## Engineer responsibilities (csharp-engineer, frontend-engineer, python-engineer, mcp-engineer, database-engineer, infrastructure-engineer)
 Before handing off to code-reviewer, every engineer agent must:
 1. **Verify unit test coverage** — identify which changed methods/functions lack
    adequate test coverage and flag gaps explicitly in the handoff summary.
 2. **Run existing tests** — execute the existing test suite (or the relevant subset
    that covers the changed code) and confirm all tests pass. If any tests fail,
    fix them before handing off. Do not proceed to code-reviewer with failing tests.
-3. **Do not skip this step** even for small changes -- a one-line fix can break
+3. **Report departures from the plan's stated calls.** When the dispatching prompt
+   quotes design calls from a plan, end the handoff with a line reading
+   `Departures from stated calls:` — list any call you did not follow and what you
+   did instead, or write `none`. **An absent line is not a "no".** You cannot read the
+   plan yourself (it is uncommitted and invisible inside your worktree), so the calls
+   arrive in your prompt and your handoff is the only route back. A departure you
+   leave unreported reaches merge-reviewer's Tier 3 as an unrecorded contradiction,
+   which fails the run — the departure itself is usually fine, the silence is not.
+4. **Do not skip these** even for small changes -- a one-line fix can break
    multiple tests or leave a coverage gap.
+
+> This section is the durable home for these duties. `/implement` step 5 also states
+> the departure requirement in its dispatch prompt, because an engineer dispatched by
+> some other caller would otherwise never learn of it — the prose alone made the duty a
+> property of one caller rather than of the engineer.
 
 ## Never invoke automatically:
 - **codex-reviewer** on bug fixes, trivial changes, or when `codex` CLI is unavailable

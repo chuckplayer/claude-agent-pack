@@ -62,8 +62,11 @@ Run **ts-linter** immediately after. Block on FAIL before continuing.
 `isolation: "worktree"` (steps 4–6) only branches from the feature branch's HEAD if `worktree.baseRef` is `"head"` in settings.json. If unset or `"fresh"` (the harness default), it silently bases new worktrees on local/origin `main` instead — regardless of what branch you're on. Before the review pass, verify each worktree branch collected in steps 4–6:
 
 ```bash
-git merge-base --is-ancestor <feature-branch> <worktree-branch>
+git merge-base --is-ancestor <feature-branch> <worktree-branch>   # correct base?
+git log --oneline <feature-branch>..<worktree-branch>             # any commits at all?
 ```
+
+**An empty commit list is also a failure, even when ancestry passes.** Engineers are told not to commit — merge-reviewer owns commits — so a worktree branch routinely has zero commits while the work sits uncommitted. `merge-base --is-ancestor` is trivially satisfied then, so this check passes and merge-reviewer's later `git merge --no-ff` merges nothing while reporting success, silently stranding the work. If the commit list is empty, check `git -C <worktree-path> status --short`: modifications mean use the repair recipe below (it captures uncommitted changes by design); a clean worktree means the engineer changed nothing, which is a finding in its own right.
 
 Non-zero exit means the worktree is stale and missing feature-branch-only commits. Repair before continuing:
 
