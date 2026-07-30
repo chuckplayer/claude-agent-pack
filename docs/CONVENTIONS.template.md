@@ -22,6 +22,9 @@
 - **Patterns in use:** [e.g., Repository pattern, MediatR for commands]
 - **Explicitly forbidden:** [e.g., No static classes. No service locator. No DbContext in controllers.]
 
+## Plan Artifacts
+- **Plan directory:** [e.g., docs/plans/]
+
 ## Error Handling
 - **Strategy:** [e.g., Throw domain exceptions from services, caught in global middleware]
 - **HTTP mapping:** [e.g., NotFoundException -> 404, ValidationException -> 400]

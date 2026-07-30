@@ -30,6 +30,11 @@ fi
 cp "$PACK_DIR/docs/MEMORY-WRITING.md" "$TARGET/docs/MEMORY-WRITING.md"
 echo "  [ok] docs/MEMORY-WRITING.md"
 
+# docs/plans/ (durable plan spine)
+mkdir -p "$TARGET/docs/plans"
+touch "$TARGET/docs/plans/.gitkeep"
+echo "  [ok] docs/plans/"
+
 # memory/
 for subdir in decisions architecture context known-issues; do
     mkdir -p "$TARGET/memory/$subdir"
