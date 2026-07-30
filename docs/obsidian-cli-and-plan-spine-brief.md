@@ -79,7 +79,140 @@ explicitly whether to add it rather than letting it pass by default.
 
 ---
 
-## Amendments accepted 2026-07-30
+## Design C — adopted 2026-07-30, authoritative
+
+**This section supersedes both "Amendments accepted 2026-07-30" below and the
+"Workstream 2: durable plan spine" section further down.** Where they conflict, this wins.
+The superseded material is kept because the reasoning that killed it is worth more than the
+design it killed.
+
+### How it was killed
+
+Three reviewers were run in sequence — `tech-lead`, `devils-advocate`, and `codex-reviewer`
+(cross-model, via the `codex` CLI). All three independently rejected the design that had been
+approved that morning. `codex` reached the load-bearing defect without being told it was the
+leading candidate.
+
+Five findings, each verified against the files rather than argued from the brief:
+
+1. **Commit one is plan-only on every real run.** `agents/merge-reviewer.md:48-51` merges each
+   engineer worktree with `git merge --no-ff` in Step 0, *before* the checklist. So by the time
+   `git add -A` fires at `:245`, the implementation is already committed and the only uncommitted
+   content left is the plan. Commit one therefore lands *after* the implementation as a
+   plan-only commit — inverting the very ordering that justified committing the plan
+   ("the PR shows intended shape against implementation").
+2. **The `SHIPPED` flip was ceremony.** Deletion in the same commit discards it, so
+   `ship-verify-failed` could only fire on a filesystem fault. *If the file is deleted the flip
+   is ceremony; if the flip matters, do not delete the file.* The design wanted both and got
+   neither.
+3. **Five skills dispatch merge-reviewer**, not two — `implement:84`, `refactor:104`,
+   `scaffold:89`, `hotfix:61`, `debug:79`. The gate's trigger was "a plan exists in the
+   directory," a property of the *directory* rather than the run. A `PROPOSED` plan from a
+   `/plan` session never implemented would be enforced against, flipped, and **deleted** by the
+   next unrelated `/hotfix`, judged against the wrong work's bars. `/scaffold` never invokes
+   tech-lead at all (zero mentions), so it could never own a plan but would consume one.
+4. **Nothing bound a plan to the run that consumed it.** Plans were located by globbing. This
+   is the root cause of 1 and 3, of the inability to choose among colliding plans, and of
+   stranded plans being swept into unrelated commits.
+5. **The extracted `plan-gate.sh` tested the invariant that has never failed.** What has failed
+   five times is *nothing read the artifact back* — and that lives in the prose invocation, which
+   no test touches. Testability was bought around the easy invariant. Meanwhile
+   `agents/merge-reviewer.md:218-227` already contains a test-coverage gate that ships, and has
+   already caught a real bug.
+
+Also fatal on inspection: `--print-dir` was frozen as always-exit-0, but its stdout was passed
+to tech-lead, which holds `Write` and therefore *creates parent directories* — so an unsafe or
+placeholder value would be materialised before the guard ever ran. With `docs/CONVENTIONS.md`
+byte-identical to the template and `[` legal in Windows filenames, a directory named
+`[e.g., docs` would have been created, written to, and committed, with every component agreeing
+on the same garbage. And every `reason=` code added converted an unowned duty from cosmetic into
+blocking: `ambiguous-plan-set` weaponised the missing plan-reaper, `status-invalid` weaponised
+the missing `IN_PROGRESS` owner in the four other callers. The gate grew more rigorous while the
+ownership map stayed incomplete, so rigour amplified the gaps.
+
+### What Design C is
+
+**The artifact.** `<plan_dir>/<plan-id>.md`, committed when created and **never deleted**.
+Frontmatter carries `plan_id`, `branch`, `origin_skill`, `created`. Body is the narrative half
+for the human and the working-memory half for the agent. Deletion is what destroyed the
+PR-review benefit; keeping the plan delivers it, and an accumulating `docs/plans/` is no worse
+than the accumulating `memory/decisions/` the pack already treats as a feature.
+
+**Consumption is opt-in per invocation.** The invoking skill passes an explicit `plan_id`;
+downstream agents consume only that, never whatever happens to be in the directory. This closes
+finding 3 **by construction rather than by rule** — `/hotfix`, `/debug`, `/scaffold`, and
+`/refactor` never pass a `plan_id`, so they cannot consume or corrupt a plan, and need no edits.
+Branch binding alone would not have sufficed: `/hotfix` on the *same* branch could still have
+consumed a `/plan` artifact.
+
+**Every acceptance bar carries evidence.** Markdown list items, each with an id and a required
+`Evidence:` line naming `tests`, `manual`, or `files`. This is what lets merge-reviewer fail
+against evidence instead of judgment, and it fixes the gap that gate 4 alone leaves — gate 4
+fires only when new public methods or API endpoints exist, so a markdown-and-shell change would
+otherwise pass unexamined. It also closes the vacuous-bars case that a length check cannot.
+
+**`test-engineer` is the consumer.** It maps tests, or explicit non-test validation, to each bar
+id. Without it the bars have no independent consumer and are inert rather than merely weak —
+merge-reviewer (itself `model: sonnet`) would be judging bars written by the agent whose work
+they measure.
+
+**Enforcement extends `agents/merge-reviewer.md`'s existing gate 4** rather than adding a gate 6.
+Reusing a gate that already ships and has already caught a bug beats introducing one that has
+never run.
+
+**Four "no plan" states**, not three — `not applicable`, `not required`, `required but missing`,
+`stale-or-unbound`. The fourth is the one the earlier designs could not represent.
+
+### Design C — 8 files
+
+1. `agents/tech-lead.md` — write the plan, the frontmatter binding, and bars with evidence
+2. `agents/test-engineer.md` — map tests or explicit validation to each bar id **(new to the cut;
+   its omission was the fourth unowned duty)**
+3. `agents/merge-reviewer.md` — extend gate 4: verify binding, verify each bar has evidence,
+   distinguish the four no-plan states
+4. `skills/plan/SKILL.md` — create the plan, emit its `plan_id`
+5. `skills/implement/SKILL.md` — pass `plan_id` and whether a plan is required; adopt by id
+6. `docs/CONVENTIONS.template.md` — the plan-path key, named explicitly
+7. `scripts/setup-project.sh` — create `docs/plans/` with a `.gitkeep`
+8. `CLAUDE.md` — the rules, including which skills opt in and which deliberately do not
+
+**Deleted from scope entirely:** `scripts/plan-gate.sh`, `scripts/plan-gate.test.sh`,
+`install.sh`, `uninstall.sh`, `scripts/check-updates.sh`, the `lint-agents.sh` assertion, the
+status lifecycle, the two-commit sequence, `--ship`, deletion, and the distillation gate.
+
+### The method finding — worth more than the design
+
+Four duties this design named turned out to have no owning component: the plan-commit duty, the
+`IN_PROGRESS` write, the plan-directory validation guard, and `test-engineer`. They were found one
+at a time across three sessions by three different means.
+
+The leak is structural: **the design recorded duties against *actors* (the stage-duties table)
+while the implementation edited *files*, and nothing reconciled the two lists.** Three actors in
+that table had no file in the edit set.
+
+For any future design that distributes responsibilities across cooperating agents, build a
+responsibility matrix per lifecycle transition before choosing files:
+
+```
+Event: <the transition>
+Writer:            Reader:
+Mutator:           Verifier:
+Failure behavior:  Persisted state:
+```
+
+That catches actor/file mismatches, unowned duties, and impossible timing — such as "verify
+deletion happened," which no component can observe from either side of the deletion. A single
+such pass would have caught all four defects on paper at once.
+
+---
+
+## Amendments accepted 2026-07-30 — SUPERSEDED by Design C above
+
+**Do not build from this section.** Every decision in it was reversed or made moot on
+2026-07-30 by the review described in "Design C" above. It is retained only because the
+reasoning is part of the record. In particular: the two-commit design, the `SHIPPED` flip, the
+gate extraction to `scripts/plan-gate.sh`, the `--ship` mode, and the file-count growth to 14
+are all **void**.
 
 Four decisions taken before the first cut was handed to `/implement`. They amend the
 "First cut — 8 files" section further down; that section's file list is unchanged — the
@@ -384,7 +517,12 @@ because the ask was the write chain, but worth recording:
 
 ---
 
-## Workstream 2: durable plan spine
+## Workstream 2: durable plan spine — SUPERSEDED by Design C
+
+**Do not build from this section.** The artifact shape and the acceptance-bar concept survive;
+the lifecycle, the deletion, the two-commit sequence, the distillation gate, and the
+directory-glob trigger were all rejected on 2026-07-30. See "Design C — adopted 2026-07-30"
+near the top of this document. Retained for the reasoning and for the rejected alternatives.
 
 Adapted from Foundry's plan-file design, reconciled with the pack's `memory/` ethos.
 
