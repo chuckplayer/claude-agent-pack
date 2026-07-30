@@ -142,13 +142,24 @@ done
 
 if [ -n "$base" ]; then
   echo "SCOPE-BASE: $base"
-  git diff --name-only "$(git merge-base "$base" HEAD)"   # files: fork point -> working tree (committed + uncommitted)
+  git diff --name-only "$(git merge-base "$base" HEAD)"   # tracked: fork point -> working tree
+  git ls-files --others --exclude-standard                 # UNTRACKED new files -- git diff omits these
   git log --oneline "$base"..HEAD                          # commits on this branch, for the PASS report
 else
   echo "SCOPE: no-base"
-  git diff --name-only HEAD                                # degrade: uncommitted changes only
+  git diff --name-only HEAD                                # degrade: tracked uncommitted only
+  git ls-files --others --exclude-standard                 # plus untracked
 fi
 ```
+
+**Both commands are required, and the second is not optional padding.** `git diff` reports only
+**tracked** files. A brand-new file an engineer just created is untracked, so `git diff` omits it
+entirely — while the commit step's `git add -A` will stage it. Branch scope built from `git diff`
+alone therefore misses exactly the files a change most often *adds*.
+
+The consequence is a false FAIL, not a false pass: gate 4 searches branch scope for test files, so a
+run whose only tests live in a **new** file would be told no tests exist and blocked on work that was
+fine. Union the two lists and treat the result as the scope.
 
 Acting on the output:
 
@@ -157,7 +168,7 @@ Acting on the output:
 - **`no-base`** — no base resolved; proceed with the uncommitted-only file list and add a warning to your output: "could not anchor scope to a base branch; scope limited to uncommitted changes." Do **not** hard-FAIL.
 - **Empty file list + clean working tree** — report "no changes relative to `<base>`", but treat it with suspicion (it can also mean a mis-inferred base). Do not issue a confident PASS.
 
-Why these commands: diffing from the **merge-base to the working tree** captures both the branch's commits and any changes still uncommitted (which the commit step will stage) — a commit-range diff (`<base>...HEAD`) would miss the latter. Never substitute `git show HEAD`, `git diff HEAD~1`, or any single-commit inspection: they cover only the tip and silently miss earlier branch commits — the exact cause of the original "file not modified" bug. No `git fetch` is run, so a stale base may *over*-scope; that is the safe direction for a review gate (under-scoping misses real changes).
+Why these commands: diffing from the **merge-base to the working tree** captures both the branch's commits and any tracked changes still uncommitted (which the commit step will stage) — a commit-range diff (`<base>...HEAD`) would miss the latter, and neither form sees untracked files, which is why `git ls-files --others` is unioned in above. Never substitute `git show HEAD`, `git diff HEAD~1`, or any single-commit inspection: they cover only the tip and silently miss earlier branch commits — the exact cause of the original "file not modified" bug. No `git fetch` is run, so a stale base may *over*-scope; that is the safe direction for a review gate (under-scoping misses real changes).
 
 ## Checklist
 
@@ -272,6 +283,14 @@ When a bound plan is present, check its bars — **using the `Grep` and `Read` t
 - `Grep` for `^- BAR-` with `output_mode: "count"` — the number of bars.
 - `Grep` for `^  Evidence:` with `output_mode: "count"` — the number carrying evidence.
 
+- **An amended bar needs a deviation entry behind it.** A bar may legitimately be rewritten when a
+  recorded deviation falsified its premise — otherwise it tests an abandoned design. But the
+  amendment must be traceable: a `## Deviations` entry naming that bar id and quoting its original
+  wording. If a bar's text plainly describes the shipped state where the plan's calls describe
+  something else, and no deviation entry accounts for it, treat it as **FAIL**,
+  `reason: bar amended without a recorded deviation`. That is retconning with extra steps, and it is
+  the one path by which "unsatisfiable" becomes cheaper to fix by rewriting the bar than by fixing
+  the code.
 - **A plan with zero bars is a FAIL**, not a pass. If the `^- BAR-` count is `0`, or the plan
   has no `## Acceptance bars` section at all, report
   `reason: plan has no acceptance bars` and fail. Do not reason "no bars, nothing to check" —
@@ -306,6 +325,115 @@ When a bound plan is present, check its bars — **using the `Grep` and `Read` t
 **Judgment, not mechanism.** Whether the evidence genuinely establishes the bar is your call, the
 same class of judgment as "Critical findings resolved." Be honest when you cannot tell: report the
 bar as unverifiable and FAIL it rather than passing it to avoid a hard call.
+
+#### Deviations — three tiers, cheapest and most certain first
+
+The plan's narrative half records design calls made on the human's behalf. When the implementation
+overrides one, that override must be recorded in `## Deviations` — otherwise the plan ships
+alongside code it contradicts, and "a reviewer reads intended shape against implementation" becomes
+a claim nothing backs.
+
+**Tier 1 — the section itself (mechanical).** Two greps, in this order. **Absence of the sentinel is
+not sufficient** — a plan with no `## Deviations` section at all also has no sentinel, and treating
+that as a pass is the exact hole this tier exists to close.
+
+1. `Grep` the plan for `^## Deviations`.
+   - **No match → FAIL**, `reason: plan has no Deviations section`. The plan is malformed, the same
+     class as a plan with no `## Acceptance bars`. tech-lead is required to emit the section; its
+     absence means the plan was written against an older template or the section was deleted.
+     Route to the coordinating session, and say the plan needs the section added — not that
+     nothing diverged.
+2. `Grep` the plan for `Deviations not yet reviewed`.
+   - **Match → FAIL**, `reason: plan deviations section not reviewed`. The coordinating session was
+     required to replace that sentinel line at step 10 with either `None.` or a list. Its presence
+     means the step did not run.
+   - **No match, and the section has content → continue.** Confirm the section is genuinely
+     non-empty while you are reading the plan: a heading followed by nothing is the third form of
+     the same failure, and it is why the template ships a sentinel rather than a blank section.
+
+Three states, three different verdicts. Do not collapse them: *nothing diverged*, *nobody checked*,
+and *no section exists* look alike only if you check for one of them. A missing sentinel replacement
+is a process failure even when the code is perfect.
+
+**Tier 2 — engineer claims (near-mechanical).** The step 10 payload includes each engineer's
+`Departures from stated calls:` line.
+
+- Any departure an engineer reported that does **not** appear in `## Deviations` → **FAIL**,
+  naming the departure and the engineer. Someone surfaced a divergence and it was dropped on the
+  way to the record.
+- An engineer that reported `none`, and a `## Deviations` reading `None.` → consistent, continue.
+
+**Tier 3 — stated calls against the diff (judgment, tightly bounded).**
+
+Work **from the calls, never from the diff.** Read each entry in `## Calls made for you`, extract
+the concrete artifact it names, and look only for that. **Do not scan the diff hunting for
+surprises** — that is unbounded, and it is how this check would start crying wolf.
+
+**This is the single authority on what counts as a checkable call.** Do not restate the lists below
+in another file; point at this section instead.
+
+A call is **checkable** when it names one thing you can look up:
+
+- a named dependency, library, tool, or runner
+- a named file or directory path
+- a named type, function, or endpoint
+- a specific numeric or enumerated value
+- an explicit will/won't about one of the above
+
+**Permanently out of scope**, because none of these yields a lookup target: adjectives and quality
+claims ("keep it maintainable", "prefer clarity"), effort estimates, motivations, risk narration,
+sequencing intent — and **pattern names**.
+
+Pattern names are the exception worth explaining, because they look checkable and are not. "Use the
+repository pattern for data access" names a *pattern*, not an artifact: there is no single thing to
+look up, and whether a given `DbContext` reference violates it is an architecture judgment with
+legitimate readings on both sides — a read-only projection, a bulk operation, a half-finished
+refactor. **That judgment already has an owner, and it is not you.** `code-reviewer` reads
+`docs/CONVENTIONS.md` and reviews pattern compliance, `smell-reviewer` catches the structural form,
+both run earlier, and a code-reviewer Critical already blocks. Adjudicating it again here would be a
+second and worse ruling on a question answered upstream — made by the only agent holding `Bash` and
+the commit.
+
+The same intent written falsifiably *is* in scope, and the difference is entirely in the writing:
+
+> "All order data access goes through `IOrderRepository`. No `DbContext` reference outside
+> `Infrastructure/Repositories/`."
+
+That names a type and a directory boundary, so it can be looked up and contradicted.
+
+Your question is narrower than "was the architecture right." It is **"did the plan's record stay
+honest?"** Conflating the two is how this check learns to wave everything through, which is worse
+than not existing because it still looks like enforcement.
+
+Say which calls you checked and which had no lookup target.
+
+**A Tier-3 FAIL requires quoting both sides.** You may only fail when you can produce all three:
+
+1. the stated call, **verbatim**;
+2. a specific `file:line` within **Step 0c's branch scope** — or a specific named artifact provably
+   absent from it — that contradicts the call;
+3. one sentence on why both cannot be true.
+
+Missing any of the three, emit an **advisory in the PASS report** instead, phrased as a question
+for the human. Never fail on a suspicion you cannot show.
+
+**Ambiguity advises; it does not fail.** This deliberately inverts the rule for bars above, where
+you are told to FAIL when you cannot tell. The inversion is intentional and the reason matters: an
+unverifiable **bar** means verification did not happen, which is the thing this gate exists to
+establish. An ambiguous **narrative call** means the plan was written imprecisely — a defect
+belonging to tech-lead, several stages back, in a file the coordinating session can no longer
+usefully change. Failing there punishes the wrong party, and a gate that fails on someone else's
+imprecision gets switched off within a week.
+
+**State the remedy in the finding.** A Tier-3 FAIL is corrected by **one line in `## Deviations`**,
+not by changing code — say so in the finding text. The override may well have been the right call;
+what is missing is the record of it. A gate whose cheapest correct response is "record it" induces
+the behaviour this check wants. One whose cheapest response is "argue with the reviewer" gets
+disabled.
+
+Read the plan with `Read` and `Grep` only. The "never interpolate the plan path into a shell
+command" rule above applies here unchanged — only branch-scope `git` commands use `Bash`, and you
+reuse Step 0c's file list rather than re-deriving it.
 
 **The plan file itself is committed and kept.** You do not flip a status field, and you do not
 delete it. It stays in the tree as the record of what the change intended, reviewable in the PR

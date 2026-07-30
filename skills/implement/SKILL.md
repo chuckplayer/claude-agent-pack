@@ -41,6 +41,17 @@ Run the full agent pipeline for the task the user described:
 5. **Engineer agents** — before invoking each engineer, check for model overrides from earlier planning stages:
    - If tech-lead (step 2) output includes a `## Model Overrides` section naming this agent, note the specified model.
    - **If step 2 adopted a plan instead of invoking tech-lead**, read `## Model Overrides` from the adopted plan file — there is no tech-lead chat output to read on that path. Without this, an escalation devils-advocate pressure-tested during `/plan` silently fails to apply to engineer dispatch.
+
+   **If a plan governs this run, carry its stated calls into each engineer's prompt.** Engineers run under `isolation: "worktree"` and **cannot see the plan** — it sits uncommitted in the primary working tree, so it does not exist in their checkout. Read `## Calls made for you`, select the entries that bear on that engineer's slice, and paste them **verbatim** into the dispatch prompt. Do not paraphrase: a summarised call is one the engineer cannot recognise itself departing from, which is where the signal dies.
+
+   Then require the departure report in the handoff:
+
+   > The plan for this work states the following calls. Follow them unless you have a concrete
+   > reason not to. Either way, end your handoff with a line reading
+   > `Departures from stated calls:` — list any call you did not follow and what you did instead,
+   > or write `none`. An absent line is not a "no", so do not omit it.
+
+   An explicit "none" matters: it distinguishes *the engineer followed the plan* from *the engineer was never asked*.
    - If devils-advocate (step 3) output includes a `## Model Escalations` section naming this agent, use that model instead (it takes precedence over tech-lead).
    - Pass the `model` parameter to the Agent call only when an override or escalation is present. Otherwise, let the agent use its frontmatter default.
 
@@ -100,6 +111,31 @@ Run the full agent pipeline for the task the user described:
 
     **If a plan governs this run, also pass the `plan_id`, the plan's path, and test-engineer's bars-to-evidence mapping.** merge-reviewer's gate 4a acts on a plan only when handed one — it never searches the plan directory. Omitting these makes the gate report "not applicable" and the plan's bars go unenforced, which looks like a pass. If no plan governs this run, pass nothing and say so explicitly, so the "not applicable" verdict is a stated fact rather than an accident.
 
+    **Before dispatching, fill in the plan's `## Deviations` section.** tech-lead wrote it as a sentinel — an italic line beginning `Deviations not yet reviewed` — and gate 4a greps for exactly that string and fails while it is present. This is deliberate: an untouched section cannot be told apart from one nobody looked at. Replace **that line only**; leave the `## Deviations` heading in place.
+
+    Replace the sentinel with one of two things:
+
+    - **Nothing diverged:** `None.` followed by a one-clause affirmation of what you checked, e.g. `None. Every stated call was followed as written.`
+    - **Something diverged:** one bullet per departure, each naming **the stated call**, **what shipped instead**, and **who decided** — an engineer or this session:
+
+      ```markdown
+      - **Test runner: Vitest** -> shipped plain `node` + `assert` with no devDependency.
+        Decided by: coordinating session, to keep the scratch project dependency-free.
+      ```
+
+    Both sources count. Collect departures from every engineer's `Departures from stated calls:` line, **and record your own** — a call you overrode while coordinating is a deviation exactly as much as one an engineer made, and in practice it is the more common case. No ids and no numbering: nothing downstream maps onto a deviation, so an id would be ceremony.
+
+    **If a deviation makes an acceptance bar unsatisfiable, you may amend that bar — under all four of these conditions, never otherwise:**
+
+    1. The amendment is a **named consequence of a recorded deviation**, not an independent editorial call. Record the deviation first.
+    2. The deviation entry **quotes the bar id and the original wording verbatim**, so the edit leaves a trace instead of erasing one.
+    3. The change is **narrowly scoped to the clause the deviation invalidated**. Do not touch other bars, and do not loosen a substantive constraint while you are in there.
+    4. **Only this session amends bar text.** Engineers never edit the plan; tech-lead wrote the bar and is no longer in the loop.
+
+    A bar whose premise a recorded deviation has falsified is testing an abandoned design — leaving it unamended fails the run on a criterion nobody intends to meet. But the licence is narrow on purpose: **if any inconvenient bar could be edited back into satisfiability, acceptance bars lose their teeth entirely**, because "unsatisfiable" would always be cheaper to fix by rewriting the bar than by fixing the code or admitting a real miss. When in doubt, leave the bar alone and let it fail — an honest FAIL is recoverable, a quietly rewritten record is not.
+
+    Then hand merge-reviewer each engineer's departure claims alongside the plan, so its Tier 2 check can confirm every claimed departure actually reached the section.
+
     **If merge-reviewer returns PASS:** the changes are committed to the feature branch. Proceed to step 10a.
 
 10a. **Worktree cleanup verification** — merge-reviewer owns worktree cleanup on the PASS path (its Step 0a removes each worktree, deletes its branch, and prunes). After a PASS, just verify nothing was left behind:
@@ -149,7 +185,7 @@ Run the full agent pipeline for the task the user described:
     - Route each failed item back to the agent responsible (e.g., Critical code finding → engineer agent, missing tests → test-engineer).
     - Engineer agents on retry also use `isolation: "worktree"`. Re-run step 5b's ancestor check against each new worktree before trusting it — retries are exactly as susceptible to the stale-base problem as the first pass.
     - Add any new worktree paths and branch names to the collected lists.
-    - After fixes, re-run steps 6–10 (code-reviewer through merge-reviewer).
+    - After fixes, re-run steps 6–10 (code-reviewer through merge-reviewer). **A retry rewrites `## Deviations`** — step 10 runs again, so a fix that changes what shipped updates the section for free. This is why the section is written at step 10 rather than step 9: written earlier, a retry would leave it stale and the gate would then enforce a stale record, which is worse than no record at all.
     - Allow up to **2 retry cycles** total. If merge-reviewer still returns FAIL after 2 retries, stop and surface the unresolved FAIL report to the user for manual resolution.
     - On final failure, still run step 10a cleanup — do not leave retry worktrees behind.
 
