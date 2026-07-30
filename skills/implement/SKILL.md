@@ -29,6 +29,8 @@ Run the full agent pipeline for the task the user described:
 
 3. **devils-advocate** — invoke before implementation if the task introduces a new pattern, a new dependency, or an irreversible architectural change. Skip for small bug fixes and established patterns.
 
+   **If a plan governs this run, pass it the plan path and ask it to pressure-test the plan file in place** — both the acceptance bars and the entries in `## Calls made for you`. It holds `Write`, and it is the only check on either. Ask it to flag any bar whose `Evidence:` line names something that cannot be produced, and any stated call that names no concrete artifact (a quality or a pattern name rather than a dependency, file, type, or value) — those have no lookup target, so merge-reviewer's Tier 3 skips them by construction and they enforce nothing. Sharpen them or mark them as documentation for the human. This is the same duty `/plan` step 3 carries; on the adoption path `/plan` already ran it, so skip it rather than repeating it.
+
 3a. **Obsidian sync requests** — tech-lead (step 2) and devils-advocate (step 3) write memory files to `./memory/` but cannot reach the vault themselves; neither grants `Bash` or `Agent`. If either one's output ends with an `## Obsidian sync request` section, you own the dispatch:
 
    - Check `$env:OBSIDIAN_VAULT_PATH`. If empty, skip silently.
@@ -41,6 +43,17 @@ Run the full agent pipeline for the task the user described:
 5. **Engineer agents** — before invoking each engineer, check for model overrides from earlier planning stages:
    - If tech-lead (step 2) output includes a `## Model Overrides` section naming this agent, note the specified model.
    - **If step 2 adopted a plan instead of invoking tech-lead**, read `## Model Overrides` from the adopted plan file — there is no tech-lead chat output to read on that path. Without this, an escalation devils-advocate pressure-tested during `/plan` silently fails to apply to engineer dispatch.
+
+   **If a plan governs this run, carry its stated calls into each engineer's prompt.** Engineers run under `isolation: "worktree"` and **cannot see the plan** — it sits uncommitted in the primary working tree, so it does not exist in their checkout. Read `## Calls made for you`, select the entries that bear on that engineer's slice, and paste them **verbatim** into the dispatch prompt. Do not paraphrase: a summarised call is one the engineer cannot recognise itself departing from, which is where the signal dies.
+
+   Then require the departure report in the handoff:
+
+   > The plan for this work states the following calls. Follow them unless you have a concrete
+   > reason not to. Either way, end your handoff with a line reading
+   > `Departures from stated calls:` — list any call you did not follow and what you did instead,
+   > or write `none`. An absent line is not a "no", so do not omit it.
+
+   An explicit "none" matters: it distinguishes *the engineer followed the plan* from *the engineer was never asked*.
    - If devils-advocate (step 3) output includes a `## Model Escalations` section naming this agent, use that model instead (it takes precedence over tech-lead).
    - Pass the `model` parameter to the Agent call only when an override or escalation is present. Otherwise, let the agent use its frontmatter default.
 
@@ -58,10 +71,22 @@ Run the full agent pipeline for the task the user described:
 5b. **Verify worktree base** — immediately after each engineer agent returns from an `isolation: "worktree"` call, before ts-linter or code-reviewer sees the code, confirm the worktree actually branched from the feature branch:
 
    ```bash
-   git merge-base --is-ancestor <feature-branch> <worktree-branch>
+   git merge-base --is-ancestor <feature-branch> <worktree-branch>   # correct base?
+   git log --oneline <feature-branch>..<worktree-branch>             # any commits at all?
+   git -C <worktree-path> status --short                             # uncommitted work?
    ```
 
-   - **Exit 0:** safe — the worktree contains every commit on `<feature-branch>`. Proceed.
+   **Both questions matter, and the second is the one that has actually bitten.** Ancestry being correct does not mean there is anything to merge: engineers are told not to commit (merge-reviewer owns commits), so a worktree branch routinely has **zero commits** while the work sits uncommitted in the worktree. `git merge-base --is-ancestor` is trivially satisfied in that state, so step 5b passes, and merge-reviewer's Step 0 then runs `git merge --no-ff` on a branch with nothing on it — merging nothing, reporting success, and **silently stranding the engineer's work**. That is the failure in `memory/known-issues/2026-07-15-worktree-isolation-bases-off-main.md` arriving through the *green* path.
+
+   - **Exit 0 and the commit list is non-empty:** safe — the worktree contains every commit on `<feature-branch>` and has work of its own. Proceed.
+   - **Exit 0 but the commit list is EMPTY while `status --short` shows modifications:** the work exists but is uncommitted, so a plain merge would transfer nothing. Do **not** rely on `git merge --no-ff`. Tell merge-reviewer this branch needs the transplant path, or resolve it here: diff the worktree, confirm parity, and apply the change in the primary tree.
+
+     ```bash
+     diff <(git diff -- <file>) <(git -C <worktree-path> diff -- <file>)   # prove parity FIRST
+     ```
+
+     Proving parity before discarding the worktree is what makes "re-apply it yourself" safe rather than a silent re-implementation that might differ.
+   - **Exit 0, empty commit list, and a clean worktree:** the engineer changed nothing. Treat that as a finding and ask why before proceeding — a no-op handoff reported as success is its own bug.
    - **Non-zero exit:** stale base — the engineer edited files starting from `main`, not `<feature-branch>`, so its diff may be missing feature-branch-only changes to the same files. Stop before continuing the pipeline and repair in place:
 
      ```bash
@@ -99,6 +124,31 @@ Run the full agent pipeline for the task the user described:
 10. **merge-reviewer** — always last. Pass a summary of: the task description, which pipeline stages ran, all findings from code-reviewer / security-reviewer / performance-reviewer / smell-reviewer, whether test-engineer produced tests, and **the list of worktree branch names** collected in step 5. merge-reviewer will verify all required stages passed and commit the changes to the feature branch.
 
     **If a plan governs this run, also pass the `plan_id`, the plan's path, and test-engineer's bars-to-evidence mapping.** merge-reviewer's gate 4a acts on a plan only when handed one — it never searches the plan directory. Omitting these makes the gate report "not applicable" and the plan's bars go unenforced, which looks like a pass. If no plan governs this run, pass nothing and say so explicitly, so the "not applicable" verdict is a stated fact rather than an accident.
+
+    **Before dispatching, fill in the plan's `## Deviations` section.** tech-lead wrote it as a sentinel — an italic line beginning `Deviations not yet reviewed` — and gate 4a greps for exactly that string and fails while it is present. This is deliberate: an untouched section cannot be told apart from one nobody looked at. Replace **that line only**; leave the `## Deviations` heading in place.
+
+    Replace the sentinel with one of two things:
+
+    - **Nothing diverged:** `None.` followed by a one-clause affirmation of what you checked, e.g. `None. Every stated call was followed as written.`
+    - **Something diverged:** one bullet per departure, each naming **the stated call**, **what shipped instead**, and **who decided** — an engineer or this session:
+
+      ```markdown
+      - **Test runner: Vitest** -> shipped plain `node` + `assert` with no devDependency.
+        Decided by: coordinating session, to keep the scratch project dependency-free.
+      ```
+
+    Both sources count. Collect departures from every engineer's `Departures from stated calls:` line, **and record your own** — a call you overrode while coordinating is a deviation exactly as much as one an engineer made, and in practice it is the more common case. No ids and no numbering: nothing downstream maps onto a deviation, so an id would be ceremony.
+
+    **If a deviation makes an acceptance bar unsatisfiable, you may amend that bar — under all four of these conditions, never otherwise:**
+
+    1. The amendment is a **named consequence of a recorded deviation**, not an independent editorial call. Record the deviation first.
+    2. The deviation entry **quotes the bar id and the original wording verbatim**, so the edit leaves a trace instead of erasing one.
+    3. The change is **narrowly scoped to the clause the deviation invalidated**. Do not touch other bars, and do not loosen a substantive constraint while you are in there.
+    4. **Only this session amends bar text.** Engineers never edit the plan; tech-lead wrote the bar and is no longer in the loop.
+
+    A bar whose premise a recorded deviation has falsified is testing an abandoned design — leaving it unamended fails the run on a criterion nobody intends to meet. But the licence is narrow on purpose: **if any inconvenient bar could be edited back into satisfiability, acceptance bars lose their teeth entirely**, because "unsatisfiable" would always be cheaper to fix by rewriting the bar than by fixing the code or admitting a real miss. When in doubt, leave the bar alone and let it fail — an honest FAIL is recoverable, a quietly rewritten record is not.
+
+    Then hand merge-reviewer each engineer's departure claims alongside the plan, so its Tier 2 check can confirm every claimed departure actually reached the section.
 
     **If merge-reviewer returns PASS:** the changes are committed to the feature branch. Proceed to step 10a.
 
@@ -149,7 +199,7 @@ Run the full agent pipeline for the task the user described:
     - Route each failed item back to the agent responsible (e.g., Critical code finding → engineer agent, missing tests → test-engineer).
     - Engineer agents on retry also use `isolation: "worktree"`. Re-run step 5b's ancestor check against each new worktree before trusting it — retries are exactly as susceptible to the stale-base problem as the first pass.
     - Add any new worktree paths and branch names to the collected lists.
-    - After fixes, re-run steps 6–10 (code-reviewer through merge-reviewer).
+    - After fixes, re-run steps 6–10 (code-reviewer through merge-reviewer). **A retry rewrites `## Deviations`** — step 10 runs again, so a fix that changes what shipped updates the section for free. This is why the section is written at step 10 rather than step 9: written earlier, a retry would leave it stale and the gate would then enforce a stale record, which is worse than no record at all.
     - Allow up to **2 retry cycles** total. If merge-reviewer still returns FAIL after 2 retries, stop and surface the unresolved FAIL report to the user for manual resolution.
     - On final failure, still run step 10a cleanup — do not leave retry worktrees behind.
 

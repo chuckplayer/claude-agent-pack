@@ -49,6 +49,23 @@ bash <pack-dir>/scripts/setup-project.sh <project>
 
 This copies `CLAUDE.md`, `docs/CONVENTIONS.md` (from the template), `docs/MEMORY-WRITING.md`, and the `memory/` scaffold into the project. Then fill in `docs/CONVENTIONS.md` with your project's standards and commit the result.
 
+## Choosing a flow
+
+The five build flows differ mainly in **ceremony** -- how much planning and review the work must pass before it can be committed. Picking the wrong one is the most common mistake: too much wastes a morning, too little ships an unreviewed change.
+
+| When you are... | Use | Ceremony | Why |
+|---|---|---|---|
+| Building a feature or change end to end | `/implement` | Full | The complete pipeline: planning, challenge, isolated writers, four review lenses, a commit gate |
+| Building something new across every layer | `/scaffold` | Full | Same rigour, fixed order: contract → schema → backend → frontend |
+| Restructuring with no behaviour change | `/refactor` | Full | Leads with blast-radius analysis; treats lost test coverage as a blocker |
+| Diagnosing something broken | `/debug` | Light | Find the cause first. No isolation, no planning stage |
+| Fixing a known production break | `/hotfix` | Light | Deliberately skips planning and structural review. Keeps code review and the commit gate |
+| Checking a diff or open PR | `/review-pr` | Review only | Four reviewers in parallel; changes nothing |
+| Unsure how to approach it | `/plan` | Planning | Decompose, pressure-test, then optionally a cross-model second opinion |
+| Holding a vague idea | `/interview-me` | Planning | Structured questioning until the shape is agreed |
+
+Every skill also states what it is *not* for and names the alternative -- `/hotfix` points at `/debug` when the cause is unknown, and `/debug` points back when it is known. That reciprocity is what stops a fast path becoming the default path.
+
 ## Skills
 
 Twenty-seven slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
@@ -222,6 +239,63 @@ task -> git-engineer -> [tech-lead] -> [devils-advocate] -> [codex-reviewer] -> 
 
 Bracketed agents are conditional. For well-defined tasks, invoke the specialist directly and skip orchestration. `git-engineer` is skipped for read-only tasks. `ts-linter` runs only when TypeScript or Vue files were modified. `database-engineer` runs in parallel with engineer agents when schema changes are needed. `security-reviewer` and `performance-reviewer` run when their trigger conditions are met. `smell-reviewer` always runs on code changes and runs in parallel with security-reviewer and performance-reviewer. When invoked through `/implement`, engineer agents run in isolated git worktrees and merge-reviewer commits the result to the feature branch if all gates pass.
 
+### What actually blocks
+
+A reviewer's severity label is not the same as its authority. The two are separated deliberately, so a genuine defect halts the pipeline and a matter of taste does not. **A High finding is not automatically a blocker.**
+
+| | |
+|---|---|
+| **Blocks** | Type or lint errors (they invalidate the code review that follows) · code-reviewer **Critical** · security **Critical** and **High** · structural **Critical** · missing tests where new public surface was added · merge conflicts or a detached HEAD |
+| **Advises** | Performance findings, including High · code-reviewer Warning and Suggestion · conflicts against the base branch · a stale repo map |
+| **Skips, on record** | Planning when the task is well scoped · challenge when the pattern is established · contract design when no API moves · security when nothing sensitive is touched · structural review for docs and config only |
+
+Why security High blocks and performance High does not: a security High is an exploitable defect that can cause harm the moment it ships, while a performance High is a cost, and costs are a judgement call belonging to whoever owns the roadmap. Different risk profiles get different authority, and the reasoning lives in the agent file rather than in whoever is on duty.
+
+A failing gate routes **back to whoever produced the problem**, never onward with a warning attached. That single rule is the difference between a pipeline and a checklist.
+
+## Plan Spine
+
+Complex work can carry a **durable plan file** that downstream stages act on and can fail against. Without it a plan lives in chat and dies there: nothing checks it off, and no stage can be blocked by it.
+
+`tech-lead` writes `<plan_dir>/<plan-id>.md` — `plan_dir` comes from the `- **Plan directory:**` key in `docs/CONVENTIONS.md` and defaults to `docs/plans`. Frontmatter binds the plan to one run via `plan_id`, `branch`, and `origin_skill`. The body is a narrative half for the human and a working-memory half for the agents, the latter holding `## Acceptance bars`:
+
+```markdown
+## Acceptance bars
+
+- BAR-001: /implement adopts an existing plan instead of writing a second one
+  Evidence: manual -> run /plan then /implement on one task, confirm one plan file exists
+- BAR-002: OrderService.Cancel rejects an already-cancelled order
+  Evidence: tests -> OrderServiceTests.Cancel_AlreadyCancelled_Throws
+```
+
+Each bar carries a required `Evidence:` line naming `tests`, `manual`, or `files`, indented **exactly two spaces** — the gate counts and pairs those lines, so the whitespace is a contract. `manual` and `files` are complete answers; work with no test surface is fully satisfied by a concrete file reference or a repeatable command.
+
+**Who does what**
+
+- **tech-lead** writes the plan and its bars, but only when the invoking skill instructs it — never unconditionally. It guards the resolved plan directory before writing, because its `Write` tool creates parent directories.
+- **devils-advocate** pressure-tests the bars in the file, editing in place. It is the only check on bar quality, since tech-lead both writes the bars and is measured by them.
+- **Engineers never write the plan file.** They run under worktree isolation and would conflict on the one file every stage depends on.
+- **test-engineer** maps evidence to every bar id in its handoff — the only consumer that makes bars load-bearing.
+- **merge-reviewer** enforces the bars in gate 4a, an extension of the existing test-coverage gate rather than a new gate.
+
+**Consumption is opt-in per invocation.** A stage acts on a plan only when handed an explicit `plan_id`; nothing ever globs the plan directory. This is a safety property rather than a style preference: five skills dispatch merge-reviewer, so a directory-glob trigger would let an unrelated `/hotfix` run enforce a plan belonging to different work. `/plan` and `/implement` pass a `plan_id`; `/hotfix`, `/debug`, `/scaffold`, and `/refactor` deliberately do not, so they are exempt **by construction** and carry no plan logic at all.
+
+**Plans are committed and never deleted.** The plan lands in the same commit as the implementation so a reviewer can read intended shape against what was built. An accumulating `docs/plans/` is the intended end state, exactly as `memory/decisions/` accumulates.
+
+**Overridden calls are recorded, not retconned.** The plan's `## Calls made for you` section states design decisions made on your behalf. When implementation overrides one, the override belongs in `## Deviations` — silently editing the original call would destroy the only signal that it was overridden.
+
+tech-lead writes `## Deviations` as a self-describing sentinel line and never fills it in; it cannot know deviations at plan time. Engineers cannot read the plan at all (it is uncommitted and invisible inside a worktree), so `/implement` step 5 pastes the relevant calls verbatim into their prompts and requires an explicit "none" in the handoff. Step 10 replaces the sentinel with `None.` or one bullet per departure.
+
+Gate 4a then enforces it in three tiers, cheapest and most certain first:
+
+| Tier | Checks | Kind |
+|---|---|---|
+| 1 | The sentinel is still present -- the section was never reviewed | Mechanical |
+| 2 | An engineer reported a departure that never reached the section | Near-mechanical |
+| 3 | A stated call the branch diff contradicts, with nothing recorded | Judgment, bounded |
+
+Tier 3 works **from the calls, never from the diff** — it looks up only the concrete artifact each call names, so a call naming nothing specific ("keep it maintainable") is out of scope by construction rather than by the gate guessing. It may only fail when it can quote the call verbatim *and* name a contradicting `file:line`; anything less becomes an advisory. **Ambiguity advises rather than fails**, deliberately inverting the rule for bars: an ambiguous call is a planning imprecision from several stages back, and a gate that fails on someone else's imprecision gets switched off. The remedy for a Tier-3 finding is one line in `## Deviations`, not a code change.
+
 ## Memory
 
 The `memory/` directory gives agents a lightweight persistence layer. Decisions, architectural context, and known issues are stored as Markdown files that survive between sessions.
@@ -237,6 +311,36 @@ Memory is committed to version control so the full team shares accumulated conte
 **Repo map:** `memory/architecture/repo-map.md` is a singleton living document — a directory-level map of the codebase (what each directory does plus its entry-point files) maintained by the `/repo-map` skill and stamped with the git commit it was last verified against (`Verified-at-commit`). Unlike other memory files it uses a fixed, undated name because it is refreshed in place rather than written once. It rides the memory-snapshot hook to Obsidian for free. `/onboard`, tech-lead, `/plan`, `/refactor`, and `/scaffold` read it; merge-reviewer, git-engineer, and `/memory-audit` flag it for refresh when the tree drifts.
 
 See `docs/AGENT-GUIDE.md` for the full memory format, hygiene guidance, and scaling notes.
+
+## Design Patterns
+
+The rules underneath the pipeline. None are specific to these agents or this stack -- they are decisions any team building multi-agent delivery has to make one way or another, and they are the transferable part of this repo.
+
+**The description is the contract.** No orchestrator holds a hardcoded agent list; routing reads each agent's own description of when it should be invoked. A new specialist becomes routable by describing itself well, so the routing layer cannot drift out of step with the roster.
+
+**Reviewers cannot edit.** code-reviewer, security-reviewer, and performance-reviewer hold read tools only. A reviewer that fixes what it finds leaves no independent record of what was wrong, and a review quietly becomes a rewrite.
+
+**One agent may commit.** Everything funnels through a single final gate that verifies the required stages ran, then commits -- never to the main branch. One place to check when asking "was this reviewed?", and one place to fix when the answer is no.
+
+**Severity is not authority.** Each finding class is assigned blocking or advisory status explicitly, with the reasoning recorded. Otherwise every reviewer's worst finding becomes a blocker and the pipeline stalls on taste.
+
+**Isolate writers, not readers.** Agents that change code work in their own throwaway checkout; files every stage depends on are written by the coordinating session instead. Isolation buys parallelism without paying for it in merge conflicts.
+
+**Fast paths, stated exemptions.** The emergency flows skip planning and structural review, and each skip is written into the flow as deliberate with its reason attached. An unwritten exemption is indistinguishable from a bug, and someone will eventually "fix" it.
+
+**Challenge before build.** Significant or hard-to-reverse decisions get an adversarial pass first, and where it earns its cost, a second opinion from a different model -- which disagrees in different places than a second pass by the same one.
+
+**Durable artifact over chat.** Anything that must outlive the conversation gets a file: decisions, constraints, known issues, and the plan a pipeline is measured against. Advice in a transcript cannot be enforced, searched, or handed over.
+
+**Opt in, never discover.** A stage acts on an artifact only when handed a specific identifier. Ambient directory discovery lets an unrelated run pick up someone else's artifact and confidently judge the wrong work.
+
+**Verify effects, not exit codes.** Where a tool reports success unreliably, success means a positive signal *and* the effect confirmed by reading it back independently. Established the hard way: a tool reported a file created and wrote zero bytes -- the success message passed, and only the read-back caught it.
+
+**Match the model to the task.** Mechanical gates run on the cheapest capable tier, implementation on the middle, planning and adversarial review on the strongest. Reasoning capacity is the expensive input; spending it on a lint check and skimping on the architectural decision is backwards.
+
+**Name an owner for every duty.** For each responsibility a design names, identify the file that will carry it, then diff that list against the files actually being changed. Learned from four duties that no component owned, found one at a time over three sessions -- the design assigned duties to *roles* while the work edited *files*, and nothing reconciled the two lists.
+
+A gate is also **unproven until it has refused something**. Every flow here is defined in a prompt file, and a prompt that reads correctly can still fail to fire. Treat a new gate as intent rather than enforcement until you have deliberately handed it something bad and watched it refuse.
 
 ## Customization
 

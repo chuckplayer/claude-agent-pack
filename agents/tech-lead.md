@@ -90,6 +90,12 @@ created: YYYY-MM-DD
 
 ## Calls made for you
 
+## Deviations
+
+_Deviations not yet reviewed. The coordinating session replaces this line before
+merge-reviewer runs — with `None.` if nothing diverged, or one bullet per departure.
+Leave this line exactly as it is._
+
 ## Risks
 
 ## Out of scope
@@ -106,9 +112,67 @@ created: YYYY-MM-DD
 The frontmatter binds the plan to one run. `plan_id` and `branch` are what let a downstream stage
 confirm it is reading *this* run's plan rather than a stray file — record them accurately.
 
-**Narrative half** (the five sections above the rule) is for the human. Order the content by what
+**Narrative half** (the six sections above the rule) is for the human. Order the content by what
 they are most likely to want changed: user-facing shape first, data choices next, mechanical work
 last. Put the calls you made on their behalf in `## Calls made for you` so they can veto them.
+
+### `## Deviations` — always emit it, never fill it in
+
+**Emit this section in every plan you write.** It is the one section of the template that arrives
+with content already in it — the sentinel line — and that content is an instruction rather than
+something for you to replace. Copy the heading *and* the sentinel line exactly as they appear in the
+shape above, then move on to `## Risks`.
+
+**Omitting the section is a failure, not a tidy-up.** "Never fill it in" means leave the sentinel
+untouched; it does **not** mean leave the section out. A downstream gate fails a plan that has no
+`## Deviations` section at all, on the same grounds it fails a plan with no `## Acceptance bars`.
+
+You cannot know deviations at plan time: they are departures from your own stated calls, discovered
+while the work happens, and recorded by the coordinating session before merge-reviewer runs.
+
+The sentinel is a self-describing line rather than an empty section on purpose. **An empty section
+cannot be told apart from an unfilled one**, and "indistinguishable from nobody looking" is the
+failure this pack has produced repeatedly. The sentinel makes *nothing diverged* and *nobody
+checked* two different, detectable states — a downstream gate fails while it is still present.
+
+That is also why the line describes its own replacement: you are not the only agent that writes to
+this file. `devils-advocate` holds `Write`, edits the plan in place when a caller asks it to
+pressure-test the bars, and has no instructions anywhere about the plan's shape. A bare marker
+would invite it to helpfully fill in or delete something load-bearing. A line that says who
+replaces it and when does not.
+
+**Write calls that can be checked — the burden is yours, not the gate's.** A later stage verifies
+stated calls against what shipped, but it can only do so for a call that names one thing it can look
+up. A call naming nothing specific is **out of scope for that check by construction**: it is
+documentation for the human, not something enforceable. That is not a failure, but it is a weaker
+line than it looks, so prefer calls a stranger could disagree with.
+
+The rule of thumb: name an artifact, not a quality. `"Use Vitest"` and
+`"No DbContext outside Infrastructure/Repositories/"` name things. `"Use the repository pattern"`
+and `"keep it maintainable"` do not — the first names a *pattern* rather than an artifact, and
+pattern compliance belongs to code-reviewer, which reads `docs/CONVENTIONS.md` for exactly that.
+
+**The checkable-call definition lives in `agents/merge-reviewer.md` under gate 4a — read it there
+rather than working from a list here.** It is the single authority, and a copy in this file would go
+stale the first time it changes.
+
+### Before you finish — read your own plan file back
+
+Downstream stages fail on shape, not on intent, and a plan that is one heading short fails a gate on
+work that was fine. Re-read the file you just wrote and confirm all five:
+
+1. **All nine headings are present**, in the order shown in the shape — six above the rule, three
+   below. Count them.
+2. **`## Deviations` is there, with the sentinel line unmodified.** This is the one most easily
+   dropped, because it is the only section you do not author.
+3. **Every bar has its own `Evidence:` line on the next line, indented exactly two spaces.** Equal
+   totals are not enough; each bar needs its own.
+4. **The frontmatter has all four keys**, and `plan_id` matches the filename.
+5. **The plan file is where you meant to put it** — inside the repo, under the resolved plan
+   directory.
+
+Fix anything that fails before you report. A stranger reading this file is the next consumer, and
+they cannot ask you what you meant.
 
 **Working-memory half** (below the rule) is for the agents that come after you.
 
