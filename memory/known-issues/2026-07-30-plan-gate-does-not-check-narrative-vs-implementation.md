@@ -1,12 +1,17 @@
 **Date:** 2026-07-30
 **Type:** finding
-**Status:** active
-**Superseded-by:** n/a
+**Status:** superseded
+**Superseded-by:** 2026-07-30-decision-plan-deviations-gate-tiers.md
 **Scope:** agents/merge-reviewer.md, docs/plans/
 **Overrides-convention:** no
 **Related-to:** docs/obsidian-cli-and-plan-spine-brief.md, 2026-07-30-challenge-durable-plan-spine-first-cut.md
 
 ## Summary
+
+> **Closed 2026-07-30 by the `## Deviations` cut.** Gate 4a now enforces narrative
+> fidelity in three tiers. Retained because the failure it describes is the reason the tiers are
+> shaped the way they are, and because its "Revisit trigger" named the worktree-invisibility
+> prerequisite that decided the design. See [[2026-07-30-decision-plan-deviations-gate-tiers]].
 
 Gate 4a verifies that every acceptance bar carries evidence. It does **not** verify that the plan's
 narrative half still describes what was actually built. So a plan can be committed alongside an

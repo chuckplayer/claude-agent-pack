@@ -180,6 +180,38 @@ never run.
 `install.sh`, `uninstall.sh`, `scripts/check-updates.sh`, the `lint-agents.sh` assertion, the
 status lifecycle, the two-commit sequence, `--ship`, deletion, and the distillation gate.
 
+### Cut two — `## Deviations`, shipped 2026-07-30
+
+The "Design C — 8 files" list below defers Deviations logging. **That deferral is closed.** Cut two
+shipped the same day, prompted by the gate passing a plan whose `## Calls made for you` stated one
+test runner while a different one shipped — recorded in
+`memory/known-issues/2026-07-30-plan-gate-does-not-check-narrative-vs-implementation.md`.
+
+What changed, in five files (`agents/tech-lead.md`, `skills/implement/SKILL.md`,
+`agents/merge-reviewer.md`, `CLAUDE.md`, `README.md`):
+
+- tech-lead writes `## Deviations` as a **self-describing sentinel** and never fills it in. An empty
+  section is indistinguishable from an unfilled one; the sentinel makes *nothing diverged* and
+  *nobody checked* two detectable states.
+- Engineers cannot read the plan — it is uncommitted and invisible inside a worktree — so
+  `/implement` step 5 pastes the relevant stated calls **verbatim** into each dispatch and requires
+  an explicit "none" in the handoff. **Commit timing did not change**; that was deliberately not
+  reopened.
+- The coordinating session replaces the sentinel at step 10, from engineer handoffs *and its own
+  departures* — the demonstrated case originated from the session, not an engineer.
+- Gate 4a enforces on three tiers: sentinel present (mechanical), an engineer-reported departure
+  missing from the section (near-mechanical), and a stated call the diff contradicts with nothing
+  recorded (judgment, bounded).
+
+**The design decision worth carrying forward:** Tier 3 works from the *calls*, never from the diff.
+It looks up only the concrete artifact a call names, so an unfalsifiable call falls out of scope
+**by construction** rather than by the gate deciding it is too vague. Pattern names are explicitly
+excluded — pattern compliance already belongs to code-reviewer, and re-adjudicating it in the one
+agent holding `Bash` and the commit would be a worse ruling on a settled question. The burden of
+writing a gateable call sits with the writer, and the honest cost is that gate coverage becomes a
+function of how well tech-lead writes them — the same shape as cut one's accepted "weak bars" risk,
+with the same conditional mitigation.
+
 ### The method finding — worth more than the design
 
 Four duties this design named turned out to have no owning component: the plan-commit duty, the
