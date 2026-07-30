@@ -1,12 +1,17 @@
 **Date:** 2026-07-30
 **Type:** finding
-**Status:** active
-**Superseded-by:** n/a
+**Status:** superseded
+**Superseded-by:** fixed in place 2026-07-30; see Revisit trigger
 **Scope:** global
 **Overrides-convention:** no
 **Related-to:** 2026-07-15-worktree-isolation-bases-off-main.md, skills/implement/SKILL.md, agents/merge-reviewer.md
 
 ## Summary
+
+> **Fixed 2026-07-30.** All four call sites now check for commits as well as ancestry:
+> `/implement` step 5b, `/refactor`, `/scaffold`, and `merge-reviewer` Step 0. An empty commit list
+> routes to the transplant path instead of `git merge --no-ff`. Retained because the composition that
+> produced it — engineers told not to commit, Step 0 transferring commits — is worth remembering.
 
 `/implement` step 5b's ancestor check passes when an engineer's worktree branch has **no commits at
 all**, so merge-reviewer's Step 0 then runs `git merge --no-ff` on a branch with nothing to merge

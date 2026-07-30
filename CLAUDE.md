@@ -80,15 +80,28 @@ implementation.
   test-engineer completes. Verifies all required stages passed and commits
   to the feature branch if clean. Never merges to main.
 
-## Engineer responsibilities (csharp-engineer, frontend-engineer, mcp-engineer, database-engineer)
+## Engineer responsibilities (csharp-engineer, frontend-engineer, python-engineer, mcp-engineer, database-engineer, infrastructure-engineer)
 Before handing off to code-reviewer, every engineer agent must:
 1. **Verify unit test coverage** — identify which changed methods/functions lack
    adequate test coverage and flag gaps explicitly in the handoff summary.
 2. **Run existing tests** — execute the existing test suite (or the relevant subset
    that covers the changed code) and confirm all tests pass. If any tests fail,
    fix them before handing off. Do not proceed to code-reviewer with failing tests.
-3. **Do not skip this step** even for small changes -- a one-line fix can break
+3. **Report departures from the plan's stated calls.** When the dispatching prompt
+   quotes design calls from a plan, end the handoff with a line reading
+   `Departures from stated calls:` — list any call you did not follow and what you
+   did instead, or write `none`. **An absent line is not a "no".** You cannot read the
+   plan yourself (it is uncommitted and invisible inside your worktree), so the calls
+   arrive in your prompt and your handoff is the only route back. A departure you
+   leave unreported reaches merge-reviewer's Tier 3 as an unrecorded contradiction,
+   which fails the run — the departure itself is usually fine, the silence is not.
+4. **Do not skip these** even for small changes -- a one-line fix can break
    multiple tests or leave a coverage gap.
+
+> This section is the durable home for these duties. `/implement` step 5 also states
+> the departure requirement in its dispatch prompt, because an engineer dispatched by
+> some other caller would otherwise never learn of it — the prose alone made the duty a
+> property of one caller rather than of the engineer.
 
 ## Never invoke automatically:
 - **codex-reviewer** on bug fixes, trivial changes, or when `codex` CLI is unavailable
@@ -144,8 +157,22 @@ a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `t
   conflict on the one file every stage depends on. They surface; the lead session writes.
 - **test-engineer** maps evidence to every bar id and reports it in its handoff. This is the only
   point where a bar is connected to something real.
+- **Engineers also report departures** from the plan's stated calls in their handoff. They cannot
+  read the plan — it is uncommitted and invisible inside a worktree — so `/implement` step 5 pastes
+  the relevant calls verbatim into their dispatch prompt and requires an explicit "none" when
+  nothing diverged.
 - **merge-reviewer** enforces the bars in gate 4a — an extension of the existing test-coverage
-  gate, not a new gate. It does **not** flip a status field and does **not** delete the plan.
+  gate, not a new gate. It does **not** flip a status field and does **not** delete the plan. It
+  also enforces `## Deviations` in three tiers; `agents/merge-reviewer.md` is the single authority
+  on what each tier checks, so do not restate them here.
+
+**`## Deviations` records overridden calls.** tech-lead writes the section as a self-describing
+sentinel and never fills it in — it cannot know deviations at plan time. The coordinating session
+replaces the sentinel at step 10 with `None.` or one bullet per departure, naming the stated call,
+what shipped instead, and who decided. Both engineers and the coordinating session are sources; in
+practice the session is the more common one. A sentinel rather than an empty section is deliberate:
+an untouched section and one nobody looked at are otherwise indistinguishable, which is the failure
+class this pack has produced repeatedly.
 
 **Consumption is opt-in per invocation.** A stage acts on a plan only when a skill hands it an
 explicit `plan_id` and path. **Nothing ever globs the plan directory.** This is a safety property,

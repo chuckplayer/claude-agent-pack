@@ -64,6 +64,15 @@ only check on bar quality anywhere in the pipeline — tech-lead writes the bars
 whose work they measure, so unreviewed bars tend toward the unfalsifiable. Specifically ask it to
 flag any bar whose `Evidence:` line names something that cannot actually be produced.
 
+**In the same pass, ask it to flag non-falsifiable entries in `## Calls made for you`.** A stated
+call is only enforceable downstream if it names a concrete artifact someone could look up — a
+dependency, a file or directory, a type or endpoint, a specific value. A call naming only a quality
+("keep it maintainable") or a pattern ("use the repository pattern") has no lookup target, so
+merge-reviewer's Tier 3 skips it by construction and it silently enforces nothing. Have
+devils-advocate either sharpen such a call into a checkable form or say plainly that it is
+documentation for the human rather than an enforceable decision. Gate coverage is a direct function
+of how well these are written, and this pass is the only place it gets checked.
+
 If its output ends with an `## Obsidian sync request` section, handle it per step 6.
 
 After it completes:
