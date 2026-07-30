@@ -64,7 +64,7 @@ wiki family was retired from the pack and purged from `~/.claude` on 2026-07-29 
    edit must ship in the *same cut* as `/spec-intake`, never before, or the hand-off offers a
    slash command that is not installed. See `docs/ado-delivery-pipeline-brief.md`.
 
-### Recommended amendment to the first cut
+### Recommended amendment to the first cut — RESOLVED 2026-07-30
 
 **The enforcement path should have a test, not just prose.** `merge-reviewer`'s gate being
 correct is the entire premise of this cut, and "if a plan exists, enforce it" is currently a
@@ -74,6 +74,99 @@ the unreachable Obsidian dispatch fixed in `cbf44ca`, the `session-*-unknown.txt
 the `DONE:` bug above. Every one of them failed in exactly the way an untested gate fails:
 silently, while looking installed. This is not in the 8-file scope as written; decide
 explicitly whether to add it rather than letting it pass by default.
+
+**Accepted 2026-07-30, all three parts.** See "Amendments accepted 2026-07-30" below.
+
+---
+
+## Amendments accepted 2026-07-30
+
+Four decisions taken before the first cut was handed to `/implement`. They amend the
+"First cut — 8 files" section further down; that section's file list is unchanged — the
+amendments land *inside* those eight files rather than growing the list.
+
+### 1. The plan-commit duty was stated but unassigned — merge-reviewer now commits twice
+
+The spec says *"The plan **is committed** when created, so the PR shows intended shape against
+implementation."* No agent in the pipeline could do that:
+
+- `tech-lead` (step 2) writes the plan but its tools are `Read, Write, Edit, Grep, Glob` — **no
+  `Bash`**, so it cannot commit.
+- Nothing between steps 2 and 10 commits anything.
+- `merge-reviewer` (step 10) performs the only `git add -A` + `git commit`, and was also
+  supposed to delete the plan in the same breath.
+
+Net effect as originally written: the plan is created uncommitted at step 2 and deleted before
+the only commit runs, so `git add -A` stages nothing for it and **it never appears in any
+commit**. "Preserved in commit history" was false, and the PR-review benefit that justified
+committing it at all evaporated. This is the write-only failure mode reappearing inside the
+artifact designed to eliminate it — a fifth instance, caught on paper this time.
+
+**Decision: `merge-reviewer` commits twice.** Commit one carries the implementation *with the
+plan file still present*; commit two flips `status: SHIPPED` and deletes it. This keeps the duty
+inside the only pipeline agent holding `Bash`, honours the "11-step order does not change"
+constraint (no new stage), and produces exactly the two-commit history the brief wanted.
+
+Rejected alternatives:
+- *A new git-engineer (Mode B) step after tech-lead* — correct in isolation, but adds a pipeline
+  step. The 11-step constraint was written to prevent stage churn; bending it was judged
+  unnecessary once option 2 was available.
+- *Drop the commit claim and treat the plan as session-local* — cheapest, but removes "durable"
+  from "durable plan spine."
+
+### 2. Worktree-isolated stages cannot see an uncommitted plan
+
+Engineers run under `isolation: "worktree"` — a separate checkout. Uncommitted changes in the
+primary working tree **do not exist there**, so an uncommitted `docs/plans/<slug>.md` is
+invisible to every engineer.
+
+Nearly moot for this cut (Deviations logging is deferred, and `test-engineer` is not
+worktree-isolated so it reads the bars fine), but it is a second, independent reason to commit
+the plan early, and it becomes blocking the moment the deferred "engineers report departures
+from the plan" duty lands. Recorded now rather than rediscovered in cut two.
+
+### 3. The gate splits into a mechanical half and a judgment half
+
+The amendment above asked for a test. There is no parser and no plan-file module — the gate is
+prose, and prose is not unit-testable. The useful move is to shrink the untestable part:
+
+| Half | Checks | Testable |
+|---|---|---|
+| **Mechanical** | plan file exists; `status` transitioned `PROPOSED` → `SHIPPED`; deletion happened; deletion was preceded by a `memory/` write when one was warranted | Yes — all grep-able, and `merge-reviewer` already holds `Bash`/`Grep` |
+| **Judgment** | "bars met" | No — same class as "Critical findings resolved," which has never been testable |
+
+**Decision: build the mechanical half as explicit shell checks inside `merge-reviewer` rather
+than prose judgment, and test that half.** Three parts, all accepted:
+
+1. **Mechanical checks** in `merge-reviewer` — real commands, not prose.
+2. **A `lint-agents.sh` presence assertion** so a future edit cannot silently delete the gate
+   section. Drift is how this pack has failed before; this is the cheap insurance.
+3. **The scratch-project exercise** — edit → `install.sh` → run in a scratch project → confirm
+   an unmet bar actually produces a FAIL. This is the *only* thing that proves the gate fires,
+   and per "Known risks" it is what "proven end-to-end" already means. **In scope for this cut,
+   not a follow-on.** Noted deliberately: the equivalent exercise was declined for workstream 1,
+   and declining it twice on the artifact whose dominant risk is *being write-only* would be a
+   materially different bet than declining it once on a transport chain.
+
+### 4. `/plan` and `/implement` both invoke tech-lead — adoption rule required
+
+`/plan` produces a plan with `status: PROPOSED` and stops. If the user then runs `/implement`,
+step 2 invokes `tech-lead` again and writes a **second** plan file for the same work. Nothing in
+the 8-file cut said "adopt an existing `PROPOSED` plan instead of re-planning."
+
+**Decision: add the adoption rule to `skills/implement/SKILL.md`** (already file 4 in the cut).
+It is arguably the highest-value line in the whole cut — it is what makes `/plan` → `/implement`
+a spine rather than two disconnected planning events.
+
+### Two smaller gaps closed in the same cut
+
+- **Name the CONVENTIONS.md key.** The spec said "an optional key" without giving the literal
+  string. `tech-lead` and `merge-reviewer` must grep for the *same* token or the override
+  silently does nothing — another silent-no-op waiting to happen. Settle on the exact key name
+  in this cut.
+- **Slug collisions.** Two `/implement` runs in one repo, or a re-run after an abandoned
+  pipeline, collide on `docs/plans/<slug>.md`. Same class as the capture write-once problem, and
+  the same fix applies: read the target path first, append a numeric suffix until free.
 
 ---
 
@@ -317,7 +410,7 @@ Path comes from an optional key in the project's `docs/CONVENTIONS.md`, defaulti
 | `devils-advocate` | Pressure-tests the bars, editing the plan in place (already holds `Write`) |
 | Engineers | Report departures from the plan in their handoff; the lead session writes them to a `## Deviations` section (deferred past the first cut) |
 | `test-engineer` | Writes tests *against* the bars rather than inventing criteria |
-| `merge-reviewer` | Verifies bars met, verifies durable findings recorded in `memory/`, flips `status: SHIPPED`, deletes the plan |
+| `merge-reviewer` | Verifies bars met, verifies durable findings recorded in `memory/`, flips `status: SHIPPED`, deletes the plan — across **two commits**, see Lifecycle below (amended 2026-07-30) |
 
 ### Lifecycle
 
@@ -328,6 +421,13 @@ The plan **is committed** when created, so the PR shows intended shape against i
 teammate can review one against the other. merge-reviewer's final commit flips it to `SHIPPED` and
 deletes it — net-zero in the PR's file list, preserved in commit history.
 
+**Amended 2026-07-30 — the commit duty had no owner.** `tech-lead` writes the plan but holds no
+`Bash`, and merge-reviewer's single `git add -A` would have deleted the file before ever
+committing it, so the plan would never have entered history at all. `merge-reviewer` therefore
+commits **twice**: commit one carries the implementation with the plan still present, commit two
+flips `SHIPPED` and deletes it. Full reasoning and rejected alternatives in "Amendments accepted
+2026-07-30" near the top of this document.
+
 Deletion is gated on distillation: anything durable the run surfaced must be recorded in
 `memory/decisions/` or `memory/known-issues/` first. Because `Write` creates parent directories, a
 missing `memory/` is not an excuse to skip it. The gate cannot be "a memory file must exist" —
@@ -336,14 +436,21 @@ merge-reviewer already applies to findings.
 
 ### First cut — 8 files
 
-1. `agents/tech-lead.md` — write the plan file and the acceptance bars
-2. `agents/merge-reviewer.md` — gate on bars, verify distillation, flip status, delete
+1. `agents/tech-lead.md` — write the plan file and the acceptance bars; resolve the plan path from
+   the named CONVENTIONS.md key; suffix the slug on collision
+2. `agents/merge-reviewer.md` — **mechanical** checks for plan presence, `PROPOSED` → `SHIPPED`
+   transition, deletion, and distillation-before-deletion; judgment call on bars met; two commits
 3. `skills/plan/SKILL.md` — create the plan, pass it forward
-4. `skills/implement/SKILL.md` — wire the plan through the pipeline
+4. `skills/implement/SKILL.md` — wire the plan through the pipeline, **and adopt an existing
+   `PROPOSED` plan instead of re-planning**
 5. `scripts/setup-project.sh` — create `docs/plans/`
-6. `docs/CONVENTIONS.template.md` — document the optional plan-path key
+6. `docs/CONVENTIONS.template.md` — document the optional plan-path key (name it explicitly)
 7. `docs/MEMORY-WRITING.md` — document lazy directory creation as intended behavior
 8. `CLAUDE.md` — the plan-spine rules
+
+Plus, per the 2026-07-30 amendments: a presence assertion in `scripts/lint-agents.sh` for the
+gate section, and the scratch-project exercise (edit → `install.sh` → run → confirm an unmet bar
+FAILs) as the cut's acceptance bar rather than a follow-on.
 
 Scoped to prove **write → read → fail** end-to-end before anything else hangs off the artifact.
 Deviations logging, reviewer findings folded into the plan, and the `start-up`/`handoff` continuity
@@ -377,9 +484,12 @@ pair all wait for a later cut.
 - **Silent CLI failure** is the dominant risk of workstream 1. If the verification rule is wrong,
   writes appear to succeed and land nowhere. Mitigated by the stdout-plus-read-back rule, verified
   through the `Read` tool rather than `Bash`.
-- **Write-only artifact** is the dominant risk of workstream 2. The pack has produced this failure
-  twice: the session-state file nothing reads back, and the unreachable Obsidian dispatch fixed in
-  `cbf44ca`. Mitigated by scoping the first cut to prove enforcement over breadth.
+- **Write-only artifact** is the dominant risk of workstream 2. The pack has now produced this
+  failure **five** times: the session-state file nothing read back, the unreachable Obsidian
+  dispatch fixed in `cbf44ca`, the `session-*-unknown.txt` orphans, the `DONE:` ordering bug
+  (fixed 2026-07-30), and — caught on paper before shipping — this brief's own unassigned
+  plan-commit duty. Mitigated by scoping the first cut to prove enforcement over breadth, and as
+  of 2026-07-30 by the mechanical checks, the lint assertion, and the scratch-project exercise.
 - **Conditional gate.** `/implement` step 2 skips `tech-lead` for well-scoped single-file tasks, so
   many runs will have no plan at all. merge-reviewer's gate must read "if a plan exists, enforce
   it" — an unconditional gate would block every small change.
