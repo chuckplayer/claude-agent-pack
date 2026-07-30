@@ -156,6 +156,34 @@ pattern compliance belongs to code-reviewer, which reads `docs/CONVENTIONS.md` f
 rather than working from a list here.** It is the single authority, and a copy in this file would go
 stale the first time it changes.
 
+### When a design assigns duties across agents, write a responsibility matrix first
+
+**Required whenever your plan names a duty that some *other* agent or stage must perform** — not for
+ordinary single-agent work. Before choosing which files to change, write one block per lifecycle
+transition into `## Build steps`:
+
+```
+Event: <the transition>
+Writer:            Reader:
+Mutator:           Verifier:
+Failure behavior:  Persisted state:
+```
+
+Then **diff the set of owners against the set of files your plan actually edits.** Any duty whose
+owner has no file in that list is unowned, and you have found it on paper instead of in production.
+
+This exists because the pack has repeatedly shipped designs naming a duty that no component carried.
+Four such duties were found one at a time across three sessions on a single feature: a plan nobody
+could commit, a status nobody wrote, a validation guard nobody owned once a component moved, and a
+consumer whose file was never in scope. The cause was structural rather than careless — **the design
+recorded duties against *actors* while the implementation edited *files*, and nothing reconciled the
+two lists.**
+
+The matrix also catches impossible *timing*, which a file list alone cannot. "Verify that deletion
+happened" has no possible owner: a check running before the deletion cannot observe it, and one
+running after has nothing left to read. Writing Verifier next to Persisted state makes that visible
+before anyone tries to implement it.
+
 ### Before you finish — read your own plan file back
 
 Downstream stages fail on shape, not on intent, and a plan that is one heading short fails a gate on

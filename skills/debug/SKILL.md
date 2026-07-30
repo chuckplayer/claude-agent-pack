@@ -80,6 +80,12 @@ This skill is diagnosis-and-fix, not full pipeline delivery. Do not run test-eng
 
 > The purpose of /debug is speed of diagnosis. The purpose of committing is permanence. Once the user decides to commit, the same safety guarantees as /implement apply.
 
+> **One guarantee that deliberately does not apply: the plan gate.** This skill passes no `plan_id`,
+> so merge-reviewer's gate 4a reports "not applicable" and neither the acceptance bars nor the
+> `## Deviations` checks run. Plan consumption is opt-in per invocation, and a diagnosis has no plan
+> because it skipped planning. **Do not add `plan_id` handling here** without first deciding who
+> would write the plan and when.
+
 ## Gotchas
 
 - **Fixing the symptom, not the root cause:** Always state your root-cause hypothesis before routing to an engineer. If the hypothesis turns out to be wrong after the fix, loop back — do not close out just because the immediate error is gone.

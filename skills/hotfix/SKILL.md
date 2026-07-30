@@ -60,6 +60,13 @@ Always. Pass the changed files and the root cause context. This is a non-negotia
 
 ## 6. merge-reviewer
 
+> **No plan governs a hotfix, deliberately.** This skill passes no `plan_id`, so merge-reviewer's
+> gate 4a reports "not applicable" and neither the acceptance bars nor the `## Deviations` checks
+> apply. That is the exemption working as designed — plan consumption is opt-in per invocation, and
+> a hotfix has no plan because it skipped planning. **Do not add `plan_id` handling here** without
+> first deciding who would write the plan and when; an emergency path that acquired a planning
+> artifact would stop being an emergency path.
+
 Pass:
 - Summary of the fix (root cause, what changed, why)
 - Which pipeline stages ran and which were skipped (with reasons)
