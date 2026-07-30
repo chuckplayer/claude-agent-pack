@@ -1584,6 +1584,113 @@ ${existingThreadLines}
 });
 
 // ---------------------------------------------------------------------------
+// THREAD:/DONE: directive ordering — regression: same-session open+close never closed
+// ---------------------------------------------------------------------------
+console.log('\nbuildCurrentNote (THREAD:/DONE: file-order semantics)');
+
+test('THREAD: then DONE: in the same state file closes the thread — regression: it never closed', () => {
+  const filePath = path.join(tmpDir, '_current.md');
+  // No pre-existing file: the thread is opened and closed entirely within this run.
+  const state = makeStateData('progress\nTHREAD: Opened and closed same session\nDONE: Opened and closed same session');
+  const ctx = makeCtx({ currentFilePath: filePath });
+  const content = buildCurrentNote(ctx, state, null);
+
+  assert.ok(!content.includes('Opened and closed same session'),
+    'a thread opened and closed in the same session must not survive');
+  const threadSection = content.split('## Open threads')[1].split('## Recent sessions')[0];
+  assert.ok(threadSection.includes('(none)'), 'thread section must be empty after same-session close');
+});
+
+test('DONE: then THREAD: in the same state file reopens the thread (later THREAD wins)', () => {
+  const filePath = path.join(tmpDir, '_current.md');
+  fs.writeFileSync(filePath,
+`---
+type: claude/current-state
+project: test
+updated: ${REF_DATE}T10:00
+tags: [claude, current-state, auto]
+---
+
+## Where we left off
+
+previous work
+
+## Open threads
+
+- (${REF_DATE}) Reopened item
+
+## Recent sessions
+
+(none)
+`, 'utf8');
+
+  const state = makeStateData('progress\nDONE: Reopened item\nTHREAD: Reopened item');
+  const ctx = makeCtx({ currentFilePath: filePath });
+  const content = buildCurrentNote(ctx, state, null);
+
+  assert.ok(content.includes('Reopened item'),
+    'a DONE followed by a THREAD for the same text must leave the thread open');
+});
+
+test('same-session close is case-insensitive across THREAD: and DONE:', () => {
+  const filePath = path.join(tmpDir, '_current.md');
+  const state = makeStateData('progress\nTHREAD: Mixed Case Thread\nDONE: mixed case thread');
+  const ctx = makeCtx({ currentFilePath: filePath });
+  const content = buildCurrentNote(ctx, state, null);
+
+  assert.ok(!content.toLowerCase().includes('mixed case thread'),
+    'lowercase DONE must close a mixed-case THREAD opened in the same run');
+});
+
+test('interleaved directives are applied in file order, not batched by type', () => {
+  const filePath = path.join(tmpDir, '_current.md');
+  fs.writeFileSync(filePath,
+`---
+type: claude/current-state
+project: test
+updated: ${REF_DATE}T10:00
+tags: [claude, current-state, auto]
+---
+
+## Where we left off
+
+previous work
+
+## Open threads
+
+- (${REF_DATE}) Carried over thread
+
+## Recent sessions
+
+(none)
+`, 'utf8');
+
+  // A: opened then closed. B: opened, stays open. Carried over: closed.
+  const state = makeStateData([
+    'progress',
+    'THREAD: Thread A',
+    'DONE: Carried over thread',
+    'DONE: Thread A',
+    'THREAD: Thread B',
+  ].join('\n'));
+  const ctx = makeCtx({ currentFilePath: filePath });
+  const content = buildCurrentNote(ctx, state, null);
+
+  assert.ok(!content.includes('Thread A'), 'Thread A opened then closed must be gone');
+  assert.ok(content.includes('Thread B'), 'Thread B opened and never closed must remain');
+  assert.ok(!content.includes('Carried over thread'), 'carried-over thread closed by DONE must be gone');
+});
+
+test('empty DONE: payload is ignored and does not disturb threads', () => {
+  const filePath = path.join(tmpDir, '_current.md');
+  const state = makeStateData('progress\nTHREAD: Survivor thread\nDONE:');
+  const ctx = makeCtx({ currentFilePath: filePath });
+  const content = buildCurrentNote(ctx, state, null);
+
+  assert.ok(content.includes('Survivor thread'), 'a bare DONE: with no payload must be a no-op');
+});
+
+// ---------------------------------------------------------------------------
 // parseCurrentNote — section ordering and missing/extra sections
 // ---------------------------------------------------------------------------
 console.log('\nparseCurrentNote (section ordering and gaps)');

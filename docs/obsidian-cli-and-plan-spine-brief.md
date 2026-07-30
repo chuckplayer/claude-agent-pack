@@ -8,9 +8,9 @@
 ## Pickup state — as of 2026-07-29 (end of day)
 
 Written here rather than relying on `_current.md`: the thread mechanism that would normally
-carry this has a live bug (item 1 below), so a committed doc is the only trustworthy handoff.
-Worth noting the irony — the artifact that would give in-flight work a durable home is
-precisely what workstream 2 builds.
+carry this had a live bug (item 1 below — fixed 2026-07-30), so a committed doc was the only
+trustworthy handoff. Worth noting the irony — the artifact that would give in-flight work a
+durable home is precisely what workstream 2 builds.
 
 ### Workstream 1 — closed
 
@@ -28,17 +28,24 @@ wiki family was retired from the pack and purged from `~/.claude` on 2026-07-29 
 
 ### Next session — in order
 
-1. **Fix the `DONE:` ordering bug in `scripts/obsidian-stop-hook.js:257-283`.** DONE removals
-   are applied before THREAD additions, and the session-state file accumulates all session
-   (it is only deleted at SessionEnd). So a file containing both `THREAD: X` and `DONE: X`
-   removes X and then re-adds it — **a thread opened and closed in the same session can never
-   close.** Fix is a single pass in file order so a later `DONE:` beats an earlier `THREAD:`.
-   Do this first; workstream 2 is multi-session work tracked through that backlog.
+1. ~~**Fix the `DONE:` ordering bug in `scripts/obsidian-stop-hook.js:257-283`.**~~
+   **FIXED 2026-07-30.** DONE removals were applied before THREAD additions, and the
+   session-state file accumulates all session (it is only deleted at SessionEnd). So a file
+   containing both `THREAD: X` and `DONE: X` removed X and then re-added it — a thread opened
+   and closed in the same session could never close. Now a single pass in file order: a later
+   `DONE:` beats an earlier `THREAD:` (closed), a later `THREAD:` beats an earlier `DONE:`
+   (reopened). Both payloads get identical sanitizing so a `DONE:` still matches the text a
+   `THREAD:` produced, and an empty payload on either directive is a no-op.
 
-   Consequence to expect: three threads will still show open in `_current.md` tomorrow despite
-   being finished today — non-interactive `install.sh` and the ADO brief update (both
-   `d3214f9`), and the `/spec-intake` vs `/interview-me` scope check (`0bbb0bf`). They are
-   done. Clear them once the bug is fixed.
+   Five regression tests added to `scripts/obsidian-stop-hook.test.js` (131 pass, 0 fail). The
+   installed copy at `~/.claude/scripts/obsidian-stop-hook.js` was verified byte-identical to
+   `HEAD` before overwriting — no local drift — and now matches the fixed repo copy.
+
+   The three threads that were finished on 2026-07-29 but still showed open — non-interactive
+   `install.sh` and the ADO brief update (both `d3214f9`), and the `/spec-intake` vs
+   `/interview-me` scope check (`0bbb0bf`) — were cleared with `DONE:` lines in the same
+   session as the fix, alongside a deliberate same-session `THREAD:`/`DONE:` pair that
+   exercises the repaired path live.
 
 2. **Workstream 2, first cut — 8 files, all of which already exist.** Verified 2026-07-29 that
    nothing has begun: no `docs/plans/`, no acceptance-bar language, and no `PROPOSED`/`SHIPPED`
