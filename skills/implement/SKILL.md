@@ -17,6 +17,16 @@ Run the full agent pipeline for the task the user described:
 
 2. **tech-lead** — invoke if the task is ambiguous, spans multiple concerns, or touches more than three files. Skip for well-scoped, single-file tasks.
 
+   **Adoption rule — check this before invoking tech-lead.** If the caller passed a `plan_id` and path (typically from `/plan` step 5), **adopt that plan instead of re-planning**: read it, take its `## Acceptance bars` and any `## Model Overrides` from the file, and skip tech-lead entirely. Re-planning would write a second plan file for the same work and discard the bars devils-advocate already pressure-tested.
+
+   Adoption is **opt-in and explicit**. Never glob the plan directory looking for a plan — a file in `docs/plans/` may govern a different branch's in-flight work, and adopting it would run this pipeline against the wrong acceptance criteria. Three cases:
+
+   - **A `plan_id` was passed and the file exists** → adopt it. Confirm its `plan_id` and `branch` frontmatter match this run; if either disagrees, stop and ask the user rather than guessing which is right. Read its `## Model Overrides` section into the same notes step 5 would have taken from tech-lead's chat output — see the adoption note in step 5.
+   - **A `plan_id` was passed but no file exists at that path** → stop and tell the user. The caller asserted a plan; its absence is a real problem, not a reason to quietly re-plan.
+   - **No `plan_id` was passed** → no plan governs this run. Invoke or skip tech-lead on the normal criteria above, and merge-reviewer's gate 4a will report "not applicable". This is the common case.
+
+   When you adopt a plan, carry its `plan_id` and path through to steps 9 and 10. (Creating a plan is `/plan`'s job — it owns the directory resolution and the write instruction. `/implement` adopts; it does not create.)
+
 3. **devils-advocate** — invoke before implementation if the task introduces a new pattern, a new dependency, or an irreversible architectural change. Skip for small bug fixes and established patterns.
 
 3a. **Obsidian sync requests** — tech-lead (step 2) and devils-advocate (step 3) write memory files to `./memory/` but cannot reach the vault themselves; neither grants `Bash` or `Agent`. If either one's output ends with an `## Obsidian sync request` section, you own the dispatch:
@@ -30,6 +40,7 @@ Run the full agent pipeline for the task the user described:
 
 5. **Engineer agents** — before invoking each engineer, check for model overrides from earlier planning stages:
    - If tech-lead (step 2) output includes a `## Model Overrides` section naming this agent, note the specified model.
+   - **If step 2 adopted a plan instead of invoking tech-lead**, read `## Model Overrides` from the adopted plan file — there is no tech-lead chat output to read on that path. Without this, an escalation devils-advocate pressure-tested during `/plan` silently fails to apply to engineer dispatch.
    - If devils-advocate (step 3) output includes a `## Model Escalations` section naming this agent, use that model instead (it takes precedence over tech-lead).
    - Pass the `model` parameter to the Agent call only when an override or escalation is present. Otherwise, let the agent use its frontmatter default.
 
@@ -81,7 +92,13 @@ Run the full agent pipeline for the task the user described:
 
 9. **test-engineer** — always last among reviewers, after code-reviewer completes. Never invoke before code-reviewer has finished.
 
+   **If a plan governs this run, pass test-engineer the plan path** and ask it to return the bars-to-evidence mapping described in its own instructions: for every `BAR-nnn` id in the plan, what evidence actually satisfies it (`tests`, `manual`, or `files`), or `NONE` where it found none. This is the only point where a bar is connected to something real, so a gate can fail against it. Carry the mapping into step 10 — merge-reviewer cross-checks it against the plan.
+
+   `manual` and `files` are complete answers. Work with no test surface — prompt files, docs, shell scripts — is fully satisfied by a concrete file reference or a repeatable command, and test-engineer should not be pushed to invent tests that cannot exist.
+
 10. **merge-reviewer** — always last. Pass a summary of: the task description, which pipeline stages ran, all findings from code-reviewer / security-reviewer / performance-reviewer / smell-reviewer, whether test-engineer produced tests, and **the list of worktree branch names** collected in step 5. merge-reviewer will verify all required stages passed and commit the changes to the feature branch.
+
+    **If a plan governs this run, also pass the `plan_id`, the plan's path, and test-engineer's bars-to-evidence mapping.** merge-reviewer's gate 4a acts on a plan only when handed one — it never searches the plan directory. Omitting these makes the gate report "not applicable" and the plan's bars go unenforced, which looks like a pass. If no plan governs this run, pass nothing and say so explicitly, so the "not applicable" verdict is a stated fact rather than an accident.
 
     **If merge-reviewer returns PASS:** the changes are committed to the feature branch. Proceed to step 10a.
 

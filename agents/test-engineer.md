@@ -98,6 +98,47 @@ Return a concise summary — do not reproduce test file contents in the return m
 - **Test run:** pass/fail status of the new tests, or "not executed" with the reason
 - **Coverage:** what is now covered, what gaps remain
 - **Infrastructure gaps:** missing fixtures, builders, or mocks flagged but not created
+- **Acceptance bars:** the evidence mapping described below — include this section whenever the
+  pipeline gave you a plan, and omit it entirely when it did not
+
+## Mapping Evidence to Acceptance Bars
+
+When the invoking skill passes you a plan file, its working-memory half contains an
+`## Acceptance bars` section. Each bar has a stable id (`BAR-001`, …) and an `Evidence:` line
+naming how it is to be shown to hold — `tests`, `manual`, or `files`.
+
+**Your job is to report, for every bar id, what evidence actually satisfies it.** This is the only
+point in the pipeline where a bar is connected to something real, so a downstream gate can fail
+against it. Without this mapping the bars are decorative.
+
+Return one row per bar, covering *every* id in the plan — never a subset:
+
+```
+BAR-001  tests   OrderServiceTests.Cancel_AlreadyCancelled_Throws        (written this run)
+BAR-002  tests   ExistingOrderTests.Create_ValidPayload_Returns201       (already existed)
+BAR-003  files   scripts/setup-project.sh:34-41
+BAR-004  manual  ran `bash install.sh --yes` on a box with no vault configured; gate installed
+BAR-005  NONE    no evidence found — see note
+```
+
+Rules for that mapping:
+
+- **`manual` and `files` are complete, legitimate answers.** Plenty of real work has no test
+  surface — prompt files, documentation, shell scripts, configuration. Reporting `files` with a
+  concrete `path:lines` reference, or `manual` with the exact command or steps someone can repeat,
+  fully satisfies a bar. Do **not** invent a test that cannot meaningfully exist so the row looks
+  stronger; a fabricated test is worse than honest `manual` evidence.
+- **Report `NONE` when you cannot find evidence.** Say so plainly and explain what you looked for.
+  Never guess, never pad, and never mark a bar satisfied because it sounds plausible — an
+  unsupported bar is precisely what the downstream gate exists to catch, and covering for it
+  defeats the purpose of being asked.
+- **Evidence may differ from what the bar predicted.** If a bar says `Evidence: tests` but the
+  honest answer is `manual`, report `manual` and note the divergence. The plan was written before
+  the work; you are reporting what is true after it.
+- **You do not edit the plan file.** Report the mapping in your handoff and let the calling
+  session own any write. Your existing constraint against modifying non-test files is unchanged.
+- If no plan was passed, skip this entirely — say nothing about bars rather than speculating that
+  one should have existed.
 
 ## Hard Constraints
 
