@@ -56,12 +56,30 @@ For each worktree branch:
 git merge-base --is-ancestor <feature-branch> <worktree-branch>
 ```
 
-- **Exit 0:** the worktree contains every commit on `<feature-branch>` — safe to merge normally:
+**Ancestry is not the only question. Also ask whether the branch has any commits:**
+
+```bash
+git log --oneline <feature-branch>..<worktree-branch>   # empty = nothing to merge
+```
+
+Engineers are told not to commit — you own commits — so a worktree branch routinely has **zero
+commits** while the work sits uncommitted in the worktree. `merge-base --is-ancestor` is trivially
+satisfied in that state. Merging it transfers nothing and reports success, **silently stranding the
+work.** Treat an empty commit list as the transplant case below regardless of what ancestry says.
+
+- **Exit 0 and the commit list is non-empty:** the worktree contains every commit on
+  `<feature-branch>` and has work of its own — safe to merge normally:
 
   ```bash
   git checkout <feature-branch>
   git merge --no-ff <worktree-branch> -m "Merge <worktree-branch> into <feature-branch>"
   ```
+
+- **Exit 0 but the commit list is EMPTY:** do **not** run `git merge --no-ff` — there is nothing on
+  the branch to merge. Check `git -C <worktree-path> status --short`. If it shows modifications, use
+  the transplant recipe in the next bullet, which captures uncommitted changes by design. If the
+  worktree is clean too, the engineer changed nothing: report that as a finding rather than a
+  successful merge of an empty branch.
 
   If this merge produces conflicts (`git status` shows `UU` files), **stop immediately** and output:
 

@@ -29,6 +29,8 @@ Run the full agent pipeline for the task the user described:
 
 3. **devils-advocate** — invoke before implementation if the task introduces a new pattern, a new dependency, or an irreversible architectural change. Skip for small bug fixes and established patterns.
 
+   **If a plan governs this run, pass it the plan path and ask it to pressure-test the plan file in place** — both the acceptance bars and the entries in `## Calls made for you`. It holds `Write`, and it is the only check on either. Ask it to flag any bar whose `Evidence:` line names something that cannot be produced, and any stated call that names no concrete artifact (a quality or a pattern name rather than a dependency, file, type, or value) — those have no lookup target, so merge-reviewer's Tier 3 skips them by construction and they enforce nothing. Sharpen them or mark them as documentation for the human. This is the same duty `/plan` step 3 carries; on the adoption path `/plan` already ran it, so skip it rather than repeating it.
+
 3a. **Obsidian sync requests** — tech-lead (step 2) and devils-advocate (step 3) write memory files to `./memory/` but cannot reach the vault themselves; neither grants `Bash` or `Agent`. If either one's output ends with an `## Obsidian sync request` section, you own the dispatch:
 
    - Check `$env:OBSIDIAN_VAULT_PATH`. If empty, skip silently.
@@ -69,10 +71,22 @@ Run the full agent pipeline for the task the user described:
 5b. **Verify worktree base** — immediately after each engineer agent returns from an `isolation: "worktree"` call, before ts-linter or code-reviewer sees the code, confirm the worktree actually branched from the feature branch:
 
    ```bash
-   git merge-base --is-ancestor <feature-branch> <worktree-branch>
+   git merge-base --is-ancestor <feature-branch> <worktree-branch>   # correct base?
+   git log --oneline <feature-branch>..<worktree-branch>             # any commits at all?
+   git -C <worktree-path> status --short                             # uncommitted work?
    ```
 
-   - **Exit 0:** safe — the worktree contains every commit on `<feature-branch>`. Proceed.
+   **Both questions matter, and the second is the one that has actually bitten.** Ancestry being correct does not mean there is anything to merge: engineers are told not to commit (merge-reviewer owns commits), so a worktree branch routinely has **zero commits** while the work sits uncommitted in the worktree. `git merge-base --is-ancestor` is trivially satisfied in that state, so step 5b passes, and merge-reviewer's Step 0 then runs `git merge --no-ff` on a branch with nothing on it — merging nothing, reporting success, and **silently stranding the engineer's work**. That is the failure in `memory/known-issues/2026-07-15-worktree-isolation-bases-off-main.md` arriving through the *green* path.
+
+   - **Exit 0 and the commit list is non-empty:** safe — the worktree contains every commit on `<feature-branch>` and has work of its own. Proceed.
+   - **Exit 0 but the commit list is EMPTY while `status --short` shows modifications:** the work exists but is uncommitted, so a plain merge would transfer nothing. Do **not** rely on `git merge --no-ff`. Tell merge-reviewer this branch needs the transplant path, or resolve it here: diff the worktree, confirm parity, and apply the change in the primary tree.
+
+     ```bash
+     diff <(git diff -- <file>) <(git -C <worktree-path> diff -- <file>)   # prove parity FIRST
+     ```
+
+     Proving parity before discarding the worktree is what makes "re-apply it yourself" safe rather than a silent re-implementation that might differ.
+   - **Exit 0, empty commit list, and a clean worktree:** the engineer changed nothing. Treat that as a finding and ask why before proceeding — a no-op handoff reported as success is its own bug.
    - **Non-zero exit:** stale base — the engineer edited files starting from `main`, not `<feature-branch>`, so its diff may be missing feature-branch-only changes to the same files. Stop before continuing the pipeline and repair in place:
 
      ```bash
