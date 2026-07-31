@@ -25,6 +25,10 @@
 ## Plan Artifacts
 - **Plan directory:** [e.g., docs/plans/]
 
+## Spec Artifacts
+- **Spec directory:** [e.g., docs/specs/]
+- **Traceability directory:** [e.g., docs/traceability/]
+
 ## Error Handling
 - **Strategy:** [e.g., Throw domain exceptions from services, caught in global middleware]
 - **HTTP mapping:** [e.g., NotFoundException -> 404, ValidationException -> 400]

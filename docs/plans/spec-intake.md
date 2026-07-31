@@ -169,9 +169,48 @@ each bullet below states exactly one authoritative call for gate 4a Tier 3 to lo
 
 ## Deviations
 
-_Deviations not yet reviewed. The coordinating session replaces this line before
-merge-reviewer runs — with `None.` if nothing diverged, or one bullet per departure.
-Leave this line exactly as it is._
+Every stated call was followed. Six departures from the plan's *illustrative material* and *scope*,
+all made by the coordinating session, none reversing a call in `## Calls made for you`:
+
+- **The plan's example block styled the per-requirement fields with bold labels** (`- **Status:**
+  active`) -> shipped plain labels (`- Status: active`). Bold breaks BAR-002's own evidence check,
+  which greps for the literal `Status: active`; with the asterisks the file reads `Status:** active`
+  and the bar could not pass against the block the plan drew. Plain labels also leave a copy-ready
+  block less cluttered. Decided by: coordinating session.
+- **The plan's REQ-002 example ordered the fields `Source refs` -> `Conflict note` -> `Lineage` and
+  omitted `Rationale / notes`** -> shipped the order its own stated call fixes (`Rationale / notes`
+  -> `Lineage` -> `Conflict note`) and added `Rationale / notes: —`. The plan's example contradicted
+  the plan's call; the call wins. Decided by: coordinating session, on code-reviewer's finding.
+- **The plan asked step 1 to "point at" `agents/tech-lead.md`'s rejection table** -> shipped an
+  imperative, fail-closed instruction ("open `agents/tech-lead.md` now and apply its table; if it
+  cannot be read, use `docs/specs`"), which also states that the file's Naming/collision-suffix
+  section is explicitly *not* imported. Still a pointer and still no copied rows, so BAR-007 holds.
+  Reason: security-reviewer found that a declarative pointer reads as background context and can be
+  skipped silently, leaving the write path unguarded. Decided by: coordinating session.
+- **Security hardening the plan's calls did not name** -> shipped a slug pattern guard
+  (`^[a-z0-9][a-z0-9-]*$`, because the slug is proposed from attacker-supplied document title text and
+  concatenated into two write paths), `pandoc --sandbox` with fallback to rung 2 rather than dropping
+  the flag, an archive bound-check before extraction, an explicit "strip with regex, never a
+  DTD-capable XML parser" rule, repo-relative source paths in the manifest, two screens before the
+  gate closes (statements phrased as instructions to the tooling; content that should not be committed
+  verbatim), and operator identity beside the `acknowledged:` timestamp. Reason: security-reviewer
+  returned four High findings against the first draft — untrusted archive, untrusted slug, unsandboxed
+  converter, and untrusted text flowing into an artifact downstream stages read as ground truth.
+  Decided by: coordinating session.
+- **Three gaps the plan's own artifact shapes left unowned** -> shipped a run-state row defining who
+  writes and reads `status: abandoned` (the plan's manifest block listed the value in its enum but no
+  step ever set or read it), a one-line rule for `spec_status:` (the one orphan key in an otherwise
+  fully-specified contract), and an explicit statement that source hashing happens in step 1 rather
+  than step 3 (step 1's run-state table compares hashes, so hashing in step 3 made step 1 depend on a
+  later step). Decided by: coordinating session, on code-reviewer's findings.
+- **Plan step 5 named only the brief's artifact-format and matrix-deferral entries** -> also updated
+  the Stage coverage map (`:39`) and the Proposed additions entry (`:85-86`), which still asserted
+  "three artifacts out" and "none of the three durable artifacts exist". Leaving them would have
+  reproduced inside one file the exact staleness bug that step 5 exists to prevent, and BAR-008 greps
+  only the "Closed since the first draft" section, so nothing would have caught it. Decided by:
+  coordinating session, on code-reviewer's finding.
+
+No acceptance bar was amended: all nine still verify as written.
 
 ## Risks
 
