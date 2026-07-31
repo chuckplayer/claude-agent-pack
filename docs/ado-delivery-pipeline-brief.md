@@ -36,7 +36,7 @@ subsequent day produce twenty story-level commits.
 
 | Playbook stage | Pack coverage today | Gap |
 |---|---|---|
-| **0 — Ground truth** (spec of record, field inventory, traceability matrix, exemplar) | `/interview-me` produces a design brief only | None of the three durable artifacts exist |
+| **0 — Ground truth** (spec of record, field inventory, traceability matrix, exemplar) | **`/spec-intake` (shipped 2026-07-31)** emits a spec of record with the field inventory as Appendix A, plus a run manifest, and names the exemplar; `/interview-me` still produces a design brief and hands off to it | Traceability matrix deferred to the ADO write-path cut — it is the one Stage 0 artifact that does not yet exist |
 | **1 — Plan + adversarial review** | `/plan` → tech-lead → devils-advocate → codex-reviewer; `memory/decisions/` as decision log | **Covered.** Closely matches the playbook |
 | **2 — Backlog decomposition** | `devops-azure` creates one work item at a time with preview-and-confirm | Largest gap. No decomposition, points-by-analogy, parallel grouping, or completeness audit |
 | **3 — Parallel execution** | `/implement` runs one story's agent chain | Partial. No work-item-driven entry or board hygiene. Multi-story fan-out is **out of scope by decision**, not a gap — see Scope revision |
@@ -82,9 +82,11 @@ The fourth — **ambiguous component references** — is a prompting discipline
 **Revised 2026-07-29.** Three skills, one agent, and two modes on existing skills. Shapes are
 sketched, not specified — each should be re-scoped as the one before it lands.
 
-1. **`/spec-intake`** — Stage 0. Markdown in; three artifacts out: spec of record, field-level
-   inventory, traceability matrix with every row `not started`. Names the exemplar screen.
-   Accepts **a source document or a completed `/interview-me` brief**, and owns document
+1. **`/spec-intake`** — Stage 0. **Shipped 2026-07-31 as two artifacts, not three:** a spec of
+   record (with the field-level inventory as Appendix A **inside** it) and a run manifest. The
+   traceability matrix is **deferred** to the cut that builds the ADO write path — see the matrix
+   decision below and the "Closed since the first draft" entry. Names the exemplar screen.
+   Accepts **a file, a directory, or a completed `/interview-me` brief**, and owns document
    conversion as its own step 0. Survives the scope check that cancelled `/deliver` — see the
    2026-07-29 decision below.
 2. **`/backlog` + `backlog-auditor` agent** — Stage 2, narrowed to reasoning only. Feature/story/
@@ -309,6 +311,21 @@ Stage 4, and the matrix should be reviewable in a PR diff.
 Path is `docs/traceability/<feature>.md` by default, overridable via a `docs/CONVENTIONS.md` key —
 **the same mechanism workstream 2 defines for `docs/plans/`.** Two artifacts, one convention.
 
+**The matrix format is explicitly deferred (2026-07-30)** to the cut that builds the ADO write path.
+Stage 0 shipped without it, deliberately. The reason is that freezing a seven-column format against
+**no consumer at all** is exactly how an emitted artifact goes stale before anything reads it, and
+`/backlog`'s input is the plan spine's acceptance bars plus a spec — **not the matrix** (see `:93` and
+the `/backlog` scope revision) — so the deferral blocks nothing downstream. The
+`- **Traceability directory:**` key is still seeded in `docs/CONVENTIONS.template.md` so the template
+documents all three path knobs at once; it is read by nothing until the matrix lands, and both README
+and the template say so.
+
+Two constraints bind that later cut. First, **the spec of record is the one authoritative registry
+and the matrix is a derived view**, so the matrix is *regenerated* from the spec's `REQ` list and
+never hand-edited — a derived artifact that is regenerated cannot drift from its source, which is
+what dissolves the three-way hand-sync duty rather than assigning it to someone. Second, the cost of
+deferring is that `/verify-spec` cannot be prototyped against a real matrix until then.
+
 ### Sequencing: plan spine first
 
 Workstream 2 of `obsidian-cli-and-plan-spine-brief.md` lands before any of this. It is already
@@ -332,9 +349,6 @@ than a specified one.
 - **Stage 4 stakeholder output format** — `/visual-explainer` HTML vs. markdown vs. an actual
   `.docx`. Unresolved. Note this is now the *only* proposal-level question left open; every skill in
   the Proposed additions list has been scope-checked.
-- **Exact wording of `/spec-intake`'s three artifacts.** Shapes are named, formats are not (beyond
-  the matrix being a markdown table). Deliberately deferred until workstream 2's plan file exists,
-  per Sequencing.
 
 ### Closed since the first draft
 
@@ -352,6 +366,12 @@ than a specified one.
   `/interview-me` asks rather than auto-routes. See the scope check above.
 - **Who converts the source document** — resolved 2026-07-29. `/spec-intake` step 0 owns it. See the
   markdown-canonical decision above.
+- **Exact wording of `/spec-intake`'s artifacts** — resolved 2026-07-30. The **spec-of-record format
+  and the run-manifest format are settled** and specified as copy-ready blocks in
+  `docs/plans/spec-intake.md`, which the shipped `skills/spec-intake/SKILL.md` steps 6 and 7 carry
+  verbatim. Two artifacts, not three: the field inventory is Appendix A **inside** the spec rather
+  than a second synchronized file. The **traceability matrix format is deferred, not resolved** — see
+  the matrix decision above.
 
 ---
 
