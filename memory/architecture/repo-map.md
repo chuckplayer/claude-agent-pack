@@ -5,8 +5,8 @@
 **Scope:** global
 **Overrides-convention:** no
 **Related-to:** n/a
-**Last-updated:** 2026-07-30
-**Verified-at-commit:** 389f40a
+**Last-updated:** 2026-07-31
+**Verified-at-commit:** b6da418
 
 # Repo Map
 
@@ -18,19 +18,21 @@ with its key files. Maintained by `/repo-map`; read by `/onboard`, tech-lead,
 ## agents/
 Sub-agent definitions, 19 files (one `.md` per agent). Each file's frontmatter `description`
 is the routing contract tech-lead matches against.
-- `tech-lead.md` — decomposition + routing brain; also writes the plan file and its acceptance bars.
+- `tech-lead.md` — decomposition + routing brain; also writes the plan file and its acceptance bars. Sole authority on the plan-directory rejection table (other files point at it rather than copying rows). Requires a responsibility matrix whenever a plan assigns a duty to another agent, then diffs owners against the edited file set to surface unowned duties.
 - `merge-reviewer.md` — final pipeline gate; the only agent that commits. Owns gate 4a (plan bars and the three Deviations tiers).
 - `git-engineer.md` — branch setup, commit, push/PR (Modes A–D).
 - `obsidian-writer.md` — the only agent that writes to the Obsidian vault; owns the three-rung transport chain.
 
 ## skills/
-One directory per slash command, 27 in total; each holds a `SKILL.md`. Entry points for
+One directory per slash command, 28 in total; each holds a `SKILL.md`. Entry points for
 user-invoked workflows. Only the build and review flows orchestrate agents; the rest are
-single-purpose.
+single-purpose. `hotfix/`, `debug/`, `refactor/`, and `scaffold/` each state their plan-spine
+exemption in-file — they pass no `plan_id`, so they are exempt by construction rather than by rule.
 - `implement/SKILL.md` — full pipeline orchestrator; also owns the worktree policy and the plan-adoption rule.
 - `plan/SKILL.md` — decomposition and pressure-testing; creates the plan file and hands its `plan_id` forward.
 - `onboard/SKILL.md` — read-only codebase orientation; consumes `repo-map.md`.
 - `repo-map/SKILL.md` — maintains this map (generate/refresh/verify).
+- `spec-intake/SKILL.md` — Stage 0 document intake; emits a spec of record plus a run manifest. Dispatches no agents, but is the pack's only skill that ingests untrusted third-party files, so it carries its own input-hardening rules.
 
 ## scripts/
 Hook implementations (pure Node.js, Windows + POSIX safe) and shell tooling. The five
@@ -43,26 +45,29 @@ Hook implementations (pure Node.js, Windows + POSIX safe) and shell tooling. The
 ## memory/
 Project memory, taxonomy under `decisions/`, `architecture/`, `context/`, `known-issues/`.
 Agents read active files before acting; `superseded`/`archived` are history only. Density is
-in `known-issues/` — platform quirks and pipeline defects found by running the pack.
+in `known-issues/` — 14 files of platform quirks, pipeline defects found by running the pack, and
+per-plan challenge records written by devils-advocate during `/plan`.
 - `architecture/repo-map.md` — this file. A singleton living document, deliberately undated (see the exception in `docs/MEMORY-WRITING.md`) because it is refreshed in place rather than written once.
 
 ## docs/
 Team-facing reference read by agents before acting, plus accumulated design briefs and
 dated `claude-agent-pack-review-*.md` files from `/pack-review`.
-- `CONVENTIONS.md` — team standards; precedence rules in CLAUDE.md govern overrides. Also holds the optional `- **Plan directory:**` key.
+- `CONVENTIONS.md` — team standards; precedence rules in CLAUDE.md govern overrides. Also holds the three optional artifact-path keys: `- **Plan directory:**`, `- **Spec directory:**`, and `- **Traceability directory:**` (the last reserved for a deferred artifact, read by nothing today).
 - `MEMORY-WRITING.md` — frontmatter spec every memory writer follows.
-- `CONVENTIONS.template.md` — seed copied by setup-project when no conventions exist.
+- `CONVENTIONS.template.md` — seed copied by setup-project when no conventions exist. Ships all three artifact-path keys as `[e.g., ...]` placeholders, which every reader treats as unset.
 
 ## docs/plans/
 Plan artifacts written by tech-lead and consumed by `/implement` and merge-reviewer's gate 4a.
 Committed alongside the implementation and never deleted, so this directory accumulates like
 `memory/decisions/`. Consumption is opt-in by `plan_id` — nothing globs this directory.
 Created eagerly by `setup-project.sh`; agents create it lazily on first write.
+Each plan's `## Deviations` section is written by the coordinating session at `/implement` step 10,
+never by tech-lead (which leaves a sentinel) and never by an engineer.
 
 ## Root
 Pack installation and metadata.
 - `install.sh` / `uninstall.sh` — register hooks and env vars in `~/.claude/settings.json`; `install.sh --yes` runs non-interactively.
 - `CLAUDE.md` — agent orchestration rules, plan-spine rules, engineer responsibilities, and Obsidian capture instructions.
-- `README.md` — flow selection, gate authority, and the pack's design patterns.
+- `README.md` — flow selection, gate authority, the pack's design patterns, and the "Plan Spine" section documenting the three artifact-path keys and their defaults. Its spelled-out skill count is always recounted, never incremented.
 - `VERSION` — pack version stamp checked by `check-updates.sh`.
 - `.claude/settings.local.json` — project-scoped permission allowlist. The only tracked file under `.claude/`; machine-level settings live in `~/.claude/settings.json`.
