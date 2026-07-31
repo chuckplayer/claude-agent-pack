@@ -63,17 +63,19 @@ The five build flows differ mainly in **ceremony** -- how much planning and revi
 | Checking a diff or open PR | `/review-pr` | Review only | Four reviewers in parallel; changes nothing |
 | Unsure how to approach it | `/plan` | Planning | Decompose, pressure-test, then optionally a cross-model second opinion |
 | Holding a vague idea | `/interview-me` | Planning | Structured questioning until the shape is agreed |
+| Holding a requirements document | `/spec-intake` | Planning | Transcribes it into an authoritative spec of record with a field inventory |
 
 Every skill also states what it is *not* for and names the alternative -- `/hotfix` points at `/debug` when the cause is unknown, and `/debug` points back when it is known. That reciprocity is what stops a fast path becoming the default path.
 
 ## Skills
 
-Twenty-seven slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Twenty-eight slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
 | `/implement` | Runs the full pipeline: git-engineer → [tech-lead] → engineer(s) → ts-linter → code-reviewer → [security-reviewer] → [performance-reviewer] → smell-reviewer → test-engineer → merge-reviewer → git-engineer (push/PR). Engineers run in isolated worktrees. |
 | `/interview-me` | Shape a vague idea into an actionable brief through structured one-at-a-time questioning. Terminates when the user signals readiness or all major branches resolve; produces an optional design brief that feeds into `/plan` or `/implement`. |
+| `/spec-intake` | Transcribe a requirements source — a file, a directory, or an `/interview-me` brief — into an authoritative spec of record with per-requirement source locators and a field inventory as Appendix A, plus a run manifest recording what the run saw. Conversion is capability-probed and inline; unread parts are reported with a severity the operator must acknowledge before anything is written. |
 | `/scaffold` | End-to-end feature scaffolding: api-designer → database-engineer → backend engineer → frontend-engineer, in dependency order. Use when building something new across all layers. |
 | `/hotfix` | Abbreviated pipeline for production incidents. No worktree isolation, 1 retry max. Still requires code-reviewer and merge-reviewer. |
 | `/refactor` | Refactor with impact analysis first: tech-lead → engineer(s) → mandatory test verification → code-reviewer. Enforces a no-behavior-delta constraint. |
@@ -269,6 +271,14 @@ Complex work can carry a **durable plan file** that downstream stages act on and
 ```
 
 Each bar carries a required `Evidence:` line naming `tests`, `manual`, or `files`, indented **exactly two spaces** — the gate counts and pairs those lines, so the whitespace is a contract. `manual` and `files` are complete answers; work with no test surface is fully satisfied by a concrete file reference or a repeatable command.
+
+**Artifact path keys in `docs/CONVENTIONS.md`.** Three keys steer where generated artifacts land, and all three ship as `[e.g., ...]` placeholders in `docs/CONVENTIONS.template.md`. **An unfilled `[e.g., ...]` value counts as unset** — every reader rejects a value starting with `[` and falls back to its default, because `[` is a legal filename character and an unguarded placeholder would otherwise create a directory named `[e.g., docs`.
+
+| Key | Default | Read by |
+|---|---|---|
+| `- **Plan directory:**` | `docs/plans` | `tech-lead` when a skill instructs it to write a plan |
+| `- **Spec directory:**` | `docs/specs` | `/spec-intake`, for the spec of record and its run manifest |
+| `- **Traceability directory:**` | `docs/traceability` | **nothing today.** Reserved for the traceability matrix, which is deferred to the cut that builds the ADO write path. It is seeded and documented so a BA discovers all three knobs at once while editing paths — not because anything reads it yet |
 
 **Who does what**
 
