@@ -210,6 +210,15 @@ all made by the coordinating session, none reversing a call in `## Calls made fo
   only the "Closed since the first draft" section, so nothing would have caught it. Decided by:
   coordinating session, on code-reviewer's finding.
 
+- **Plan step 4 enumerated four README changes** (skills row, flow row, recount, path keys) -> also
+  added three `/spec-intake` invocation lines to `## Quick Start`. An addition rather than a departure:
+  no stated call prohibited it, and BAR-008 is unaffected. Reason: Quick Start is where a reader looks
+  for how to invoke a skill, and neither table conveys that this one accepts a **directory** as well as
+  a file. Written as bare commands, matching the `/smell` pair above them — README's code blocks carry
+  no inline comments, so the paths are self-describing instead. Decided by: team lead, asked for after
+  merge-reviewer had already passed; recorded here rather than left silent, though it post-dates
+  gate 4a.
+
 No acceptance bar was amended: all nine still verify as written.
 
 ## Risks

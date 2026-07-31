@@ -224,6 +224,9 @@ Use skills as entry points:
 /obsidian-capture my design decision: keep auth in middleware, not controllers
 /smell
 /smell src/services/OrderService.cs
+/spec-intake docs/source/requirements.docx
+/spec-intake docs/source/
+/spec-intake docs/claims-intake-brief.md
 ```
 
 Or invoke agents directly in natural language:
