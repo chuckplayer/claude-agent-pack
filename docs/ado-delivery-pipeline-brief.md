@@ -38,7 +38,7 @@ subsequent day produce twenty story-level commits.
 |---|---|---|
 | **0 — Ground truth** (spec of record, field inventory, traceability matrix, exemplar) | **`/spec-intake` (shipped 2026-07-31)** emits a spec of record with the field inventory as Appendix A, plus a run manifest, and names the exemplar; `/interview-me` still produces a design brief and hands off to it | Traceability matrix deferred to the ADO write-path cut — it is the one Stage 0 artifact that does not yet exist |
 | **1 — Plan + adversarial review** | `/plan` → tech-lead → devils-advocate → codex-reviewer; `memory/decisions/` as decision log | **Covered.** Closely matches the playbook |
-| **2 — Backlog decomposition** | `devops-azure` creates one work item at a time with preview-and-confirm | Largest gap. No decomposition, points-by-analogy, parallel grouping, or completeness audit |
+| **2 — Backlog decomposition** | **`/backlog` + `backlog-auditor` (shipped 2026-07-31)** emit a reviewed feature/story/task tree at `<spec_dir>/<feature>.backlog.md`, sized by relation to reference stories, with an independent seven-dimension audit; `devops-azure` still creates one work item at a time with preview-and-confirm | The **ADO write is still absent** — nothing turns the tree into work items. That is batch write mode, deferred to its own cut |
 | **3 — Parallel execution** | `/implement` runs one story's agent chain | Partial. No work-item-driven entry or board hygiene. Multi-story fan-out is **out of scope by decision**, not a gap — see Scope revision |
 | **4 — Verify against spec** | `/review-pr` reviews a diff | No coverage. Nothing walks a traceability matrix |
 
@@ -93,6 +93,13 @@ sketched, not specified — each should be re-scoped as the one before it lands.
    task tree, story points estimated by analogy against a named already-delivered epic, and
    stories grouped by what can run in parallel. **Acceptance criteria are read from the plan
    spine's acceptance bars, not invented here.** Emits a reviewed tree; does not write to ADO.
+   **Shipped 2026-07-31** as `skills/backlog/SKILL.md` + `agents/backlog-auditor.md`, emitting
+   `<spec_dir>/<feature>.backlog.md`. Two things changed from this sketch in the building: parallel
+   grouping is **not persisted** — `depends_on:` is the only recorded ordering fact, and anything
+   derived from it would have been the one derived view inside a file otherwise declared a registry —
+   and sizing is **coarse by relation** (`comparable to` / `smaller than` / `larger than` a named
+   reference story) rather than numeric, because a model can defend a relation and cannot defend the
+   gap between a 3 and a 5. A numeric value appears only when the operator supplies or approves one.
 3. **`/verify-spec`** — Stage 4. Walks the matrix against delivered code and the field inventory,
    reports gaps bidirectionally, opens stories for them, emits a stakeholder-readable document.
 4. **Work-item mode on `/implement`** (replaces the proposed `/deliver`) — Stage 3.
@@ -325,6 +332,96 @@ and the matrix is a derived view**, so the matrix is *regenerated* from the spec
 never hand-edited — a derived artifact that is regenerated cannot drift from its source, which is
 what dissolves the three-way hand-sync duty rather than assigning it to someone. Second, the cost of
 deferring is that `/verify-spec` cannot be prototyped against a real matrix until then.
+
+**The matrix's three inputs are now settled (2026-07-31), one authority each:**
+
+| Input | Owns | Never owns |
+|---|---|---|
+| The **spec of record** | the `REQ` row set | anything about decomposition or delivery |
+| The **tree** (`<spec_dir>/<feature>.backlog.md`) | the `REQ` → story → bar join, keyed by its frozen item ids, **plus the recorded `external_refs:` entry per tracked item** | work item state, hours, or the authoritative work-item id |
+| The **tracker** | work item state, hours, and **the id it minted** | requirements, decomposition, or the definition of done |
+
+No source owns anything a second one also owns. The one place that needs saying out loud is the join
+itself: **the tracker is the authority for the id it minted, and `external_refs:` is a recorded copy of
+it**, written into the tree by the same actor that minted it, in the moment it minted it. What keeps
+that copy from becoming a second source of truth is the reciprocal key below — the copy stays
+re-derivable from the authority rather than merely trusted.
+
+**The frozen item-id scheme is the stable join key.** `FEATURE-n`, `STORY-n`, `TASK-n.m`, `SPIKE-n` are
+append-only from the moment a tree is written — never reused, never renumbered — and the batch-write cut
+carries them into whichever tracker it writes. This is the constraint that cut **inherits rather than
+re-decides**, exactly as this cut inherited the regenerate-never-hand-edit rule from
+`docs/plans/spec-intake.md`. Note which half is which: the **scheme** is tracker-neutral and belongs to
+the tree contract; **which tracker field holds the key** is ADO-specific and belongs to the batch-write
+cut.
+
+**The pipeline is tracker-agnostic by design and ADO-first by circumstance**, so Stage 2's tree carries
+`external_refs:` keyed by system rather than an ADO-specific column.
+
+That sentence needs its reason attached, because a bare assertion of neutrality will not survive the
+title at the top of this document. The verified fact behind it: **the pack already ships two trackers** —
+`skills/devops-azure/`, `skills/devops-github/`, and `skills/devops/`, a router whose stated job is
+deciding which of the two a request belongs to. The transport layer has been tracker-agnostic since
+before Stage 2 existed.
+
+The history is recorded here deliberately, because it is the only thing that stops the next reader
+repeating it. The Stage 2 plan's first three passes named a non-ADO tracker **zero times** and
+hard-coded an `ado_id:` column into the artifact contract. Four readers reasoned inside this document's
+title — the first drafting pass, `devils-advocate` across nineteen concerns, and `codex-reviewer`
+twice — and none of them questioned the field's *name*. It was caught only when a fifth reader asked
+what happens if the tracker is something else.
+
+**Three duties this contract hands the batch-write cut**, stated so that cut inherits them:
+
+1. Writing `external_refs:` back into the tree after it creates the work items.
+2. Writing the reciprocal key — `key: <feature>:<item-id>` — **into the tracker's own field, in the same
+   operation that creates the item.**
+3. Using that key to answer *"which items already exist?"* after a partial run.
+
+**State plainly which problem each half solves: `external_refs:` alone fixes the steady state and not
+the crash state.** If the process dies after the work item is created but before the id is written back
+to the tree, the tree is silent and our own file is the wrong place to ask — recovery **queries the
+tracker for the key**. The reciprocal key is the half that closes the crash case, and the item ids being
+frozen is what makes the key stable enough to query on.
+
+Batch mode stays scoped to `devops-azure` in that cut. A later `devops-github` batch mode must satisfy
+**this same tree format unchanged** — that is what the neutrality is for.
+
+**The cut ordering is forced rather than chosen: `/backlog` → batch write → matrix.** The matrix's only
+join is the work-item id, so it cannot be built before work items exist; and the batch write has nothing
+to write until a reviewed tree exists.
+
+### Stage 2's four seams, resolved (2026-07-31)
+
+The `/backlog` cut existed to close four gaps that had no answer when it was sketched:
+
+- **Seam 1 — nothing joined `REQ-nnn` to `BAR-nnn`.** Resolved: **the tree is a second registry, not a
+  derived view.** Tree shape, sizing, and dependencies exist in no other artifact, so re-running the
+  reasoning that produced them would destroy operator edits rather than refresh them — the tree is
+  hand-editable everywhere and never regenerated. What makes an *undivided* registry safe is that
+  `backlog-auditor` recomputes the two genuinely spec-derived sections (`## Coverage` and
+  `## Blocked requirements`) and reports disagreement as drift **while regenerating neither**. The tree
+  references and never restates: a story cites `REQ-003` and `<plan_id>#BAR-007` rather than copying
+  requirement or bar text, because a reference cannot drift from its target and a copy can.
+- **Seam 2 — "points by analogy" needed ADO reads, so `/backlog` was not purely reasoning.** Resolved
+  structurally: the skill **runs no `az` command and dispatches no transport skill.** It asks the
+  operator for the reference epic and reference stories, and names `/devops-azure` as where to read them.
+  A reasoning skill blocking on transport setup it does not own, for data a human can paste in one line,
+  was the wrong trade.
+- **Seam 3 — one spec spans several plans.** Resolved: **one tree per spec, covering every `active`
+  requirement**, forced by the completeness audit — "every requirement is decomposed" is only checkable
+  against one artifact whose scope is the whole spec. Consequence accepted: a later cut's bars are
+  **hand-attached**, one `Bars:` line per story, never a re-run.
+- **Seam 4 — requirements with open questions cannot be decomposed.** Resolved structurally, with **no
+  carve-out**: a `REQ` named anywhere in the spec's `## Open questions`, or carrying a `Conflict note:`,
+  gets a `SPIKE` whose deliverable is an answer in the spec — never an implementation story. Two
+  carve-outs were offered at challenge and both declined. On the real 15-requirement spec this blocks
+  seven, which is accepted knowingly: a rule with an exception a model applies is a rule a model can
+  talk itself out of, and inventing a missing UI that then reaches a tracker and gets built is not
+  proportionate to the cost of an over-blocked requirement. Blocked entries declare a
+  `Blocking nature:` — `unresolved`, or `recorded as resolved elsewhere` with a required citation — as
+  **presentation only**: both block, neither gets a story. The harm that distinction addresses is
+  prioritization distortion, not wasted effort.
 
 ### Sequencing: plan spine first
 

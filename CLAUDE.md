@@ -32,6 +32,21 @@ Run codex-reviewer sequentially after devils-advocate (it benefits from having
 devils-advocate's concerns as context). It is advisory only -- it never blocks
 implementation.
 
+### Invoke backlog-auditor AFTER a backlog tree exists:
+- **backlog-auditor** is dispatched by `/backlog` after the tree is written, and by nothing else. It
+  is the **independent audit of a decomposition, not a code reviewer** — it reads a
+  feature/story/task tree, recomputes that tree's coverage from the spec of record, and reports
+  disagreement without regenerating anything. It mirrors `tech-lead -> devils-advocate`: the skill
+  that built the artifact cannot be the check on it.
+
+  `/backlog` is outside the plan-spine gate for a **different reason** than the four exempt skills
+  below, and the distinction is worth keeping straight: they invoke merge-reviewer and deliberately
+  hand it no `plan_id`, whereas **`/backlog` never invokes merge-reviewer at all.** There is no gate
+  in its path to exempt it from. It does read acceptance bars from plans handed to its own run, but
+  reading bars to attach them to stories is not the same act as feeding a `plan_id` to a downstream
+  gate. Do not add `/backlog` to the four-skill enumeration in the **Plan spine** section — that list
+  is about skills that dispatch merge-reviewer without a plan, and `/backlog` is not one of them.
+
 ### Parallel dispatch (run simultaneously):
 - Tasks with no shared files and no output dependencies
 - Independent reviews of separate files or modules
@@ -117,6 +132,9 @@ Before handing off to code-reviewer, every engineer agent must:
   changes with no application logic
 - **merge-reviewer** before the full pipeline (engineer → code-reviewer →
   test-engineer) has completed
+- **backlog-auditor** on code changes, as a review lens in any code pipeline, or before a backlog
+  tree exists. It audits a decomposition, not an implementation — pulling it into a code review is a
+  loose name match, not a routing decision
 
 ## Built-in agent disambiguation
 
