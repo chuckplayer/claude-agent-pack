@@ -340,9 +340,168 @@ created: 2026-07-31
 
 ## Deviations
 
-_Deviations not yet reviewed. The coordinating session replaces this line before
-merge-reviewer runs — with `None.` if nothing diverged, or one bullet per departure.
-Leave this line exactly as it is._
+Nine departures, all recorded by the coordinating session; no engineer agent was dispatched, so there
+are no engineer departure claims to reconcile. **No acceptance bar was amended** — including the three
+that did not pass, because an honest FAIL is recoverable and a rewritten bar is not.
+
+**The one that matters most — a stated design was unfollowable by the agent assigned to it:**
+
+- **`agents/backlog-auditor.md` dimension 1 was specified to have the auditor compare "the spec's
+  current hash" against the tree's `source_spec_hash_at_generation`** (build step 2) -> shipped with
+  `/backlog` computing the current hashes at dispatch time and passing them, so the auditor performs a
+  **string comparison** on values it was handed. It also now states that it does not compute hashes and
+  must report the check NOT PERFORMED if none were handed in. Reason: the auditor holds
+  `Read, Grep, Glob` and no `Bash` — deliberately — so it cannot produce a `git hash-object` value at
+  all. **Both code-reviewer and security-reviewer independently returned this as Critical**, and
+  code-reviewer identified the sharper failure: BAR-013's fixture makes the drift textually obvious, so
+  a model could narrate "hash mismatch" without ever computing one and the bar would pass on a
+  confabulation. This is the dimension the whole undivided-registry design rests on, so a check it can
+  only narrate is worse than no check. Decided by: coordinating session.
+
+**Security findings the plan did not anticipate:**
+
+- **Step 1 guarded `spec_dir` but not `<feature>`** -> added a `^[a-z0-9][a-z0-9-]*$` guard on
+  `<feature>`, stopping rather than re-proposing on a bad value. Reason: security-reviewer's Critical.
+  `<feature>` is read from a hand-editable spec transcribed from third-party documents and concatenated
+  straight onto `spec_dir` to form a write path — the identical hazard `skills/spec-intake/SKILL.md`
+  already guards its own slug against. The plan inherited that file's `spec_dir` pointer and dropped its
+  slug lesson. Decided by: coordinating session.
+- **No screen before quoting spec text verbatim into a second committed artifact** -> added one to
+  step 2, mirroring `/spec-intake`'s Screen 2 (confidentiality markers; personal, tax, or payment-shaped
+  data), with the note that passing the screen one stage earlier does not discharge it here. Reason:
+  security-reviewer's High. `## Blocked requirements` quotes each blocking question verbatim and
+  `Recorded answer:` quotes a spec section, and the real spec used for BAR-011 carries a populated tax
+  identifier. Decided by: coordinating session.
+
+**A stated build step whose own wording created the drift it warns about:**
+
+- **Build step 6 specified a CLAUDE.md line reading that `/backlog` carries "the same disposition
+  `/hotfix`, `/debug`, `/scaffold`, and `/refactor` carry"** -> shipped instead describing `/backlog`'s
+  exemption on its own terms, and stating explicitly that it must **not** be added to the four-skill
+  enumeration. Reason: code-reviewer found the specified wording made `/backlog` a fifth member of a set
+  the same file still calls "the four", going stale inside one file in one commit — and the analogy is
+  wrong anyway: those four *invoke* merge-reviewer without a `plan_id`, whereas `/backlog` never invokes
+  merge-reviewer at all, so there is no gate in its path to be exempt from. Decided by: coordinating
+  session.
+
+**Smaller corrections, each a named review finding:**
+
+- **Build step 1's run-state table named the field `depends_on:`** -> shipped `Depends on:`, the spelling
+  used everywhere the field is actually emitted and audited. A hand-editor following the plan's token
+  would find it nowhere in a real tree. Decided by: coordinating session, on code-reviewer.
+- **Dimension 1's "an `active` requirement with no story, and no SPIKE when blocked"** -> split into two
+  bullets, because as one conjunctive clause it read as a single condition rather than the two disjoint
+  failure modes intended. Decided by: coordinating session, on code-reviewer.
+- **Dimension 5 gained the wholly-in-file check** that every `<plan_id>` in a `Bars:` line also appears
+  in frontmatter `plans:`. `memory/known-issues/2026-07-31-challenge-backlog-stage-2.md` recorded this
+  as known-and-accepted-unresolved; it was added because it needs no capability the auditor lacks and
+  closes a real unaudited field relationship. Decided by: coordinating session.
+
+**Process and scope:**
+
+- **security-reviewer ran in parallel with code-reviewer** rather than strictly after it. The
+  no-duplicate-findings constraint in CLAUDE.md binds smell-reviewer, not this lens, and the two are
+  independent read-only passes. Decided by: coordinating session, for wall-clock.
+- **An eighth file was added to the seven-file edit set:**
+  `memory/known-issues/2026-07-31-new-agent-not-dispatchable-in-creating-session.md`. A genuine platform
+  quirk found while implementing — skills hot-reload from the repo mid-session, agents do not — meeting
+  all three of CLAUDE.md's conditions for a `known-issues` write. It is also the direct cause of the two
+  NOT RUN bars, so recording it inside the cut is what makes those verdicts legible later. Decided by:
+  coordinating session.
+- **A ninth file was added in the verification session:**
+  `memory/known-issues/2026-07-31-backlog-auditor-severity-not-stable-across-runs.md`, recording the
+  severity instability found while closing BAR-012. Same three-condition test as the eighth file: it is
+  non-obvious, it affects future work, and nothing else documents it. Decided by: coordinating session.
+- **`agents/backlog-auditor.md` was edited twice after its own bars were verified.** Both edits are to
+  dimension 6's `external_refs` absence rule, made in response to BAR-012 (e)'s failure rather than to
+  any reviewer finding. The first added a paragraph forbidding enumeration of items that lack the
+  field; it proved too weak. The second gives the one permitted sentence verbatim, strikes through both
+  observed violations as counter-examples, and states that naming the set is the forbidden act
+  regardless of the label attached. The operator was offered three options — fix the file, gate on the
+  PARTIAL as-is, or amend the bar — and chose to fix. **Amending BAR-012 was declined twice**, which is
+  why the bar reads as satisfied by corrected behaviour rather than by a relaxed clause. BAR-007 covers
+  this file as text and was re-verified against it: test-engineer confirmed it after the first edit, and
+  `scripts/lint-agents.sh` returns 49 passed / 0 failed after the second. Decided by: operator.
+
+**Three bars did not pass in the implementing session. All three now pass.**
+
+The blocker was environmental and is now cleared: `backlog-auditor` is **not dispatchable in the
+session that created it** — `install.sh` copies `agents/*.md` into `~/.claude/agents/` and the harness
+enumerates that directory at session start, so the repo had 20 agents while `~/.claude/agents/` had 19
+and the dispatch failed with `Agent type 'backlog-auditor' not found`. Recorded at
+`memory/known-issues/2026-07-31-new-agent-not-dispatchable-in-creating-session.md`. Re-running
+`install.sh` and starting a fresh session closed it; all five dispatches below succeeded.
+
+- **BAR-011 — SATISFIED.** Its generation half was already reproduced evidence: 15/15 coverage rows,
+  the blocked set exactly `REQ-001, 008, 009, 010, 011, 013, 014`, provenance hash matching
+  `git hash-object`, anchored `external_refs:` count zero. **Both outstanding sub-checks now ran.**
+  `backlog-auditor` on the clean tree with no plan handed reported **zero findings**, recompute
+  agreeing on all 15 dispositions, stale provenance "not stale" on its own line, and both required
+  output sections present. The re-run check: `/backlog` re-invoked on the same spec hit step 1's "tree
+  already present" row, stopped and named the sanctioned hand edits; tree hash
+  `ce40dff9c10ba66ff6a3b64c4466d6677748ce28` unchanged, `git status --short` unchanged.
+- **BAR-013 — SATISFIED.** On a fresh clean tree with the spec amended two ways, the auditor named
+  `REQ-006` at `Critical` stating **both** readings, named `REQ-016` at `Critical` as an `active`
+  requirement with no item, and reported stale provenance on its own line naming the hash move
+  `64e6db06…` → `8ed052f0…` and attributing it to the source moving rather than the tree being
+  defective. The load-bearing negative half verified mechanically: tree hash unchanged, tree
+  byte-identical to a pre-run backup including `## Coverage` and `## Blocked requirements`,
+  `git status --short` showing only the spec edit.
+- **BAR-012 — SATISFIED, after a real failure that was fixed rather than amended away.** All five
+  defect groups (a)–(e) now pass across two dispatches over the five-defect fixture (hash
+  `d45358670f783a39a99a80365b0680b2bc5d1f3d`), both run under the same version of
+  `agents/backlog-auditor.md`. Every planted defect was detected in every run the bar ever had, at the
+  specified severities: `STORY-5` at `High` under dimension 4, `BAR-099` `Critical` with `BAR-003`
+  correctly not flagged, the thirteen unattached bars named by id at `High`, `STORY-99` and both cycle
+  members at `High`, the scalar at `High`, and the mismatched key at `High` with **both** the recorded
+  and expected key stated. The `narrowed_by_depth: true` dispatch (d) raised no dimension-4 zero-task
+  finding, said it read the flag as an exemption, and flagged `STORY-5` as absent from
+  `## Not decomposed` instead. Both dispatches wrote nothing: fixture hash unchanged, spec and plan
+  hashes unchanged, diff against the clean backup showing exactly the planted edits.
+
+  **(e)'s third outcome failed first, and the failure was worth having.** Across three earlier
+  dispatches the auditor named the five stories lacking an `external_refs:` line — "STORY-1, STORY-2,
+  STORY-3, STORY-5, STORY-6 carry no `external_refs:` line at all" — which the bar forbids "not as a
+  finding, not as a warning, not as an observation". One enumeration was itself wrong: it listed
+  `STORY-7`, the scalar it had flagged a paragraph earlier, and omitted `STORY-5`. **This is exactly
+  the negative half the bar was written to catch**, and it caught a real reporting defect that no
+  positive check would have surfaced.
+
+  **Diagnosis required isolating two candidate causes.** The first fix — a paragraph telling the agent
+  to state the rule and name no ids — was installed and still enumerated, which was initially
+  indistinguishable from the session-reload gap above. A dispatch in a **fresh** session with the fix
+  verifiably installed **still enumerated**, which settled it: the wording was too weak, not unloaded.
+  Dimension 6 was then given the one permitted sentence verbatim, both observed violations struck
+  through as counter-examples, and an explicit statement that **naming the set is the forbidden act
+  regardless of the label attached to it**. That version was validated with loading removed as a
+  variable — a stand-in agent reading the file from disk produced the permitted sentence with zero
+  item ids — and then confirmed by the two real dispatches above.
+
+  **The bar was never amended, and amendment was declined twice.** Decided by: operator.
+
+- **A second defect surfaced while closing BAR-012, unrelated to (e).** `backlog-auditor` assigned
+  **different severities to identical input across runs**: dispatch 1 reported the `STORY-99` dangling
+  target and the `STORY-3`↔`STORY-4` cycle at `High` (matching dimension 6 and the bar), while the
+  re-verification reported both at `Critical` on a byte-identical fixture. Recorded at
+  `memory/known-issues/2026-07-31-backlog-auditor-severity-not-stable-across-runs.md`. This makes
+  BAR-012's severity-pinning clauses partially uncheckable — they can pass or fail on unchanged input
+  depending on the run — and it matters because `merge-reviewer` blocks on `Critical` and treats
+  `High` as advisory. Detection was stable in every run; only severity moved. **Not grounds for
+  amending BAR-012 either**; it is a defect the bar exposed, which is what the bar is for.
+
+  **Across all five dispatches the tally is four `High` to one `Critical`**, including both closing
+  dispatches, so `High` is the modal reading and the bar's pinned value is the right one. **The single
+  `Critical` outlier is why this is recorded as a live issue rather than closed:** one run in five is
+  enough to mislead a gate, and nothing in this cut makes the severity deterministic. A durable fix is
+  named in the known-issue file and was **not attempted here** — it would mean restating each
+  dimension's severities as an explicit lookup the agent consults per finding, which is a change to all
+  seven dimensions and outside this cut's scope.
+
+**One bar's explanatory aside is inaccurate, and it is left alone deliberately.** BAR-004 predicts
+"at least three matching lines" for `grep -n '\baz\b'`; the real count is two, because `/devops-azure`
+does not match `\baz\b` — the `az` in "azure" fails the trailing word boundary. Every substantive check
+in that bar passes and test-engineer marked it SATISFIED. The aside is wrong, not the check, and
+rewriting a passing bar to tidy its prose is the habit the amendment licence exists to prevent.
 
 ## Risks
 

@@ -1,10 +1,10 @@
 # Claude Code Agent Pack
 
-Nineteen specialized Claude Code subagents for enterprise software development teams, an Obsidian vault integration, and persistent knowledge management.
+Twenty specialized Claude Code subagents for enterprise software development teams, an Obsidian vault integration, and persistent knowledge management.
 
 ## Why
 
-Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides nineteen agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
+Claude Code works best on large, complex tasks when it can delegate to focused specialists rather than context-switching across domains in a single session. This pack provides twenty agents that Claude Code orchestrates automatically -- routing to the right specialist based on what the task requires, running parallel agents when there are no dependencies, and sequencing reviews after implementation.
 
 Without orchestration, a single session planning an architecture change, writing C# services, reviewing them, and writing tests quickly loses coherence. With the pack, each agent is narrow enough to be consistently good at its job, and session context is automatically logged to an Obsidian vault on Stop.
 
@@ -31,6 +31,7 @@ Without orchestration, a single session planning an architecture change, writing
 | test-engineer | Test generation matching established project patterns | After code-reviewer has completed its review |
 | merge-reviewer | Final pipeline gate -- verifies all stages passed and commits to the feature branch | After test-engineer completes; never merges to main |
 | obsidian-writer | Owns the entire vault write chain -- Obsidian CLI, then Local REST API, then filesystem -- verifying each rung before accepting it, and writes both the main note and the daily note append | Dispatched by Obsidian skills; never writes outside allowed vault directories |
+| backlog-auditor | Independent audit of a `/backlog` decomposition tree across seven dimensions -- recomputes coverage from the spec and reports drift, never regenerating it | Dispatched by `/backlog` after the tree is written; never on code changes |
 
 ## Installation
 
@@ -64,18 +65,20 @@ The five build flows differ mainly in **ceremony** -- how much planning and revi
 | Unsure how to approach it | `/plan` | Planning | Decompose, pressure-test, then optionally a cross-model second opinion |
 | Holding a vague idea | `/interview-me` | Planning | Structured questioning until the shape is agreed |
 | Holding a requirements document | `/spec-intake` | Planning | Transcribes it into an authoritative spec of record with a field inventory |
+| Holding a spec of record and needing a backlog | `/backlog` | Planning | Decomposes it into a feature/story/task tree sized by comparison to reference stories, then audits it |
 
 Every skill also states what it is *not* for and names the alternative -- `/hotfix` points at `/debug` when the cause is unknown, and `/debug` points back when it is known. That reciprocity is what stops a fast path becoming the default path.
 
 ## Skills
 
-Twenty-eight slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
+Twenty-nine slash-command entry points are included. Invoke them directly in Claude Code without knowing the agent sequence:
 
 | Skill | What it does |
 |---|---|
 | `/implement` | Runs the full pipeline: git-engineer → [tech-lead] → engineer(s) → ts-linter → code-reviewer → [security-reviewer] → [performance-reviewer] → smell-reviewer → test-engineer → merge-reviewer → git-engineer (push/PR). Engineers run in isolated worktrees. |
 | `/interview-me` | Shape a vague idea into an actionable brief through structured one-at-a-time questioning. Terminates when the user signals readiness or all major branches resolve; produces an optional design brief that feeds into `/plan` or `/implement`. |
 | `/spec-intake` | Transcribe a requirements source — a file, a directory, or an `/interview-me` brief — into an authoritative spec of record with per-requirement source locators and a field inventory as Appendix A, plus a run manifest recording what the run saw. Conversion is capability-probed and inline; unread parts are reported with a severity the operator must acknowledge before anything is written. |
+| `/backlog` | Decompose a spec of record into a feature/story/task tree at `<spec_dir>/<feature>.backlog.md`, then dispatch `backlog-auditor` over it. Reads acceptance bars from plans handed to the run rather than authoring criteria, sizes by relation to reference stories rather than inventing point values, and refuses an implementation story for any requirement the spec leaves open. Creates nothing in any tracker. |
 | `/scaffold` | End-to-end feature scaffolding: api-designer → database-engineer → backend engineer → frontend-engineer, in dependency order. Use when building something new across all layers. |
 | `/hotfix` | Abbreviated pipeline for production incidents. No worktree isolation, 1 retry max. Still requires code-reviewer and merge-reviewer. |
 | `/refactor` | Refactor with impact analysis first: tech-lead → engineer(s) → mandatory test verification → code-reviewer. Enforces a no-behavior-delta constraint. |
