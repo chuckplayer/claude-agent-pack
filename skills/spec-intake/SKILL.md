@@ -416,8 +416,9 @@ spec is used downstream.
   merge-reviewer's `git add -A`.
 - State that the spec is **authoritative and hand-editable**, and that a traceability matrix is
   **not** produced by this version.
-- Offer `/plan` next. Name `/backlog` as the eventual Stage 2 entry point and say plainly that it
-  does not exist yet.
+- Offer `/plan` next, and name `/backlog` as the Stage 2 entry point: it decomposes this spec into a
+  feature/story/task tree at `<spec_dir>/<feature>.backlog.md`, then audits it. It creates nothing in
+  any tracker.
 
 ## Gotchas
 
