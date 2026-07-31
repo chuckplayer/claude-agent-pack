@@ -134,14 +134,34 @@ skill trusts.
 2. **Suspect** — fewer than `200` non-whitespace characters, or fewer than `1%` of the source file's
    byte count. Either test alone makes the conversion suspect. Report **both** numbers and ask before
    ingesting. Never ingest a suspect conversion silently.
-3. **Coverage** — on the `.docx` PowerShell rung, enumerate the text-bearing parts present in the
-   package and name those not read, each with a severity:
+
+   **Report embedded-media bytes beside the ratio, because media confounds it.** In an image-heavy
+   document the pictures dominate the byte count, so the `1%` test trips on a conversion that is not
+   mangled at all — a 200 KB file that is 92% PNG cannot pass it whatever its prose says. Without the
+   media figure the operator gets an alarming ratio with a benign cause and no way to tell which. The
+   ratio is still worth computing: it trips loudly on exactly the documents whose content is most
+   likely to be pictures, which is a useful alarm even when it is the wrong one.
+3. **Coverage** — on the `.docx` PowerShell rung, enumerate what the package contains and name
+   everything not read, each with a severity. **Enumerate two things, not one:** the `word/*.xml`
+   parts, *and* the embedded media. Counting only XML parts is how ten screenshots carrying a
+   document's entire design got reported as nothing at all.
    - **high** — `word/footnotes.xml`, `word/endnotes.xml`, and textbox/drawing content (prose that
      commonly carries requirements)
+   - **high** — **embedded images.** Count `word/media/*` entries and `<w:drawing>` occurrences in
+     `word/document.xml`, and report **both** the count and their total bytes. A requirements
+     document's diagrams, flowcharts, and UI screenshots are content, not decoration — a heading with
+     no prose beneath it followed by a drawing means the requirement *is* the picture. This rung reads
+     no image, ever, so every one is an omission by construction.
    - **medium** — `word/comments.xml` (reviewer intent, possibly unratified requirements)
    - **low** — `word/header*.xml`, `word/footer*.xml` (usually boilerplate)
 
    Any omission makes the file `partially ingested`.
+
+   **Two tells that images are load-bearing rather than decorative**, both worth stating in the
+   report: a heading or list item with no prose under it followed by a drawing, and prose that points
+   at a picture — "you should see something like this:", "as shown below", "the following screen".
+   Where either appears, say so, because it converts a vague "images not read" into a specific claim
+   about what is missing.
 
 **Two limits of read-back, stated here because neither is enforceable:**
 
