@@ -78,9 +78,30 @@ After the interview (with or without artifact):
 - **Plan clear enough to build** → offer `/implement` with the brief as context
 - **User wants to iterate** → loop back to step 3
 
+### Stage 0 artifact — gated on step 4's signals, and no others
+
+- **Signal (b), all branches resolved** → **ask, once:**
+
+  > "Do you want a spec of record for this — requirements captured with source locators and a field
+  > inventory — or just build it?"
+
+  On yes, route to `/spec-intake` with the written brief path as the input. On no, continue with the
+  hand-off above and say nothing further about it — asking once is the whole mechanism. Name the
+  *artifacts*, not the pipeline, because the artifacts are what the user is choosing between.
+
+- **Signal (a), the user said "let's go" / "implement it"** → **do not ask.** Note it once, in one
+  line — *"No Stage 0 artifact for this, so `/verify-spec` will have nothing to check it against
+  later."* — then proceed to `/implement`.
+
+The mechanism differs from the other two branches on purpose. `/plan` versus `/implement` is
+inferable from interview state, whereas whether this work is a tracked deliverable is an
+organizational fact that no amount of interview content answers — so it has to be asked, and asked
+only where asking is still welcome.
+
 ## Gotchas
 
 - **Passive agreement:** If the user keeps saying "yes" without engaging, slow down — "Any concern with that choice, or are you happy with it?" Uncritical agreement is not consensus.
 - **"I don't care" is not a decision:** Offer a concrete default and confirm — "I'd default to X, does that work?" Don't leave the branch open.
 - **Don't invoke tech-lead mid-interview:** Discovery must complete before handoff. Calling tech-lead while questions remain open produces a half-baked plan.
 - **Don't over-interview:** If all major branches resolve early, don't invent questions to fill space. Terminate and hand off.
+- **Don't ask the Stage 0 question on signal (a):** When the user says "let's go", **do not ask** whether they want a spec of record — they just declined ceremony, and re-imposing it contradicts the gotcha directly above. Emit the one-line note and proceed.
