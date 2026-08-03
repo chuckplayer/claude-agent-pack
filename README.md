@@ -66,6 +66,7 @@ The five build flows differ mainly in **ceremony** -- how much planning and revi
 | Holding a vague idea | `/interview-me` | Planning | Structured questioning until the shape is agreed |
 | Holding a requirements document | `/spec-intake` | Planning | Transcribes it into an authoritative spec of record with a field inventory |
 | Holding a spec of record and needing a backlog | `/backlog` | Planning | Decomposes it into a feature/story/task tree sized by comparison to reference stories, then audits it |
+| Holding a reviewed backlog tree and needing work items | `/devops-azure` | Delivery | Previews the whole tree, takes one confirmation, creates the items with per-item reporting, and writes the ids back into the tree |
 
 Every skill also states what it is *not* for and names the alternative -- `/hotfix` points at `/debug` when the cause is unknown, and `/debug` points back when it is known. That reciprocity is what stops a fast path becoming the default path.
 
@@ -103,7 +104,7 @@ Twenty-nine slash-command entry points are included. Invoke them directly in Cla
 | `/obsidian-search` | Full-text search across Claude notes in the vault, scoped to the current project by default; pass `--global` to search all projects. Opens the best match in Obsidian if the REST API is available. |
 | `/devops` | Help and routing entry point for the DevOps skill family — dispatches to `/devops-github` or `/devops-azure` based on intent. |
 | `/devops-github` | Read and create GitHub PRs/issues via the `gh` CLI for repos configured in `GITHUB_ORG`/`GITHUB_REPOS`. Strict repo targeting (never guesses); write operations always preview and require confirmation. |
-| `/devops-azure` | Read and create Azure DevOps work items/PRs via the `az` CLI (`devops` extension) for the org/projects configured in `AZURE_DEVOPS_ORG`/`AZURE_DEVOPS_PROJECTS`. Discovers work item type/field schemas at runtime per project; strict targeting and write-operation preview+confirm, same as `/devops-github`. |
+| `/devops-azure` | Read and create Azure DevOps work items/PRs via the `az` CLI (`devops` extension) for the org/projects configured in `AZURE_DEVOPS_ORG`/`AZURE_DEVOPS_PROJECTS`. Discovers work item type/field schemas at runtime per project; strict targeting and write-operation preview+confirm, same as `/devops-github`. Also provides **batch write mode**, which consumes a reviewed backlog tree from `/backlog` and creates the whole tree as work items in one pass, writing the resulting ids back into the tree. |
 
 ## Obsidian Vault Integration
 

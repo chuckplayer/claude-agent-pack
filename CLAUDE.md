@@ -47,6 +47,14 @@ implementation.
   gate. Do not add `/backlog` to the four-skill enumeration in the **Plan spine** section — that list
   is about skills that dispatch merge-reviewer without a plan, and `/backlog` is not one of them.
 
+  **Batch write mode on `/devops-azure` is the only writer of `external_refs:`.** It consumes a tree
+  `/backlog` produced and creates the corresponding work items; `/backlog` never writes that field and
+  never asks about trackers. Like `/backlog`, batch mode is **not part of the code pipeline** — it
+  dispatches no agent and enters no gate, so nothing about it belongs in the routing rules above or
+  below. Stated here explicitly so a later reader does not add batch mode to an agent list: the
+  routing sections govern agents, and this mode is not one. This is the same failure the `/backlog`
+  paragraph above guards against, arriving from a different direction.
+
 ### Parallel dispatch (run simultaneously):
 - Tasks with no shared files and no output dependencies
 - Independent reviews of separate files or modules
