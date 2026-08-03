@@ -40,17 +40,38 @@ questions that mattered.
 1. **Never infer completion from process state.** Idle, exited, "completed" in a task list — none of
    these are evidence the stage produced a judgement. Only the report's *content* is.
 2. **Re-dispatch rather than proceed.** A silent agent is a failed run of that stage, and re-running
-   a read-only reviewer is cheap. Re-dispatch is always available; reconstructing a verdict nobody
-   received is not.
-3. **Prefer a check you can re-run yourself over a report you have to trust.** Where a stage's output
+   a read-only reviewer is cheap. Reconstructing a verdict nobody received is not.
+
+   **Amended the same day: re-dispatch is NOT always available, and this workaround originally said
+   it was.** A `devils-advocate` run on `docs/plans/bar-cost-and-first-run.md` went idle without
+   reporting, was asked directly for its findings via `SendMessage` — which resumes an agent from its
+   transcript, so the context was intact — and **went idle a second time without reporting.** It made
+   no further file edits between the two. So the escalation path has a floor:
+
+   - **One direct re-request.** Ask for the report specifically, naming what is missing.
+   - **If that also returns silence, stop.** A third attempt on the same agent is not a different
+     experiment. Declare the judgement **unrecoverable**, record that in the artifact, and either
+     spawn a **fresh** agent or do the work in the lead session — saying which.
+
+3. **Beware the case where the artifacts are complete and the judgement is not.** This is the most
+   dangerous variant and it is what happened above. The agent held `Write`, and its **entire bar
+   audit landed in the plan file** — high quality, several real defects fixed in place. What never
+   arrived was its ranked concerns and its implement/smaller/reconsider verdict. A reader finding a
+   thoroughly-edited plan will reasonably conclude it was fully reviewed.
+
+   So when an agent's output is *partly* an artifact and *partly* a judgement, **name the half that
+   is missing in the artifact itself.** "Bars audited in place; narrative challenge and verdict never
+   received" is a sentence a later reader needs, and no diff will supply it.
+4. **Prefer a check you can re-run yourself over a report you have to trust.** Where a stage's output
    is mechanically reproducible — `scripts/lint-agents.sh`, `node scripts/obsidian-stop-hook.test.js`,
    a test suite, a `git` fact — run it rather than reading a claim about it. merge-reviewer holds
    `Bash` precisely so it need not trust a report for anything reproducible. This is why gates 2a and
    2b instruct it to run the checks itself.
-4. **For stages whose only artifact *is* the report** — code-reviewer, security-reviewer,
-   performance-reviewer, smell-reviewer, devils-advocate — there is nothing to re-run and no
-   artifact to inspect, so rule 1 is the whole defence. Say "did not report, re-dispatched" in the
-   record rather than quietly counting it as a pass.
+5. **For stages whose only artifact *is* the report** — code-reviewer, security-reviewer,
+   performance-reviewer, smell-reviewer, and `devils-advocate` when no plan file was handed to it —
+   there is nothing to re-run and no artifact to inspect, so rule 1 is the whole defence. Say "did not
+   report" in the record rather than quietly counting it as a pass. Note that `devils-advocate` **with**
+   a plan file path is the partial case in rule 3 instead, not this one.
 
 **Not fixed, and cannot be fixed from inside the pack.** The stall is in the harness, not in any
 agent file. What the pack can do is stop treating silence as assent, which is what the rules above
