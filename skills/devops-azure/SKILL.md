@@ -192,13 +192,29 @@ The mapping is **persisted nowhere.** Not in the tree — it is ADO-specific, an
 
 ### 8d. Determine what already exists
 
-**The decision comes from ADO, never from `external_refs:`.** After a crash the tree is the unreliable artifact — that is the whole reason the reciprocal key exists. Run **one** query per run:
+**The decision comes from ADO, never from `external_refs:`.** After a crash the tree is the unreliable artifact — that is the whole reason the reciprocal key exists. Run **one** query per run, matching on the **anchor tag**:
 
 ```bash
-az boards query --wiql "SELECT [System.Id], [System.Tags], [System.WorkItemType], [System.Title] FROM WorkItems WHERE [System.TeamProject] = '<project>' AND [System.Tags] CONTAINS '<feature>:'" --org https://dev.azure.com/<org> --output json
+az boards query --wiql "SELECT [System.Id], [System.Tags], [System.WorkItemType], [System.Title] FROM WorkItems WHERE [System.TeamProject] = '<project>' AND [System.Tags] CONTAINS '<feature>'" --org https://dev.azure.com/<org> --output json
 ```
 
-**`CONTAINS` is a server-side narrowing filter and never the identity test.** It is a substring match, so a run for feature `rbe` also returns an item tagged `vendor-sync:STORY-3` from an unrelated feature. A returned row counts as an item's key **only when its tag set holds a value exactly equal to `<feature>:<item-id>`**, compared **client-side** against the split tag set. Without that exact comparison the foreign row is dispositioned `skip`, and the operator is told an item exists that was never created — **silent under-creation**, the worst available failure because nothing reports it.
+**Query the anchor tag `<feature>`, never the key prefix `<feature>:`.** This is not a stylistic choice and getting it wrong breaks the mode completely:
+
+**`[System.Tags] CONTAINS` is whole-tag membership, not substring matching.** Verified against `<org>/<project-a>` on 2026-08-03 with a real work item carrying the tag `zzprobe-a:STORY-1`:
+
+| Query | Result |
+|---|---|
+| `CONTAINS 'zzprobe-a:'` (a prefix of the tag) | **no match** |
+| `CONTAINS 'zzprobe'` (a prefix of the tag) | **no match** |
+| `CONTAINS WORDS 'zzprobe-a'` | **no match** |
+| `CONTAINS 'zzprobe-a:STORY-1'` (the whole tag) | **matched** |
+| `[System.Tags] = 'zzprobe-a:STORY-1'` | **error — `=` is not supported on this field** |
+
+So a query for `<feature>:` matches **nothing, ever**, no matter how many items carry keys beginning with it. That is why 8f writes a second tag equal to the bare `<feature>` slug: the anchor is a whole tag, so `CONTAINS '<feature>'` returns every item this feature has created — which is what makes one query per run possible at all.
+
+**Why this cannot be left to fail quietly.** A `<feature>:` query returns zero rows on a tracker that is *full* of this feature's items. The control below would find the mechanism healthy — the query is valid, merely semantically wrong — so every already-created item would fall to row 1's no-entry case and be **created again on every run**. The six-row table exists to prevent exactly that, and this one substitution would make duplication the default path rather than an edge case.
+
+**Exact equality is still the identity test, for a different reason than before.** The anchor query returns **every** item of the feature, so a row proves only "this feature created something", not *which* item. A returned row counts as a specific item's key **only when its tag set holds a value exactly equal to `<feature>:<item-id>`**, compared **client-side** against the tag string split on `"; "` (the delimiter ADO returns — verified, semicolon *and* space). Note what is **no longer** a hazard: because `CONTAINS` does not substring-match, a feature slug that is a substring of another (`rbe` inside `vendor-sync`) **cannot** collide through the query. Exact matching earns its place by resolving row identity, not by preventing a cross-feature false positive.
 
 `[System.Title]` is in the select list for one stated purpose: a **title-divergence line in the preview**, information only. It is never a stop and never an update — titles are hand-editable on both sides and this mode never updates an item. Its value is being the cheapest available signal that a matched key belongs to an item the tree does not mean.
 
@@ -252,7 +268,7 @@ The preview shows nine things, in order:
 5. **The exact `az` command for the first item, verbatim.** Not a template and not a description: the command as it will actually run, so the operator approving an irreversible batch can read what the first write does. **Then, for every remaining item, show its full title, mapped type, and tag value** — every field value is known before any write runs, so there is no reason for the operator's one confirmation to cover content they were never shown. Item 1 is shown as a command so the *shape* is auditable; every other item is shown by content so the *data* is auditable. A batch where only item 1 was ever seen means a title in item 5 reaches a shared tracker permanently with no human having read it, and there is no delete path to undo that.
 6. **The field payload shape** — which fields are set on a create, and which are deliberately not (no state, no assignment, no area/iteration override beyond the resolved defaults).
 7. **The total count of `az` write invocations**: **creates plus parent/child link additions, and nothing else.**
-8. **The tag value that will be written**, shown literally — e.g. `claims-intake:STORY-3`. The operator is granting a write into an **org-wide tag namespace** visible to every user in the organization, so the value they are creating is theirs to see before they approve it.
+8. **The tag values that will be written**, shown literally — both of them: the per-item key tag (e.g. `claims-intake:STORY-3`) and the shared anchor tag (`claims-intake`). The operator is granting writes into an **org-wide tag namespace** visible to every user in the organization, so the values they are creating are theirs to see before they approve them. Say that the anchor is one value shared by every item in the batch, not one per item.
 9. **An explicit statement that the tree is modified in place, naming which items gain an `external_refs:` entry**, plus the statement that no rollback is available and created items stay.
 
 One informational line sits **beyond** those nine: where an item matched by key carries a different title in ADO than in the tree, say so. It is additive, never a stop, and never an update.
@@ -269,7 +285,16 @@ One informational line sits **beyond** those nine: where an item matched by key 
 
 **Parent before child**, by necessity.
 
-The **reciprocal key goes into `System.Tags` as `<feature>:<item-id>` in the same operation that creates the item.** Timing is the whole contract — a key written afterwards has exactly the gap it was meant to close.
+**Two tags go into `System.Tags` in the same operation that creates the item**, separated by `; `:
+
+| Tag | Value | Purpose |
+|---|---|---|
+| **Key tag** | `<feature>:<item-id>` | Per-item identity — the reciprocal of the tree's `key:` field |
+| **Anchor tag** | `<feature>` | Makes the feature's items **findable in one query**, because `CONTAINS` matches whole tags only (see 8d) |
+
+Timing is the whole contract — a tag written afterwards has exactly the gap it was meant to close, so **both go in at create time**, never as a follow-up update. This mode never updates a work item, so a tag it fails to write at creation is a tag it can never add.
+
+**The anchor tag is what makes the resume path work at all.** Without it there is no query that finds this feature's items: `CONTAINS '<feature>:'` matches nothing, because it is a prefix rather than a whole tag. The anchor costs one extra tag value per feature in the org-wide namespace — one, not one per item, since every item of the feature carries the same anchor.
 
 **No prefix and no namespace is added to the value.** The tag is exactly `<feature>:<item-id>` — not `key:claims-intake:STORY-3`, not `backlog/claims-intake:STORY-3`. The value in the tag and the value in the tree's `key:` field are **byte-identical**, which is what makes the join queryable.
 
@@ -287,8 +312,10 @@ The **reciprocal key goes into `System.Tags` as `<feature>:<item-id>` in the sam
 **The tag value cannot contain a space by construction** — 8b's two regexes admit no whitespace in either `feature:` or an item id, so the tag is always a single token and never needs quoting as a multi-word value.
 
 ```bash
-az boards work-item create --type "<mapped-type>" --title "<title from tree>" --fields "System.Tags=<feature>:<item-id>" --org https://dev.azure.com/<org> --project <project> --output json
+az boards work-item create --type "<mapped-type>" --title "<title from tree>" --fields "System.Tags=<feature>:<item-id>; <feature>" --org https://dev.azure.com/<org> --project <project> --output json
 ```
+
+Both tags, one `--fields` value, delimited `; ` — the key tag first, the anchor second.
 
 **Title handling is a security boundary, not a formatting preference.** A title is arbitrary free text out of a hand-editable file, and it reaches a shell-executed command. `feature:` and item ids are allowlisted in 8b; **a title cannot be**, so it gets a mechanism instead:
 
@@ -320,7 +347,17 @@ This matters more on this machine than the general case: `memory/context/2026-07
 | **Wrong org or project on a resume** | The ID-scoped read of a recorded id reveals a different `[System.TeamProject]` → **stop**, naming both projects. Work item ids are unique org-wide, which is what makes this detectable at all. |
 | **Partial failure mid-batch** | Stop, emit the per-item report (8i), and state that a **resume is safe** — the key query reconciles what exists. |
 
-**Tag round-trip probe, on the first created item only.** Read that item's tags back. If the tag is absent, altered, or split, **write that item's `external_refs:` entry** (the id is known) and **stop**, reporting that recovery-by-key is unavailable in this project. This converts two things that cannot be verified in advance — whether this ADO project accepts a colon inside a tag, and whether the shell delivered `--fields` intact — into one check that fails at item 1 rather than silently at item 40.
+**Tag round-trip probe, on the first created item only.** Read that item back and confirm **both** tags survived: the key tag `<feature>:<item-id>` exactly, and the anchor tag `<feature>` exactly. If either is absent, altered, or split, **write that item's `external_refs:` entry** (the id is known) and **stop**, reporting which tag failed and that recovery-by-key is unavailable in this project. This fails at item 1 rather than silently at item 40.
+
+**Read the tags back from the full JSON — never through a shell-quoted `--query` projection.** This is not a style note; the wrong method produces a **false negative that looks exactly like a rejected tag**:
+
+```bash
+az boards work-item show --id <id> --org https://dev.azure.com/<org> --output json      # then find System.Tags in the JSON
+```
+
+Verified on 2026-08-03: `--query 'fields."System.Tags"' -o tsv` returned **empty for an item whose tag was present and correct**, because the quoted JMESPath was mangled before `az` ever saw it — the hazard in `memory/context/2026-07-30-powershell-mangles-native-exe-arguments.md`. A projection containing quotes or parentheses can fail at the shell layer and return nothing with **exit code 0**. A probe using that method would report "the tag did not round-trip" and stop the batch on a project where tagging works perfectly.
+
+**So: absent output from a projection is evidence about the projection, not about the tag.** Read the whole object and search within it. And per 8d's rule, treat a blank read as `UNKNOWN` rather than as an answer.
 
 ### 8g. Write back, per item, immediately
 
@@ -403,7 +440,7 @@ Then, in the same report:
 - **Never hand-type an `external_refs:` entry:** `/backlog` forbids it and warns about it in every tree it emits. On a write-back failure the route is to re-run, where row 1 repairs the entry.
 - **A blank `az` result is a tool failure on this machine, not a success:** Treat empty output as `UNKNOWN` and stop. See `memory/known-issues/2026-07-10-bash-tool-silent-failure-windows.md`.
 - **`$?` lies after a native command:** Use `$LASTEXITCODE`. A zero-looking `$?` following an `az` call is not evidence the call succeeded.
-- **`[System.Tags] CONTAINS` narrows, exact equality decides:** `CONTAINS` is a substring match, so a feature slug that is a substring of another (`rbe` inside `vendor-sync`) matches a foreign item. Compare the split tag set for exact equality client-side, or you get silent under-creation.
+- **`[System.Tags] CONTAINS` matches whole tags, never substrings:** Verified 2026-08-03 — `CONTAINS 'feature:'` matches **nothing**, even on items whose tags all start with it, and `=` is not supported on the field at all. Query the **anchor tag** `<feature>`; a prefix query returns zero rows on a full tracker and would make the mode duplicate-create everything on every run. Exact equality on the split tag set (`"; "`-delimited) then resolves *which* item a returned row is.
 - **A missing tag is a recovery problem, not proof the item is absent:** The tag is user-editable. The fix is **a human re-adding the tag in ADO** — never deleting the tree entry, which reaches the create path and double-creates.
 - **Never re-create an item whose recorded id no longer resolves:** Stop and ask. A second work item for the same story is harder to undo than a stopped run, because nothing here deletes what it creates.
 - **`audit: not run` is a refusal, not a warning:** Only `findings open` is warn-and-acknowledge. An unaudited tree does not get created.

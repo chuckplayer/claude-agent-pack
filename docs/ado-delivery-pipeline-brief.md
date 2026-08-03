@@ -411,6 +411,23 @@ change, so it cannot be assumed present), the **title** (pollutes the board and 
 run, and the sanctioned fix is **a human re-adding it** — the mode never updates an item. Deleting the
 tree entry is *not* the fix; it double-creates.
 
+**Corrected 2026-08-03 after a live probe — the key needs a companion anchor tag.** `[System.Tags]
+CONTAINS` is **whole-tag membership, not substring matching.** Verified against `<org>/<project-a>`:
+`CONTAINS 'zzprobe-a:'` matched **nothing** on an item tagged `zzprobe-a:STORY-1`, the whole-tag form
+matched, and `=` errored as unsupported on the field. A single colon-bearing key tag is therefore
+**unqueryable by feature**, which would have made the resume path return zero rows forever and
+**duplicate-create every item on every run** — the failure the reconciliation table exists to prevent,
+as the default path. Each item now carries **two** tags: the per-item key `<feature>:<item-id>` and a
+bare **anchor** `<feature>` that a whole-tag query can find. A colon inside a tag *is* accepted and
+round-trips exactly; multiple tags return as one `"; "`-delimited string. Recorded in
+`memory/known-issues/2026-08-03-wiql-tags-contains-is-whole-tag-not-substring.md`.
+
+**Two consequences worth keeping.** The substring-collision hazard raised in review — a feature slug
+matching a longer one — **cannot occur**, because there is no substring matching; exact client-side
+equality is retained to resolve *which* item a returned row is, since the anchor query returns all of
+them. And the general lesson: this was found by executing an acceptance bar against a live org, after
+four review passes had read `CONTAINS` as a substring operator because it reads like one.
+
 **Five obligations a future `devops-github` batch mode inherits**, stated so they can be checked rather
 than promised: only `external_refs:` blocks are added to the tree; the entry carries **exactly**
 `system:`/`id:`/`key:`; `key:` is `<feature>:<item-id>` and `system:` is the tracker's own name; the
