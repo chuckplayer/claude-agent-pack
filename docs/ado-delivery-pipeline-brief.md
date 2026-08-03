@@ -36,9 +36,9 @@ subsequent day produce twenty story-level commits.
 
 | Playbook stage | Pack coverage today | Gap |
 |---|---|---|
-| **0 — Ground truth** (spec of record, field inventory, traceability matrix, exemplar) | **`/spec-intake` (shipped 2026-07-31)** emits a spec of record with the field inventory as Appendix A, plus a run manifest, and names the exemplar; `/interview-me` still produces a design brief and hands off to it | Traceability matrix deferred to the ADO write-path cut — it is the one Stage 0 artifact that does not yet exist |
+| **0 — Ground truth** (spec of record, field inventory, traceability matrix, exemplar) | **`/spec-intake` (shipped 2026-07-31)** emits a spec of record with the field inventory as Appendix A, plus a run manifest, and names the exemplar; `/interview-me` still produces a design brief and hands off to it | Traceability matrix still the one Stage 0 artifact that does not exist — but **no longer blocked** as of 2026-08-03: the ADO write path shipped, so a tree now carries the work item ids the matrix joins on |
 | **1 — Plan + adversarial review** | `/plan` → tech-lead → devils-advocate → codex-reviewer; `memory/decisions/` as decision log | **Covered.** Closely matches the playbook |
-| **2 — Backlog decomposition** | **`/backlog` + `backlog-auditor` (shipped 2026-07-31)** emit a reviewed feature/story/task tree at `<spec_dir>/<feature>.backlog.md`, sized by relation to reference stories, with an independent seven-dimension audit; `devops-azure` still creates one work item at a time with preview-and-confirm | The **ADO write is still absent** — nothing turns the tree into work items. That is batch write mode, deferred to its own cut |
+| **2 — Backlog decomposition** | **`/backlog` + `backlog-auditor` (shipped 2026-07-31)** emit a reviewed feature/story/task tree at `<spec_dir>/<feature>.backlog.md`, sized by relation to reference stories, with an independent seven-dimension audit; **batch write mode on `devops-azure` (shipped 2026-08-03)** turns that tree into work items in one pass — whole-tree preview, one confirmation, per-item reporting, and the ids written back into the tree | **Covered.** The ADO write exists: `skills/devops-azure/SKILL.md` section 8. Parent/child hierarchy only — the `Depends on:` link pass was cut, and ordering stays a fact of the tree |
 | **3 — Parallel execution** | `/implement` runs one story's agent chain | Partial. No work-item-driven entry or board hygiene. Multi-story fan-out is **out of scope by decision**, not a gap — see Scope revision |
 | **4 — Verify against spec** | `/review-pr` reviews a diff | No coverage. Nothing walks a traceability matrix |
 
@@ -103,7 +103,14 @@ sketched, not specified — each should be re-scoped as the one before it lands.
 3. **`/verify-spec`** — Stage 4. Walks the matrix against delivered code and the field inventory,
    reports gaps bidirectionally, opens stories for them, emits a stakeholder-readable document.
 4. **Work-item mode on `/implement`** (replaces the proposed `/deliver`) — Stage 3.
-5. **Batch write mode on `devops-azure`** — the only new ADO write surface `/backlog` needs.
+5. **Batch write mode on `devops-azure`** — the only new ADO write surface `/backlog` needs. **Shipped
+   2026-08-03** as `## 8. Batch write mode` in `skills/devops-azure/SKILL.md`, plus one check added to
+   `backlog-auditor` dimension 6. Three things differ from this sketch: the reciprocal key lives in
+   **`System.Tags`** (chosen over four alternatives, with its user-editability and org-wide namespace
+   accepted knowingly); the `Depends on:` **link pass was cut** after review, leaving parent/child
+   hierarchy only; and the preview-and-confirm rule is **amended once, in the file that owns it**, scoped
+   to batch mode alone. It creates only — never state, assignment, hours, comments, or closure — and
+   offers **no rollback, ever**: a partial run is resumed, never undone.
 
 `/deliver` as a separate skill is **cancelled, not deferred.** See the two scope decisions below.
 
@@ -162,8 +169,14 @@ seam. Of `/backlog`'s five responsibilities, exactly one is an ADO operation:
 targeting, runtime schema discovery, safe writes. It contains no reasoning workflow. Folding
 decomposition into it would put a BA workflow inside an API shell, and worse, would force the
 preview-and-confirm rule to be relaxed *inside the file that owns the rule*
-(`skills/devops-azure/SKILL.md:108`, "even for a one-line comment"). That is the one place a
-deliberate deviation must not happen quietly.
+(`skills/devops-azure/SKILL.md`, the **Write operations** gotcha — "Never skip the preview-and-confirm
+step in step 7, even for a one-line comment"). That is the one place a deliberate deviation must not
+happen quietly.
+
+> **Cited by sentence, not by line number, deliberately.** That gotcha was at `:108` until the
+> batch-write cut inserted `## 8` above it. Two consecutive cuts have now had to re-anchor a citation
+> into this file's own targets; quoting the sentence is what makes the reference survive the next
+> insertion.
 
 So the split is:
 
@@ -371,12 +384,64 @@ title — the first drafting pass, `devils-advocate` across nineteen concerns, a
 twice — and none of them questioned the field's *name*. It was caught only when a fifth reader asked
 what happens if the tracker is something else.
 
-**Three duties this contract hands the batch-write cut**, stated so that cut inherits them:
+**Three duties this contract hands the batch-write cut**, stated so that cut inherits them — **all three
+discharged 2026-08-03 by `skills/devops-azure/SKILL.md` section 8**:
 
-1. Writing `external_refs:` back into the tree after it creates the work items.
+1. Writing `external_refs:` back into the tree after it creates the work items. → **Discharged:** written
+   **per item and immediately** by section 8g, never batched at the end, so a crash loses at most one
+   item's record. Section 8 is the field's sole writer and adds no other line of the tree.
 2. Writing the reciprocal key — `key: <feature>:<item-id>` — **into the tracker's own field, in the same
-   operation that creates the item.**
-3. Using that key to answer *"which items already exist?"* after a partial run.
+   operation that creates the item.** → **Discharged:** the field is **`System.Tags`**, carrying
+   `<feature>:<item-id>` with no prefix, written in the same `az boards work-item create` invocation.
+   A round-trip probe on the first created item fails the run at item 1 rather than silently at item 40.
+3. Using that key to answer *"which items already exist?"* after a partial run. → **Discharged:** one
+   **WIQL query on the key** per run, reconciled through a six-row table of which four rows stop. The
+   query is a **server-side narrowing filter and never the identity test** — `CONTAINS` is a substring
+   match, so exact tag equality is compared client-side. Without that, a feature slug that is a
+   substring of another matches a foreign item and the result is silent under-creation.
+
+**Which tracker field holds the key — decided 2026-08-03 in the batch-write cut, recorded here because a
+future reader will otherwise re-litigate it.** `docs/plans/backlog.md` deferred this deliberately. The
+answer is **`System.Tags`**, chosen knowingly with its costs accepted: the field is **user-editable** and
+its namespace is **org-wide**, so a tree of N items adds N tag values visible to every user in the
+organization. Four alternatives were considered and rejected — a **custom field** (requires a process-template
+change, so it cannot be assumed present), the **title** (pollutes the board and is hand-edited freely), a
+**hyperlink or external link relation** (not queryable by value in WIQL), and **`System.Description`**
+(free text nobody can query reliably). The residual risk is explicit: a human deleting a tag stops a later
+run, and the sanctioned fix is **a human re-adding it** — the mode never updates an item. Deleting the
+tree entry is *not* the fix; it double-creates.
+
+**Corrected 2026-08-03 after a live probe — the key needs a companion anchor tag.** `[System.Tags]
+CONTAINS` is **whole-tag membership, not substring matching.** Verified against `<org>/<project-a>`:
+`CONTAINS 'zzprobe-a:'` matched **nothing** on an item tagged `zzprobe-a:STORY-1`, the whole-tag form
+matched, and `=` errored as unsupported on the field. A single colon-bearing key tag is therefore
+**unqueryable by feature**, which would have made the resume path return zero rows forever and
+**duplicate-create every item on every run** — the failure the reconciliation table exists to prevent,
+as the default path. Each item now carries **two** tags: the per-item key `<feature>:<item-id>` and a
+bare **anchor** `<feature>` that a whole-tag query can find. A colon inside a tag *is* accepted and
+round-trips exactly; multiple tags return as one `"; "`-delimited string. Recorded in
+`memory/known-issues/2026-08-03-wiql-tags-contains-is-whole-tag-not-substring.md`.
+
+**Two consequences worth keeping.** The substring-collision hazard raised in review — a feature slug
+matching a longer one — **cannot occur**, because there is no substring matching; exact client-side
+equality is retained to resolve *which* item a returned row is, since the anchor query returns all of
+them. And the general lesson: this was found by executing an acceptance bar against a live org, after
+four review passes had read `CONTAINS` as a substring operator because it reads like one.
+
+**Five obligations a future `devops-github` batch mode inherits**, stated so they can be checked rather
+than promised: only `external_refs:` blocks are added to the tree; the entry carries **exactly**
+`system:`/`id:`/`key:`; `key:` is `<feature>:<item-id>` and `system:` is the tracker's own name; the
+identical value goes into a **queryable** tracker field **in the same operation** as the create; and
+recovery **queries the tracker**, never the tree. **The limit is worth stating:** `backlog-auditor`
+dimension 6 catches an unknown key only where this pack's auditor is run. That is a contract plus one
+mechanical check — not an enforcement.
+
+**One scope narrowing this cut took after review (2026-08-03):** the `Depends on:` **dependency-link pass
+is not built.** Batch mode creates **parent/child hierarchy only**. No downstream consumer reads an ADO
+ordering link — `/implement` takes one story at a time, the fan-out was cancelled, and the matrix joins on
+ids — and creating them would have added a second partial-failure surface resting on a relation type name
+discovered rather than known. The tree's `depends_on:` **remains the recorded ordering fact**, so ordering
+left the *board*, not the *tree*. Available as its own later cut; not an open question.
 
 **State plainly which problem each half solves: `external_refs:` alone fixes the steady state and not
 the crash state.** If the process dies after the work item is created but before the id is written back
@@ -390,6 +455,11 @@ Batch mode stays scoped to `devops-azure` in that cut. A later `devops-github` b
 **The cut ordering is forced rather than chosen: `/backlog` → batch write → matrix.** The matrix's only
 join is the work-item id, so it cannot be built before work items exist; and the batch write has nothing
 to write until a reviewed tree exists.
+
+**That ordering held, and the matrix is now unblocked (2026-08-03).** Both predecessors shipped in
+sequence, and a tree that has been through batch mode carries the work item ids the matrix needs to join
+on. The matrix remains **out of scope** — nothing builds it yet — but it is no longer *blocked*, and that
+status change is the one this cut records. Its three inputs each already have one named authority.
 
 ### Stage 2's four seams, resolved (2026-07-31)
 
@@ -452,7 +522,12 @@ than a specified one.
 - **Batch writes vs. `devops-azure`'s safety rule** — resolved by the 2026-07-29 scope revision: an
   explicit batch write mode in `devops-azure` itself, with per-item result reporting. The original
   framing (a deviation `/backlog` should document) was the wrong shape; the rule is amended in the
-  file that owns it.
+  file that owns it. **The amendment landed 2026-08-03**, as a bounded note beside step 7 in
+  `skills/devops-azure/SKILL.md` — batch mode takes one confirmation for the batch, every other write
+  in that file still takes its own, and per-item result reporting (section 8i) is the compensating
+  control. Section 8i also **reconciles the actual count of `az` write invocations against the
+  previewed count** and reports a mismatch as a failure, so the number the operator confirmed is
+  checked rather than decorative.
 - **Verifying the decision-capture hook actually captures** — done 2026-07-29, two defects found and
   fixed. See failure mode #3 above.
 - **Whether `/deliver` fans out across stories in parallel** — moot. `/deliver` is cancelled and the

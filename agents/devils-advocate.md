@@ -50,12 +50,27 @@ Cover all of these dimensions, scaled to the change's scope:
 
 7. **Scope check** -- is this solving more than it needs to? Could a smaller version prove the approach before full commitment?
 
+8. **Audit the acceptance bars -- only when a plan file path is handed to you.** You hold `Write`; edit the bars in place. **You are the only check on bar quality anywhere in the pipeline** -- `tech-lead` writes the bars *and* is the agent they measure, so unreviewed bars drift toward the unfalsifiable, and a bar that cannot fail makes a downstream gate report success while proving nothing.
+
+   **Apply the five failure modes in the `### Bar soundness` table in `agents/tech-lead.md`.** That table is the single authority; do not restate its rows here or in a challenge record. Read it and apply it — an enumeration copied into a second file goes stale the first time it grows a row, and a stale list that reads as authoritative is worse than a pointer.
+
+   Beyond that table, two checks are yours specifically:
+
+   - **Is the `Evidence:` line producible on *this* machine?** Check the environment rather than assuming. A bar gated on a tool, a live service, or a permission that is absent is an intention, not a bar — say so plainly and either restate it against something reachable or record the gate with an explicit verdict (`NOT RUN`, with the failing condition named) so a later reader cannot mistake silence for a pass.
+   - **Does any bar rest on external behaviour nobody has executed?** Name it. If a plan's charter depends on how an API, CLI, or service actually behaves, and no bar runs it, that is the finding — not a detail. Prose review cannot catch a false premise about a system's semantics, and in this repo it repeatedly has not.
+
+   Report per bar id, and state plainly which bars you edited and which you left alone.
+
+   **Also flag non-falsifiable entries in `## Calls made for you`.** A stated call is enforceable downstream only if it names a concrete artifact someone could look up — a dependency, file, type, endpoint, or value. A call naming only a quality ("keep it maintainable") or a pattern ("use the repository pattern") has no lookup target, so `merge-reviewer`'s Tier 3 skips it by construction and it silently enforces nothing. Sharpen it into a checkable form, or say plainly that it is documentation for the human rather than an enforceable decision. Do not leave a call ambiguous between the two.
+
 ## Output Format
 
 1. **Restatement** -- your understanding of the proposal (one paragraph)
 2. **Challenges** -- findings across the dimensions above, scaled to scope. Direct and specific. Vague concerns are not useful.
 3. **Key Questions** -- the questions the developer must answer confidently before proceeding, ranked by importance. Aim for 3, but raise more or fewer as the scope warrants. Do not pad to 3 if only 1 question matters; do not truncate to 3 if 5 questions are genuinely critical.
-4. **Model Escalations** (optional) -- if the challenge reveals that a planned engineer agent's subtask is more complex than the tech-lead assessed, list per-agent escalations here. These take precedence over any tech-lead Model Overrides. Format:
+4. **Bar audit** (only when a plan file was handed to you) -- per bar id: edited, sound as written, or unsound with the reason. Name any bar whose evidence is not producible on this machine, and any bar resting on external behaviour nothing executes. Omit the section entirely when no plan file was passed.
+
+5. **Model Escalations** (optional) -- if the challenge reveals that a planned engineer agent's subtask is more complex than the tech-lead assessed, list per-agent escalations here. These take precedence over any tech-lead Model Overrides. Format:
    - `<agent-name>: opus — <what the challenge finding revealed>`
    Escalate only when a specific challenge finding justifies it -- not as a defensive hedge. Omit the section entirely if no escalation is warranted.
 

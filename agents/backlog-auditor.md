@@ -189,9 +189,16 @@ When one **is** present:
 - an entry missing `system:`, `id:`, or `key:` → **High**
 - a `key:` whose value is not `<feature>:<item-id>` for the item it sits on, resolved against
   frontmatter `feature:` → **High**, **naming both the recorded key and the expected one**
+- an entry carrying **any key other than `system:`, `id:`, and `key:`** → **High**, naming the item id
+  and the unknown key
 
-That last check is the mechanical one worth having: it catches a back-reference written against the
-wrong item, which is the failure that would silently break tracker-side recovery.
+Those three keys are the whole entry. An added key is a **format change** to a contract a future
+tracker mode has to satisfy unchanged, which is why an unknown key is a finding rather than harmless
+extra detail — and why this check is mechanical rather than a judgement about whether the extra key
+looks useful.
+
+The `key:` check is the other mechanical one worth having: it catches a back-reference written against
+the wrong item, which is the failure that would silently break tracker-side recovery.
 
 ### 7. Sizing honesty
 

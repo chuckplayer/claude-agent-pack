@@ -47,6 +47,14 @@ implementation.
   gate. Do not add `/backlog` to the four-skill enumeration in the **Plan spine** section — that list
   is about skills that dispatch merge-reviewer without a plan, and `/backlog` is not one of them.
 
+  **Batch write mode on `/devops-azure` is the only writer of `external_refs:`.** It consumes a tree
+  `/backlog` produced and creates the corresponding work items; `/backlog` never writes that field and
+  never asks about trackers. Like `/backlog`, batch mode is **not part of the code pipeline** — it
+  dispatches no agent and enters no gate, so nothing about it belongs in the routing rules above or
+  below. Stated here explicitly so a later reader does not add batch mode to an agent list: the
+  routing sections govern agents, and this mode is not one. This is the same failure the `/backlog`
+  paragraph above guards against, arriving from a different direction.
+
 ### Parallel dispatch (run simultaneously):
 - Tasks with no shared files and no output dependencies
 - Independent reviews of separate files or modules
@@ -74,6 +82,14 @@ implementation.
   back to the originating engineer before proceeding.
   If both frontend-engineer and mcp-engineer ran in parallel, invoke ts-linter
   once after both complete, passing all modified `.ts` and `.vue` files together.
+- **`scripts/lint-agents.sh`** whenever the changeset touches `agents/` or `skills/`, after the files
+  are written and before code-reviewer. **Blocking on non-zero exit**, same footing as ts-linter, and
+  enforced by merge-reviewer's gate 2a. Run the script directly rather than invoking the
+  `/lint-agents` skill -- that skill is for manual runs; this is orchestration. A malformed
+  `description` **is** the routing contract, so a file that fails this check may be undispatchable no
+  matter how sound its body is, which makes a downstream code-reviewer PASS meaningless. The gate
+  exists because a skill description shipped 322 characters over the limit through four review stages
+  and a merge gate into two pushed commits, while the one-command check that catches it went unrun.
 - **code-reviewer** after any output from csharp-engineer, frontend-engineer, or mcp-engineer
 - **security-reviewer** when changes touch authentication, authorization,
   data access, PII handling, API endpoints, or configuration with secrets
@@ -135,6 +151,10 @@ Before handing off to code-reviewer, every engineer agent must:
 - **backlog-auditor** on code changes, as a review lens in any code pipeline, or before a backlog
   tree exists. It audits a decomposition, not an implementation — pulling it into a code review is a
   loose name match, not a routing decision
+- **`scripts/lint-agents.sh`** when the changeset touches neither `agents/` nor `skills/`. It
+  validates frontmatter and body in those two trees and has nothing to say about any other file —
+  running it elsewhere produces a PASS that means nothing was checked. Say the skip out loud rather
+  than leaving it ambiguous with a genuine skip-because-clean
 
 ## Built-in agent disambiguation
 
@@ -170,7 +190,12 @@ a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `t
   second file goes stale the first time the table grows a row, and a stale list that reads as
   authoritative is worse than a pointer.
 - **devils-advocate** pressure-tests the bars in the plan file, editing in place. It is the only
-  check on bar quality; tech-lead both writes the bars and is measured by them.
+  check on bar quality; tech-lead both writes the bars and is measured by them. It applies the
+  **`### Bar soundness` table in `agents/tech-lead.md`**, which is the single authority on the ways an
+  `Evidence:` line passes while the property it checks is false — **do not restate its rows here or in
+  any other file**, for the same reason the plan-directory guard table is cited rather than copied. The
+  table exists because format compliance is not soundness: a well-shaped bar that cannot fail makes a
+  downstream gate report success while proving nothing, which is worse than a missing bar.
 - **Engineers never write the plan file.** They run under `isolation: "worktree"` and would
   conflict on the one file every stage depends on. They surface; the lead session writes.
 - **test-engineer** maps evidence to every bar id and reports it in its handoff. This is the only
