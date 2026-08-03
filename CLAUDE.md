@@ -234,11 +234,15 @@ a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `t
   authoritative is worse than a pointer.
 - **devils-advocate** pressure-tests the bars in the plan file, editing in place. It is the only
   check on bar quality; tech-lead both writes the bars and is measured by them. It applies the
-  **`### Bar soundness` table in `agents/tech-lead.md`**, which is the single authority on the ways an
-  `Evidence:` line passes while the property it checks is false — **do not restate its rows here or in
-  any other file**, for the same reason the plan-directory guard table is cited rather than copied. The
-  table exists because format compliance is not soundness: a well-shaped bar that cannot fail makes a
-  downstream gate report success while proving nothing, which is worse than a missing bar.
+  **`### Bar soundness` table in `agents/tech-lead.md`**. That table is the single authority and
+  **defines its own scope** — do not restate its rows, its row count, or its scope here or in any other
+  file, for the same reason the plan-directory guard table is cited rather than copied. This pointer is
+  deliberately bare: an earlier version of it described the table as covering "the ways an `Evidence:`
+  line passes while the property it checks is false", which stopped being true the moment the table
+  grew a row about something other than an `Evidence:` line. **A second description of a scope is a
+  second thing to keep in sync, and it will lose.** The table exists because format compliance is not
+  soundness: a well-shaped bar that cannot fail makes a downstream gate report success while proving
+  nothing, which is worse than a missing bar.
 - **Engineers never write the plan file.** They run under `isolation: "worktree"` and would
   conflict on the one file every stage depends on. They surface; the lead session writes.
 - **test-engineer** maps evidence to every bar id and reports it in its handoff. This is the only
@@ -251,6 +255,37 @@ a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `t
   gate, not a new gate. It does **not** flip a status field and does **not** delete the plan. It
   also enforces `## Deviations` in three tiers; `agents/merge-reviewer.md` is the single authority
   on what each tier checks, so do not restate them here.
+
+**`scripts/lint-plans.sh` checks a plan's structure, and it is the coordinating session's job, not
+merge-reviewer's.** Run it after tech-lead writes a plan and after devils-advocate edits one, passing
+the plan path. It validates frontmatter keys, the presence of `## Acceptance bars` and
+`## Deviations`, unique bar ids, an `Evidence:` line typed `tests`/`manual`/`files` on every bar, and
+one substantive rule: **a bar carrying a `Gated:` field must also carry a `Cost:` line** —
+bar-soundness row 6 made mechanical, because a missing cost statement is visible to a script while a
+*wrong* one is not. The trigger is the **structured field**, never the prose word "gated"; matching the
+word flagged bars that only *mentioned* gating, including one describing the check itself.
+
+Three constraints on it, each for a reason already established elsewhere:
+
+- **It takes explicit paths and never globs a plan directory**, for exactly the reason consumption is
+  opt-in below: a glob would let one run validate and report on a plan belonging to unrelated work.
+- **Pass the path as a discrete argument; never interpolate it into a shell string.** The path derives
+  from a `docs/CONVENTIONS.md` value controlled by the host repository, and `agents/merge-reviewer.md`
+  documents in full why that is a command-substitution risk rather than a style question. The same
+  reasoning applies to any caller, not only to that agent.
+- **merge-reviewer deliberately does not run it.** It is forbidden from putting the plan path into a
+  shell command at all, and it holds `git commit`, `git add -A`, and branch deletion — so it keeps
+  using `Grep` and `Read` for gate 4a. This is a real division, not an oversight: the script checks
+  *structure*, gate 4a judges *evidence*, and the script's failures are all things a plan's author can
+  fix before the pipeline ever starts.
+
+**Plans written before this check existed pass it, and that is deliberate rather than lucky.** They
+carry no `Gated:` field, so the `Cost:` rule never fires on them — a field-based trigger cannot
+retroactively condemn text written before the field existed. This removes a tension the first draft of
+this check had: a prose trigger failed four bars in `docs/plans/devops-azure-batch-write.md`, which
+would have invited editing a merged plan to quiet a linter. **A merged plan is the record of what a
+change meant to do and is never retro-edited.** Run the script on the plan handed to your run, not on
+the directory.
 
 **`## Deviations` records overridden calls.** tech-lead writes the section as a self-describing
 sentinel and never fills it in — it cannot know deviations at plan time. The coordinating session

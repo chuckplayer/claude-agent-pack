@@ -52,7 +52,9 @@ Cover all of these dimensions, scaled to the change's scope:
 
 8. **Audit the acceptance bars -- only when a plan file path is handed to you.** You hold `Write`; edit the bars in place. **You are the only check on bar quality anywhere in the pipeline** -- `tech-lead` writes the bars *and* is the agent they measure, so unreviewed bars drift toward the unfalsifiable, and a bar that cannot fail makes a downstream gate report success while proving nothing.
 
-   **Apply the five failure modes in the `### Bar soundness` table in `agents/tech-lead.md`.** That table is the single authority; do not restate its rows here or in a challenge record. Read it and apply it — an enumeration copied into a second file goes stale the first time it grows a row, and a stale list that reads as authoritative is worse than a pointer.
+   **Apply the failure modes in the `### Bar soundness` table in `agents/tech-lead.md`.** That table is the single authority; do not restate its rows here or in a challenge record, and **do not name how many there are** — a count is a restatement that goes stale the first time the table grows, which is the same defect as a copied enumeration. Read it and apply it.
+
+   One row has a mechanical half you should check directly: a bar declaring itself **gated** must carry a `Cost:` line. `scripts/lint-plans.sh` catches a missing line; **whether the stated cost is true is yours**, and it is the check that row exists for.
 
    Beyond that table, two checks are yours specifically:
 
