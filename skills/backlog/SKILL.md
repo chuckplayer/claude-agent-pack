@@ -9,7 +9,7 @@ Stage 2 of the delivery pipeline. Turn a spec of record into **one reviewed deco
 feature/story/task tree — then dispatch an independent auditor over it.
 
 **This skill creates nothing in any tracker.** It emits a markdown tree. Creating work items is the
-job of a transport skill that does not exist yet.
+job of `/devops-azure` batch write mode, which consumes the tree this skill emits.
 
 **The tree is a registry, not a derived view.** Tree shape, sizing, and dependencies are information
 that exists in no other artifact, so the tree is hand-editable everywhere and **never regenerated** —
@@ -247,8 +247,8 @@ and a copy of it here would drift.
 **The join to a tracker is recorded in an `external_refs` entry, and no item above carries one.**
 That absence is the record: **no such entry means no tracker holds this item.** It is a fact, not
 a placeholder awaiting a value. `/backlog` never writes the field and never asks about trackers;
-it is written by whatever creates the work items — `devops-azure` batch write mode, which does
-not exist yet. The field is a **list keyed by system**, never a single id, because one story can
+it is written by whatever creates the work items — `devops-azure` batch write mode, its sole
+writer. The field is a **list keyed by system**, never a single id, because one story can
 be tracked in two systems.
 This pipeline is **tracker-agnostic by design** and **ADO-first by circumstance**.
 Its shape, and the reciprocal key written back into the tracker, are documented
@@ -415,8 +415,8 @@ future reader rather than being decoration.
 ## 9. Report and hand off
 
 - The path written.
-- **No tracker work item was created, and this skill never creates one.** Name `devops-azure` batch
-  write mode as the eventual creator and say plainly that it does not exist yet.
+- **No tracker work item was created, and this skill never creates one.** Name `/devops-azure` batch
+  write mode as the creator, and point the operator at it as the next step once the tree is reviewed.
 - **Restate the blocked requirements a second time**, deliberately — those are the lines most likely to
   be skimmed.
 - For requirements with no bars yet: run `/plan` when that cut starts, then **hand-edit the `Bars:`
