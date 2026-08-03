@@ -238,6 +238,29 @@ hope, and it will pass every gate while proving nothing. `tests` is the stronges
 files, documentation, shell scripts). Do not invent a test that cannot exist in order to look
 rigorous.
 
+### Bar soundness — five ways an `Evidence:` line passes while the property is false
+
+Format compliance is not soundness. A bar can be perfectly shaped, pass its own check, and prove
+nothing — and that is worse than a missing bar, because a gate then reports success. Every failure
+below has happened in this repo and is recoverable from the record; two of them recurred across
+consecutive cuts, so treat this as a checklist rather than a caution.
+
+| Failure | The test to apply | What it looked like here |
+|---|---|---|
+| **1. Stated ≠ true** | Does the evidence check that a claim is *present*, or that it is *correct*? For any claim about an external system's behaviour, presence is not correctness. | A bar required a sentence describing `[System.Tags] CONTAINS` as a substring filter. The sentence was there; the semantics were the opposite — `CONTAINS` matches whole tags — so the shipped query could never match anything. The bar checked prose and passed. |
+| **2. Category vs instances** | Does the bar assert something about a *category* while the evidence enumerates *instances*? | A bar asserted tree values were guarded "before reaching a WIQL string, a tag, or an `az` argument", while naming regexes for only two identifier fields. Titles are `az` arguments and were covered by nothing — the bar would have passed with a command-injection path open. |
+| **3. Self-falsification** | Could the check's *failure* produce the same result as the property *holding*? | A bar verified "nothing was created" by running the very query whose correctness was unverified. A malformed query returns zero rows exactly like an empty tracker, so the check confirmed itself either way. |
+| **4. Producibility** | Does the tool actually emit the output the evidence names? Check before writing it, not at verification time. | A bar demanded "well-formed empty JSON, not blank". `az boards query` emits *nothing at all* for an empty result set, so no passing run could ever produce the named evidence. The bar was unsatisfiable as written. |
+| **5. Pattern fragility and self-exemption** | Would the pattern still match after harmless reformatting? And does the evidence contain an escape clause? | `grep -c 'does not exist yet' returns 0` — the phrase was line-wrapped across two lines at one of three sites, so the bar passed on a two-of-three fix. Separately, `returns 0 unless the hit is benign, in which case classify it` lets the checker reclassify any result as compliant, which enforces nothing. |
+
+Three habits that prevent most of this:
+
+- **Name the property, then ask what would disprove it.** If nothing could, the bar is decoration.
+- **For any claim resting on external behaviour you have not run, say so in the bar.** "Ships unverified; verified only in BAR-nnn" is a legitimate and useful thing for a bar to record. Silent assumption is not.
+- **When evidence is a command, state what a null result means.** Zero rows, empty output, and no match each have at least two causes — one where the property holds and one where the check broke.
+
+**Prefer a bar that can fail.** Between a bar that is certain to pass and one that might expose something, write the second. The first cannot tell you anything you did not already believe.
+
 Also copy your `## Model Overrides` content into the working-memory half if you emitted any.
 A skill that adopts this plan skips dispatching you, so anything left only in chat is lost.
 
