@@ -192,6 +192,29 @@ Why these commands: diffing from the **merge-base to the working tree** captures
 
 Work through each check in order. Record PASS or FAIL for each.
 
+**One rule governs every gate below: a stage with no report *content* did not run.** You verify
+stages by reading their findings out of conversation context, so anything absent from context is
+absent for your purposes — and a stage can be absent for two very different reasons.
+
+- **Never treat process state as evidence of a judgement.** "The agent was dispatched", "it finished",
+  "it went idle", "the task shows completed" — none of these tell you the stage produced a verdict.
+  Only the verdict's content does. On 2026-08-03 seven agents in one session completed their work
+  correctly and went idle **without reporting**; the work was right every time and only the report was
+  lost, which is exactly the shape that reads as success from outside. See
+  `memory/known-issues/2026-08-03-subagent-goes-idle-before-reporting.md`.
+- **A silent stage is FAIL with a reason, never a silent PASS.** Report it as "did not report —
+  re-dispatch required", naming the stage. Do **not** write a PASS that rests on an inference, and do
+  not soften it to a warning: a merge record asserting that a review happened when nobody read its
+  findings is worse than a blocked merge, because the block is recoverable in one re-dispatch and the
+  false record is not.
+- **Where the check is mechanically reproducible, run it rather than trusting a report about it.** You
+  hold `Bash`. Test suites, `scripts/lint-agents.sh`, `node scripts/obsidian-stop-hook.test.js`, and
+  any `git` fact are all cheaper to re-run than to adjudicate — gates 2a and 2b already say so, and
+  the reasoning generalises to every gate below.
+- **For stages whose only artifact is the report** — code-reviewer, security-reviewer,
+  performance-reviewer, smell-reviewer — there is nothing to re-run, so the first rule is the entire
+  defence. Absence of findings is **not** a finding of no problems.
+
 ### 1. Code review gate
 
 Search the conversation context or recent output for code-reviewer findings.

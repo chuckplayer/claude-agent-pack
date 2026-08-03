@@ -173,6 +173,32 @@ Before handing off to code-reviewer, every engineer agent must:
   as coverage. Same reason as `lint-agents.sh` above: a PASS on an unrelated changeset is worse than
   an acknowledged skip
 
+## A stage is complete when it reports, not when its agent stops
+
+**A subagent that goes idle without sending a report has not completed its stage.** Seven agents in
+one session did exactly that on 2026-08-03 — `obsidian-writer`, `codex-reviewer`, `code-reviewer`,
+`security-reviewer`, `git-engineer` twice, and `test-engineer`. The work was correct every time and
+only the report was lost, which is precisely why it is dangerous: nothing is missing except the
+judgement, so it is indistinguishable from success at a glance.
+
+- **Never infer a verdict from process state.** Dispatched, finished, idle, or `completed` in a task
+  list are facts about a process, not about a review. Only the report's content is evidence.
+- **Re-dispatch a silent agent; never speak for it.** Do not reconstruct, summarise, or assume its
+  findings, and never report the stage as run. merge-reviewer verifies stages from context, so an
+  unreported stage passed off as complete yields a confident verdict about a review nobody read.
+- **Prefer a re-runnable check over a report you must trust.** Anything mechanical — a test suite,
+  the two gated scripts above, a `git` fact — should be executed rather than believed. This is why
+  merge-reviewer holds `Bash` and why its gates 2a and 2b run their checks directly.
+- **Reviewers whose only artifact is the report** (code-reviewer, security-reviewer,
+  performance-reviewer, smell-reviewer, devils-advocate) have nothing to re-run, so the first rule is
+  the whole defence there.
+
+The stall is in the harness and cannot be fixed from inside this pack. What the pack controls is
+whether silence is read as assent. See
+`memory/known-issues/2026-08-03-subagent-goes-idle-before-reporting.md`, and note the shared lesson
+with `memory/known-issues/2026-07-10-bash-tool-silent-failure-windows.md`: **absence of a signal is
+never evidence that the signal would have been positive.**
+
 ## Built-in agent disambiguation
 
 Use the built-in `claude-code-guide` agent for Claude Code feature questions

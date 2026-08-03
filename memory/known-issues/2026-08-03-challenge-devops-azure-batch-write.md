@@ -112,6 +112,18 @@ objection applied to the chosen field is unexamined. The choice may still be rig
 should say so out loud, and BAR-015's gate is not "throwaway items" — the mode has no delete path, so it
 is permission to create ~10 permanent work items plus ~10 permanent org-wide tags.
 
+> **Correction, 2026-08-03 (after BAR-015 ran): the scope above is wrong — ADO work item tags are
+> per-project, not org-wide.** Verified against `<org>`: `<project-a>` held one tag value and `<project-a>`
+> seventeen, and each tag's REST URL is namespaced by the project GUID (`/_apis/wit/tags/` under the
+> project id). A 36-item tree adds 36 tag values to **one project's** autocomplete, not the
+> organization's. The concern's *substance* survives intact and is why this note amends rather than
+> deletes it: the pollution cost is real, it was genuinely unexamined against the same objection that
+> killed the title prefix, and **"throwaway" is still the wrong word** — the mode has no delete path,
+> so what the operator grants is permission to create items and tag values this pack cannot remove.
+> Only the blast radius was overstated. Fixed in `skills/devops-azure/SKILL.md` 8e item 8 and 8f, in
+> `docs/ado-delivery-pipeline-brief.md`, and in the plan's `## Risks` and BAR-015 text — see
+> [[2026-08-03-ado-workitemtypes-lists-blocked-types]] for the other correction the same run forced.
+
 ### 10. BAR-012 named evidence that does not exist, and passed on a two-of-three fix
 **Addressed.** `grep -n 'does not exist yet' skills/backlog/SKILL.md` returns **two** lines, `:12` and
 `:419`. The third site is line-wrapped — `:250` ends `...which does`, `:251` begins `not exist yet.` So
