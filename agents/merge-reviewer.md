@@ -218,6 +218,15 @@ Check whether the changeset touches `agents/` or `skills/`.
 
 > Why this is a gate: a malformed `description` **is** the routing contract, so an agent or skill that fails the linter may be undispatchable or mis-routed regardless of how good its body is. This gate exists because a skill description shipped at 1346 characters against a 1024 limit through four review stages and this gate, into two pushed commits — the check took one command and nothing ran it. Verify mechanically; do not accept "it looks fine".
 
+### 2b. Obsidian hook test gate
+
+Check whether the changeset touches `scripts/obsidian-stop-hook.js` or `scripts/obsidian-context-hook.js`.
+
+- If it does: verify `node scripts/obsidian-stop-hook.test.js` was run and exited **0**. **FAIL if it reported a failure or was not run.** You hold `Bash` — run it yourself rather than assuming; it needs no npm install and finishes in seconds.
+- If it does not: PASS (skip), and say so.
+
+> Why this is a gate, and why the trigger is two filenames rather than `scripts/`: the suite covers those two hooks only, so running it after a change to any other file in `scripts/` yields a PASS that verified nothing in the changeset. It became a gate because 131 passing tests sat un-invoked by any pipeline until 2026-08-03 — several of them named as regressions for bugs already fixed once, which is precisely what an unrun suite fails to protect. Same class as gate 2a, found by auditing for it.
+
 ### 3. Security review gate
 
 Check whether security-reviewer was required for this task (changes touched authentication, authorization, data access, PII, external endpoints, or secrets).

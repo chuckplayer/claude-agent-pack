@@ -119,6 +119,18 @@ Run the full agent pipeline for the task the user described:
 
    > **Why this is a step rather than a suggestion.** The batch-write cut shipped `skills/devops-azure/SKILL.md` with a description of 1346 characters against a 1024 limit, through code-reviewer, security-reviewer, test-engineer, and merge-reviewer's gate, into two pushed commits. The check that catches it existed the whole time and took one command; nothing in the pipeline ran it. A mechanical check catches a class of defect that careful prose review demonstrably does not.
 
+5d. **Obsidian hook tests** — run whenever the changeset touches **`scripts/obsidian-stop-hook.js`** or **`scripts/obsidian-context-hook.js`**, after the files are written and **before code-reviewer**. **Blocking gate**, same footing as 5c:
+
+   ```bash
+   node scripts/obsidian-stop-hook.test.js
+   ```
+
+   No npm install, no dependencies — Node stdlib only, so there is no setup step to skip. A **non-zero exit fails the pipeline**; route the failure back to whoever changed the hook and re-run until it exits 0.
+
+   **The trigger is those two files by name, not `scripts/` as a directory.** The suite imports `obsidian-stop-hook.js` and exercises `obsidian-context-hook.js` as a subprocess; it covers **neither** the three other `obsidian-*.js` hooks **nor** any `.sh` script in that directory. Running it after a change to `check-updates.sh` produces a PASS that checked nothing relevant, which is the same false assurance 5c warns about. Say the skip out loud rather than leaving it ambiguous.
+
+   > **Why this is a step.** 131 tests, exit 0, and until 2026-08-03 **no pipeline invoked them** — found by auditing `scripts/` for other unrun checks after 5c was added. Several are named as regressions (`"regression: it never closed"`), meaning they encode bugs already fixed once; nothing was stopping a hook edit from reintroducing one silently. This is the same class as 5c, found by asking the question 5c raised.
+
 6. **code-reviewer** — always after any engineer agent output.
 
 7. **security-reviewer** — invoke if changes touch authentication, authorization, data access, PII, external endpoints, or secrets.

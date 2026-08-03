@@ -90,6 +90,16 @@ implementation.
   matter how sound its body is, which makes a downstream code-reviewer PASS meaningless. The gate
   exists because a skill description shipped 322 characters over the limit through four review stages
   and a merge gate into two pushed commits, while the one-command check that catches it went unrun.
+- **`node scripts/obsidian-stop-hook.test.js`** whenever the changeset touches
+  `scripts/obsidian-stop-hook.js` or `scripts/obsidian-context-hook.js`, after the files are written
+  and before code-reviewer. **Blocking on non-zero exit**, same footing as `lint-agents.sh`, and
+  enforced by merge-reviewer's gate 2b. Node stdlib only -- no npm install, so there is no setup step
+  whose absence could excuse a skip. **The trigger is those two filenames, not the `scripts/`
+  directory:** the suite imports the stop hook and drives the context hook as a subprocess, and covers
+  neither the three other `obsidian-*.js` hooks nor any `.sh` script beside them. This gate exists
+  because 131 passing tests went un-invoked by any pipeline until 2026-08-03, several of them named as
+  regressions for bugs already fixed once -- found by auditing `scripts/` for other unrun checks after
+  the `lint-agents.sh` gate above was added, which is the same failure arriving a second time.
 - **code-reviewer** after any output from csharp-engineer, frontend-engineer, or mcp-engineer
 - **security-reviewer** when changes touch authentication, authorization,
   data access, PII handling, API endpoints, or configuration with secrets
@@ -155,6 +165,13 @@ Before handing off to code-reviewer, every engineer agent must:
   validates frontmatter and body in those two trees and has nothing to say about any other file —
   running it elsewhere produces a PASS that means nothing was checked. Say the skip out loud rather
   than leaving it ambiguous with a genuine skip-because-clean
+- **`node scripts/obsidian-stop-hook.test.js`** when the changeset touches neither
+  `scripts/obsidian-stop-hook.js` nor `scripts/obsidian-context-hook.js` — including changesets that
+  touch **other** files in `scripts/`, which is the near-miss worth stating explicitly. A change to
+  `check-updates.sh`, `set-env.sh`, or one of the three uncovered `obsidian-*.js` hooks gets a clean
+  run out of this suite while nothing in the changeset was exercised, and that reads in a merge record
+  as coverage. Same reason as `lint-agents.sh` above: a PASS on an unrelated changeset is worse than
+  an acknowledged skip
 
 ## Built-in agent disambiguation
 
