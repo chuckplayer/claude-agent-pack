@@ -178,7 +178,12 @@ a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `t
   second file goes stale the first time the table grows a row, and a stale list that reads as
   authoritative is worse than a pointer.
 - **devils-advocate** pressure-tests the bars in the plan file, editing in place. It is the only
-  check on bar quality; tech-lead both writes the bars and is measured by them.
+  check on bar quality; tech-lead both writes the bars and is measured by them. It applies the
+  **`### Bar soundness` table in `agents/tech-lead.md`**, which is the single authority on the ways an
+  `Evidence:` line passes while the property it checks is false — **do not restate its rows here or in
+  any other file**, for the same reason the plan-directory guard table is cited rather than copied. The
+  table exists because format compliance is not soundness: a well-shaped bar that cannot fail makes a
+  downstream gate report success while proving nothing, which is worse than a missing bar.
 - **Engineers never write the plan file.** They run under `isolation: "worktree"` and would
   conflict on the one file every stage depends on. They surface; the lead session writes.
 - **test-engineer** maps evidence to every bar id and reports it in its handoff. This is the only
