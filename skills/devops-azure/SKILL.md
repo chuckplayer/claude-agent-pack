@@ -171,6 +171,26 @@ az devops invoke --area wit --resource workitemtypes --route-parameters project=
 
 If that fails, fall back to step 5's sample-an-existing-item, then to asking the operator directly.
 
+**Discovery returns types that exist, including types that are BLOCKED for creation. Run a second, cheap check before proposing a mapping.** A customized process can leave a type present in `workitemtypes` while refusing every create against it:
+
+```
+ERROR: VS403074: Work item creation or migration to the target work item type
+'Product Backlog Item' is blocked. Enable the work item type to unblock the operations.
+```
+
+Verified against `<org>/<project-a>` on 2026-08-03: the project is built on a process named "<project-a> Scrum" and lists **both** `Product Backlog Item` and `User Story`, but PBI is blocked and the whole batch failed at item 1. **Two lessons, and the second is the one that costs a run:**
+
+- **The process template's *name* predicts nothing.** A project named for Scrum had the Agile type enabled and the Scrum type blocked. Never infer the mapping from the template name — that inference is what produced this failure.
+- **`workitemtypes` alone cannot tell you what is creatable**, so its output is a *candidate* list rather than an answer.
+
+So cross-check the candidates against the types the project **actually uses**, which is one read and needs no write:
+
+```bash
+az boards query --wiql "SELECT [System.Id], [System.WorkItemType] FROM WorkItems WHERE [System.TeamProject] = '<project>'" --org https://dev.azure.com/<org> --output json
+```
+
+Group the returned `[System.WorkItemType]` values. A type with existing items is demonstrably creatable; a candidate type with **zero** items in a project that has plenty of others is the signal to prefer a different candidate or ask. **This is evidence, not proof** — a brand-new project has no items at all, and a legitimately unused type is not necessarily blocked. Where it is inconclusive, say so in the preview and let the operator choose rather than presenting a guess as discovery. The authoritative answer only arrives at create time, which is why 8f treats `VS403074` as a stop with the type list echoed.
+
 Propose this mapping and confirm it in the preview:
 
 | Tree level | Proposed ADO type |
@@ -268,7 +288,9 @@ The preview shows nine things, in order:
 5. **The exact `az` command for the first item, verbatim.** Not a template and not a description: the command as it will actually run, so the operator approving an irreversible batch can read what the first write does. **Then, for every remaining item, show its full title, mapped type, and tag value** — every field value is known before any write runs, so there is no reason for the operator's one confirmation to cover content they were never shown. Item 1 is shown as a command so the *shape* is auditable; every other item is shown by content so the *data* is auditable. A batch where only item 1 was ever seen means a title in item 5 reaches a shared tracker permanently with no human having read it, and there is no delete path to undo that.
 6. **The field payload shape** — which fields are set on a create, and which are deliberately not (no state, no assignment, no area/iteration override beyond the resolved defaults).
 7. **The total count of `az` write invocations**: **creates plus parent/child link additions, and nothing else.**
-8. **The tag values that will be written**, shown literally — both of them: the per-item key tag (e.g. `claims-intake:STORY-3`) and the shared anchor tag (`claims-intake`). The operator is granting writes into an **org-wide tag namespace** visible to every user in the organization, so the values they are creating are theirs to see before they approve them. Say that the anchor is one value shared by every item in the batch, not one per item.
+8. **The tag values that will be written**, shown literally — both of them: the per-item key tag (e.g. `claims-intake:STORY-3`) and the shared anchor tag (`claims-intake`). The operator is granting writes into the **project's tag namespace**, visible in tag autocomplete to every user with access to that project, so the values they are creating are theirs to see before they approve them. Say that the anchor is one value shared by every item in the batch, not one per item.
+
+   **State the scope accurately: the tag namespace is per-project, not org-wide.** Verified against `<org>` on 2026-08-03 — `<project-a>` returned one tag and `<project-a>` returned seventeen, and each tag's REST URL is namespaced by project GUID (`/_apis/wit/tags/` under the project id). This file, `docs/ado-delivery-pipeline-brief.md`, and `BAR-015`'s own gate text all previously said org-wide. **Overstating it is not the safe direction:** the operator is approving an irreversible write, and a preview that inflates the blast radius trains them to discount the preview. Say what is true — permanent, unremovable by this mode, and confined to one project.
 9. **An explicit statement that the tree is modified in place, naming which items gain an `external_refs:` entry**, plus the statement that no rollback is available and created items stay.
 
 One informational line sits **beyond** those nine: where an item matched by key carries a different title in ADO than in the tree, say so. It is additive, never a stop, and never an update.
@@ -294,7 +316,7 @@ One informational line sits **beyond** those nine: where an item matched by key 
 
 Timing is the whole contract — a tag written afterwards has exactly the gap it was meant to close, so **both go in at create time**, never as a follow-up update. This mode never updates a work item, so a tag it fails to write at creation is a tag it can never add.
 
-**The anchor tag is what makes the resume path work at all.** Without it there is no query that finds this feature's items: `CONTAINS '<feature>:'` matches nothing, because it is a prefix rather than a whole tag. The anchor costs one extra tag value per feature in the org-wide namespace — one, not one per item, since every item of the feature carries the same anchor.
+**The anchor tag is what makes the resume path work at all.** Without it there is no query that finds this feature's items: `CONTAINS '<feature>:'` matches nothing, because it is a prefix rather than a whole tag. The anchor costs one extra tag value per feature in the **project's** tag namespace — one, not one per item, since every item of the feature carries the same anchor.
 
 **No prefix and no namespace is added to the value.** The tag is exactly `<feature>:<item-id>` — not `key:claims-intake:STORY-3`, not `backlog/claims-intake:STORY-3`. The value in the tag and the value in the tree's `key:` field are **byte-identical**, which is what makes the join queryable.
 
@@ -307,7 +329,7 @@ Timing is the whole contract — a tag written afterwards has exactly the gap it
 | A **hyperlink relation** | Not queryable by value in WIQL, which is the whole requirement. |
 | A **title prefix** | Pollutes the board for every human reader, and titles are hand-edited freely. |
 
-`System.Tags` is queryable, settable at create time, and present in every process template. Its costs are accepted knowingly: it is **user-editable**, and its namespace is **org-wide**.
+`System.Tags` is queryable, settable at create time, and present in every process template. Its costs are accepted knowingly: it is **user-editable**, and its namespace is **per-project and permanent** — this mode cannot remove a tag value it creates. It is *not* org-wide; see 8e item 8 for the verification.
 
 **The tag value cannot contain a space by construction** — 8b's two regexes admit no whitespace in either `feature:` or an item id, so the tag is always a single token and never needs quoting as a multi-word value.
 
@@ -344,6 +366,7 @@ This matters more on this machine than the general case: `memory/context/2026-07
 | **Auth failure mid-batch** | Stop at that item. **No retry, no continue.** |
 | **Insufficient permissions** | Stop at that item, **naming the project and the work item type** that was refused — those two together are what tell the operator whether to ask for a broader grant or a different type. |
 | **Invalid work item type** | Stop, **echoing the discovered type list** from 8c so the operator can see what the project actually offers rather than guessing. |
+| **Blocked work item type (`VS403074`)** | Stop at that item. **Distinct from the row above and from a permissions failure** — the type is valid, the operator has the grant, and the project refuses it anyway. Report the type by name, echo the 8c in-use type list beside the candidate list so the difference is visible, and **treat a re-preview under a new mapping as mandatory** per 8e's in-band-override rule. Do not retry the same type and do not fall through to another type on this mode's own initiative. |
 | **Wrong org or project on a resume** | The ID-scoped read of a recorded id reveals a different `[System.TeamProject]` → **stop**, naming both projects. Work item ids are unique org-wide, which is what makes this detectable at all. |
 | **Partial failure mid-batch** | Stop, emit the per-item report (8i), and state that a **resume is safe** — the key query reconciles what exists. |
 
@@ -374,6 +397,17 @@ external_refs:
 
 **Exactly three keys.** No fourth key, ever — the entry is the whole contract a future tracker mode must satisfy unchanged.
 
+**Where the block goes was unspecified, and the natural reading puts it under the wrong item.** The shape above says nothing about placement, and `/backlog`'s tree holds items at two different structural levels — `FEATURE`/`STORY`/`SPIKE` are **headings**, while `TASK-n.m` are **bullets nested under a story's `Tasks:` list**. Insert relative to the item's own level:
+
+| Item form | Placement |
+|---|---|
+| Heading (`FEATURE`, `STORY`, `SPIKE`) | Immediately **after the item's own bullet list and before the next heading**, at indent 0, with the entry list indented 2. |
+| Task bullet (`TASK-n.m`) | Immediately **after the task's bullet**, indented two past the bullet, with the entry list two past that. |
+
+**The trap is a story whose bullet list ends with a `Tasks:` sub-list.** Appending the story's block after its bullets puts it directly beneath the last `TASK` line, where a human reads it as that task's entry — and both entries are then adjacent and visually indistinguishable by anything but indentation. Observed while running `BAR-015` on 2026-08-03. It is not a contract violation (`key:` still names the right item, and the reconciliation table reads `key:` rather than position), so **a checker comparing keys will never catch it** — the damage is to the human reader who has no reason to doubt the nesting. Place the story's block **before** its `Tasks:` sub-list where the story has one, so the block sits with the bullets it belongs to.
+
+**Never move or reformat an existing entry to satisfy this rule.** A tree written by an earlier run holds entries wherever that run put them, and re-indenting one would be a write outside the sole-writer contract's insert-only shape. The placement rule governs blocks this run inserts.
+
 **`url:` is the rejected fourth key**, and it is worth naming because it is the one a reader will want to add: an item URL is genuinely useful, and adding it would still be a **format change** to a contract a future `devops-github` mode has to satisfy **unchanged**. Convenience is not a reason to widen a contract.
 
 **Every ADO-specific fact lives somewhere other than the tree.** The tree stays tracker-neutral, so each of these has a stated home and none of them is written into a tree item:
@@ -402,6 +436,18 @@ az boards work-item relation add --id <child-id> --relation-type parent --target
 
 **A failed link never invalidates the item's creation record.** The item exists, it carries its key, and the tree entry stands; report the link failure separately.
 
+**A resume must re-check the parent link of every item it did not create, because "created during the item pass" leaves a gap nothing else closes.** The write order inside the item pass is create → write back → link, so a run that dies **between the write-back and the link** leaves an item that is fully recorded and permanently unparented. On the next run that item matches by key, lands on row 2 `skip`, and the item pass never reaches it — so the link is **never re-attempted and never reported**, and the tree looks complete while the board shows an orphan. Found by executing `BAR-015` on 2026-08-03, where exactly this happened to a `STORY` and had to be repaired by hand.
+
+So, for **every item matched by key in 8d** — the `skip` row and the `repair` row both — read its relations and confirm the expected parent is present:
+
+```bash
+az boards work-item show --id <id> --org https://dev.azure.com/<org> --output json   # then inspect relations
+```
+
+The parent is the relation whose `rel` is `System.LinkTypes.Hierarchy-Reverse`. If it is **absent** and the tree gives that item a parent, **add the link and report the item under `repaired`** rather than `skipped`, naming the link as what was repaired. If it is **present but points at a different work item**, that is a **STOP** naming both ids — this mode never moves an item between parents. An item the tree gives no parent (a `SPIKE` under `## Blocked requirements`) is correct with no parent and is not a finding.
+
+**This check is reads-plus-at-most-one-write per already-existing item, and it is not optional on a resume.** Skipping it makes the missing link unreachable by any later run, which is the same permanence problem the no-rollback rule already carries — except silent.
+
 **Batch mode creates no dependency or ordering link of any kind.** A `Depends on:` line in the tree becomes **no link in ADO**. Ordering remains a fact of the tree, and a reader who wants sequence reads the tree. The reason is that no downstream consumer reads an ADO ordering link, and creating them would add a second partial-failure surface for no reader's benefit.
 
 **Hierarchy on a board is not a licence to fan out.** A board of sibling stories under a feature is **ordering at most** — one `/implement` per story. This holds even though no ordering link is created, because the shape of the board invites the same wrong conclusion, and the tree in the operator's hands still carries `depends_on:` lines.
@@ -420,6 +466,16 @@ Then, in the same report:
 - Parent/child link results.
 - The resolved org and project.
 - **The actual count of `az` write invocations, reconciled against the count the preview stated.** A mismatch is **reported as a failure** — without this check the previewed number is decoration the operator confirmed and nothing ever verified.
+
+  **Report three numbers, not two, because "actual" was ambiguous and the ambiguity hides the interesting case.** A failed create **is** an invocation that reached the service, so a run with one blocked type and every other item created has 16 previewed, 16 succeeded, and 17 attempted — and a rule comparing one "actual" against the preview either reads that as a failure when nothing was lost, or hides the failed attempt entirely, depending on which number it picked. State all three:
+
+  | Number | Meaning |
+  |---|---|
+  | **previewed** | what the operator confirmed in 8e item 7 |
+  | **succeeded** | invocations that returned exit 0 |
+  | **attempted** | every invocation issued, failures included |
+
+  **`succeeded` versus `previewed` is the reconciliation that matters** — a mismatch there means the batch did not do what was approved, and is the failure this check exists to catch. **`attempted` minus `succeeded` is the count of failed writes**, which must equal the number of `failed`/`UNKNOWN` rows in the per-item table above; if it does not, a failure went unrecorded and *that* is a reportable defect regardless of the other two numbers agreeing.
 - The resume instruction.
 - **No rollback is offered, ever.** Created items stay, tagged and recoverable. Deleting items from a shared tracker on our own initiative is a worse outcome than leaving recoverable ones behind.
 

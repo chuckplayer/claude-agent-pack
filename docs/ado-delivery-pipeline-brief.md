@@ -106,7 +106,7 @@ sketched, not specified — each should be re-scoped as the one before it lands.
 5. **Batch write mode on `devops-azure`** — the only new ADO write surface `/backlog` needs. **Shipped
    2026-08-03** as `## 8. Batch write mode` in `skills/devops-azure/SKILL.md`, plus one check added to
    `backlog-auditor` dimension 6. Three things differ from this sketch: the reciprocal key lives in
-   **`System.Tags`** (chosen over four alternatives, with its user-editability and org-wide namespace
+   **`System.Tags`** (chosen over four alternatives, with its user-editability and per-project namespace
    accepted knowingly); the `Depends on:` **link pass was cut** after review, leaving parent/child
    hierarchy only; and the preview-and-confirm rule is **amended once, in the file that owns it**, scoped
    to batch mode alone. It creates only — never state, assignment, hours, comments, or closure — and
@@ -403,8 +403,11 @@ discharged 2026-08-03 by `skills/devops-azure/SKILL.md` section 8**:
 **Which tracker field holds the key — decided 2026-08-03 in the batch-write cut, recorded here because a
 future reader will otherwise re-litigate it.** `docs/plans/backlog.md` deferred this deliberately. The
 answer is **`System.Tags`**, chosen knowingly with its costs accepted: the field is **user-editable** and
-its namespace is **org-wide**, so a tree of N items adds N tag values visible to every user in the
-organization. Four alternatives were considered and rejected — a **custom field** (requires a process-template
+its namespace is **per-project and permanent**, so a tree of N items adds N tag values visible in tag
+autocomplete to every user with access to that project, and this mode can remove none of them.
+**Corrected 2026-08-03:** this said "org-wide … visible to every user in the organization", which is
+false — verified against `<org>`, where `<project-a>` held one tag and `<project-a>` seventeen, each namespaced by
+project GUID. The cost is real but confined to one project. Four alternatives were considered and rejected — a **custom field** (requires a process-template
 change, so it cannot be assumed present), the **title** (pollutes the board and is hand-edited freely), a
 **hyperlink or external link relation** (not queryable by value in WIQL), and **`System.Description`**
 (free text nobody can query reliably). The residual risk is explicit: a human deleting a tag stops a later
