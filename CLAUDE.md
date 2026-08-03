@@ -82,6 +82,14 @@ implementation.
   back to the originating engineer before proceeding.
   If both frontend-engineer and mcp-engineer ran in parallel, invoke ts-linter
   once after both complete, passing all modified `.ts` and `.vue` files together.
+- **`scripts/lint-agents.sh`** whenever the changeset touches `agents/` or `skills/`, after the files
+  are written and before code-reviewer. **Blocking on non-zero exit**, same footing as ts-linter, and
+  enforced by merge-reviewer's gate 2a. Run the script directly rather than invoking the
+  `/lint-agents` skill -- that skill is for manual runs; this is orchestration. A malformed
+  `description` **is** the routing contract, so a file that fails this check may be undispatchable no
+  matter how sound its body is, which makes a downstream code-reviewer PASS meaningless. The gate
+  exists because a skill description shipped 322 characters over the limit through four review stages
+  and a merge gate into two pushed commits, while the one-command check that catches it went unrun.
 - **code-reviewer** after any output from csharp-engineer, frontend-engineer, or mcp-engineer
 - **security-reviewer** when changes touch authentication, authorization,
   data access, PII handling, API endpoints, or configuration with secrets
@@ -143,6 +151,10 @@ Before handing off to code-reviewer, every engineer agent must:
 - **backlog-auditor** on code changes, as a review lens in any code pipeline, or before a backlog
   tree exists. It audits a decomposition, not an implementation — pulling it into a code review is a
   loose name match, not a routing decision
+- **`scripts/lint-agents.sh`** when the changeset touches neither `agents/` nor `skills/`. It
+  validates frontmatter and body in those two trees and has nothing to say about any other file —
+  running it elsewhere produces a PASS that means nothing was checked. Say the skip out loud rather
+  than leaving it ambiguous with a genuine skip-because-clean
 
 ## Built-in agent disambiguation
 
