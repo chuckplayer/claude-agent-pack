@@ -138,6 +138,32 @@ az boards iteration project list --project <project> --org https://dev.azure.com
 
 If either is ambiguous or unset for the project, **ask before previewing** rather than letting the batch land somewhere the operator did not choose.
 
+**Then resolve which teams' boards will show these items.** 8c needs this to look up backlog levels, and a backlog is team-scoped, so a project-wide answer does not exist. **Discovered at run time; there is no environment variable for a team and none should be added** — a configured default goes stale silently and points the read at the wrong board.
+
+```bash
+az devops team list --project <project> --org https://dev.azure.com/<org>
+az devops invoke --area work --resource teamfieldvalues --route-parameters project=<project> team=<team> --org https://dev.azure.com/<org> --http-method GET --api-version 7.1
+```
+
+A team is a **candidate** when one of its `System.AreaPath` values covers the area path resolved above — an exact match, or a value with `includeChildren: true` at or above it. **Name every candidate in the preview**; a silent implicit choice is not acceptable, because the same work items are viewed through other teams' boards.
+
+**No read available here can prove the right team was read.** The `backlogs` response in 8c carries **no team echo** to check the route parameter against, so a shape check confirms only that *some* team's configuration came back. That is why the team is **derived** from the area path rather than assumed, and **named** in the preview: the operator reading the name is the only check on it. Say the scoped thing — *"using team `<team>`'s configuration"* — never *"this pair is invalid for the project"*.
+
+**A team's line has three states and two of them are benign.** Verified 2026-08-04: `teamfieldvalues` returned `field.referenceName` of `System.AreaPath` with an **empty `defaultValue` and no `values` array**, at exit 0, for two of three teams in one project. So distinguish *levels resolved*, *no area path configured — never a candidate*, and *read failed*. Only the last is "not determined", and conflating the middle one with it reports failures on ordinary configurations.
+
+**Bound the reads against a measured cost, and fall back rather than refusing.** `N` is the project's **total** team count and is **not** reducible: narrowing needs every team's `teamfieldvalues` and no project-wide route returns them, so the cost is paid before the narrowing, not after. `az` invocations measured **~3.3s** each on this machine (five samples, 2.46–3.77s), so `1 + N + M` is a real wait in front of a preview:
+
+| Condition | Behaviour |
+|---|---|
+| `1 + N + M` ≤ **10** invocations (≈ 33s) | Narrow fully; examine every candidate team |
+| Above it | Read **the project's default team only** — `az devops project show --project <project>` returns `defaultTeam.name` in one read — and **say on the face of the preview that other teams were not examined** |
+
+**The fallback is deliberate and is not a refusal.** A refusal would make this silent on most multi-team projects; a project with dozens of teams would otherwise wait minutes. Show what was read and say what was not. **A cap justified by a duration nobody timed is a stated cost nobody verified** — if the per-invocation figure above is re-measured and differs, move the number rather than keeping a stale justification.
+
+**Three hazards land on these two reads, before 8c ever parses anything.** The team list is this mode's array response, so `@($json | ConvertFrom-Json)` **double-wraps** on PowerShell 5.1 (`memory/context/2026-08-03-powershell-convertfrom-json-array-double-wraps.md`). A conventional team name **contains a space** and reaches the route as a parameter, so PowerShell **mangles the native argument** unless it is passed as a discrete value (`memory/context/2026-07-30-powershell-mangles-native-exe-arguments.md`) — never interpolate it into a command string. And `az` emits *"Unable to encode the output with cp1252 encoding. Unsupported characters are discarded"* on some projects, so **a team name carrying a non-cp1252 character is silently mangled on output on this machine** — which matters because this design routes on team names. Blank output with exit 0 is **not** "no teams"; trust `$LASTEXITCODE`, never `$?`.
+
+**`az devops invoke` also serves a sibling route silently when the route parameters do not disambiguate, and this route family is the documented instance** — `teamfieldvalues` and `teamsettings` are literal siblings on it. So check the **shape** of what came back, not just the exit code: `teamfieldvalues` must carry a `field.referenceName` and a `values` list, and anything else is "not determined" for that team. The same hazard applies to 8c's read and is restated there, because a hazard a reader does not encounter while writing the parse is not available to them.
+
 **Hard cap: above 100 items, refuse.** Name the scoped-run escape rather than telling the operator to edit the tree — for example, "create `FEATURE-2` and its children".
 
 **Know what these gates rest on.** `audit:` and `narrowed_by_depth:` are ordinary frontmatter fields in a file that is **hand-editable everywhere**, and nothing binds them to the tree's current content — unlike `source_spec_hash_at_generation`, which is hash-checked above. A tree that was never audited, or was edited after its audit, can present `audit: findings addressed` and pass the REFUSE gate. This mode cannot close that: it inherits the tree design, and no hash over tree content exists to check. **Treat the gates as a check against accident, not against intent**, and do not describe a passing gate to the operator as proof the tree was audited — only that it claims to have been.
@@ -233,6 +259,35 @@ The mapping is **persisted nowhere.** Not in the tree — it is ADO-specific, an
 
 So stopping during reconciliation is not converting a mid-batch failure into a pre-write one; it is converting a **silent, permanent, post-run defect** into a pre-write stop, which is the only point at which it is still cheap. Report the item ids, the type recorded in ADO, and the type this run's mapping proposes.
 
+**Backlog levels for the mapped types — a facts display, not a check.** Once the mapping is proposed and 8a has resolved the examined teams, read each examined team's backlog levels. **Zero writes.**
+
+```bash
+az devops invoke --area work --resource backlogs --route-parameters project=<project> team=<team> --org https://dev.azure.com/<org> --http-method GET --api-version 7.1
+```
+
+**Parse `.value`, never the envelope.** The response is `{ "count": n, "value": [ … ] }`. Iterating the parsed object instead of its `.value` yields **one row with every field empty at exit 0** — so every type resolves to "no level" and the whole display degrades to silence while looking like a clean read. Verified 2026-08-04: this happened on the first live call. Blank output, a non-zero `$LASTEXITCODE`, or a response that is not a list of levels each carrying `id`, `name`, `rank`, `isHidden` and `workItemTypes` is **"not determined" for that team**, never an empty configuration. This route family is also the documented instance of `az devops invoke` **silently serving a sibling route** (`teamfieldvalues` and `teamsettings` are literal siblings), which is what the shape check catches.
+
+Then, per examined team, report each mapped ADO type with the level(s) it occupies. **The one thing worth flagging is positive co-membership: two types the tree requires appearing in the same returned level object.**
+
+| Observation | What is reported |
+|---|---|
+| Two required types in the **same** returned level | The sanctioned sentence in 8e item 2, naming the team, the level and both types |
+| Types in **different** returned levels | `no same-level condition observed by this route` — a statement about the route, not about the pair |
+| A type in **no** returned level, or in **two** | Printed as observed (`no level returned for <type>`). Ordinary, not an anomaly — one probed team returned only two levels with no feature or epic level, and two others had no requirement level. Any reading of a multi-level type must be **order-independent** |
+| A team's read **failed** | `not determined for team <team-a>`, on that team's line only. The other examined teams still report |
+
+**Never read a level `id` as a work item type category reference name.** It is documented as only *"can be"* one, and they are different objects — see the corrected bullet above. The sound signal is co-membership in the returned level object; the `name` is what is displayed. **Do not restate the consequence from memory** — state the narrow executed one and attribute it.
+
+**Read the project-scoped categories too, as a control rather than as the source.**
+
+```bash
+az devops invoke --area wit --resource workitemtypecategories --route-parameters project=<project> --org https://dev.azure.com/<org> --http-method GET --api-version 7.1
+```
+
+This is a **second, independent route**, which is what makes it useful: the level read cannot check itself, and two routes agreeing or disagreeing is evidence neither produces alone. It is **not** a substitute — it is project-scoped by construction, so it cannot represent per-team bug placement, and keying on it loses the very pair this display exists to surface. Surface **non-bug** disagreement between the two groupings as a **config mismatch**, naming the types. **Bug disagreement is expected and is not surfaced**: per-team bug placement moves that type between levels without moving it between categories, and it disagreed in four of six probed projects while agreeing in one.
+
+**This display is not a board-health claim.** It covers **the pairs this tree requires**, and nothing else. Pre-existing nesting the run neither creates nor touches is invisible to it — a tree root matched to an item already sitting under a same-level parent shows nothing here while that board is already degraded.
+
 ### 8d. Determine what already exists
 
 **The decision comes from ADO, never from `external_refs:`.** After a crash the tree is the unreliable artifact — that is the whole reason the reciprocal key exists. Run **one** query per run, matching on the **anchor tag**:
@@ -306,6 +361,14 @@ The preview shows nine things, in order:
 
 1. **The resolved org, project, area path, and iteration path** — all four, since area and iteration are project-specific per step 5 and the operator is approving where these items land, not just that they land.
 2. **The proposed type mapping**, asking for confirmation rather than asserting it, with `SPIKE` flagged by name. Include the tree path, its `feature:` slug, the item count, and every gate verdict from 8a here, including any warning requiring acknowledgement.
+
+   **With the mapping, show each mapped type's backlog level per examined team** (8c), naming the teams and how they were resolved — and, when 8a fell back, saying that other teams were **not examined**. The operator is confirming the mapping, so they should confirm it with the levels in front of them. Where two types the tree requires sit on the same returned level, add **this sentence, verbatim** — it is quoted here rather than described for the same reason item 5 quotes the first `az` command, because it is the one sentence that must not overclaim:
+
+   > Same returned backlog level observed for team `<team>`: `<type-1>` and `<type-2>` both sit on `<level-name>`. A live probe on 2026-08-04 and Microsoft's documentation show this can make backlog reordering fail on that team's boards. Different returned levels are informational only and are not a guarantee that Azure DevOps will accept all reorder operations.
+
+   **This is a fact display and adds no gate, no acknowledgement and no second confirmation.** Nothing here is a stop, and the verdict vocabulary is deliberately absent: **no `RISK`, no `NO_KNOWN_RISK`, no `UNKNOWN`, no green checks, and never the word "safe".** A quiet line means *this route observed no same-level condition for the pairs this tree requires* — it is not a clean bill of health, and rendering it as one is the failure this shape exists to avoid. **`SPIKE` maps to the same ADO type as `STORY`**, so `FEATURE → SPIKE` and `FEATURE → STORY` are the same type pair and must appear **once**; two lines would show one risk twice.
+
+   **Why it is stated as an observation rather than a prediction.** The consequence is attributed to an executed probe and to Microsoft's documentation, so this is a compatibility fact rather than a derived guarantee — which is what keeps it off the footing of every other stop in 8c–8h, each of which fires on an observed service response or a reconciliation mismatch.
 3. **Three lists, by item id**, using the literals **`create`**, **`skip`**, and **`repair`** — the skip list carrying each item's matched work item id.
 4. **Any stop condition found during reconciliation** — and if there is one, the preview **does not offer to proceed at all.**
 5. **The exact `az` command for the first item, verbatim.** Not a template and not a description: the command as it will actually run, so the operator approving an irreversible batch can read what the first write does. **Then, for every remaining item, show its full title, mapped type, and tag value** — every field value is known before any write runs, so there is no reason for the operator's one confirmation to cover content they were never shown. Item 1 is shown as a command so the *shape* is auditable; every other item is shown by content so the *data* is auditable. A batch where only item 1 was ever seen means a title in item 5 reaches a shared tracker permanently with no human having read it, and there is no delete path to undo that.
@@ -320,7 +383,7 @@ One informational line sits **beyond** those nine: where an item matched by key 
 
 **One confirmation covers the batch.** `preview only` is a **first-class answer** and stops the run having written nothing.
 
-**An in-band override invalidates the preview.** The confirmation bundles several judgements — the type mapping, the gate acknowledgements, and the item-1 command. If the operator changes any of them in their answer (most likely the type mapping: "use `Product Backlog Item`, not `User Story`"), **the preview they were shown no longer describes what would run**: the verbatim command and the tag values both follow from the mapping, and so does whether the mapped type can be created at all (`VS403074` — see **8f**). **Validity does not, and this sentence used to say it did.** Per **8c**, every parent/child type pair is accepted, so nothing about link validity follows from the mapping — the same false premise `8f`'s justification was corrected for on 2026-08-03, which survived here four lines below the corrected paragraph. Treat an override exactly like `preview only` — **write nothing, re-preview under the new mapping, and ask again.** One confirmation covering the batch is sanctioned; one confirmation covering a batch that then changed is not.
+**An in-band override invalidates the preview.** The confirmation bundles several judgements — the type mapping, the gate acknowledgements, and the item-1 command. If the operator changes any of them in their answer (most likely the type mapping: "use `Product Backlog Item`, not `User Story`"), **the preview they were shown no longer describes what would run**: the verbatim command and the tag values both follow from the mapping, and so does whether the mapped type can be created at all (`VS403074` — see **8f**). **The backlog-level lines follow from it too** — levels are looked up by mapped ADO type, so an override changes which levels are shown and whether two of them coincide, and a preview showing the old level lines describes a run that would not happen. **Validity does not, and this sentence used to say it did.** Per **8c**, every parent/child type pair is accepted, so nothing about link validity follows from the mapping — the same false premise `8f`'s justification was corrected for on 2026-08-03, which survived here four lines below the corrected paragraph. Treat an override exactly like `preview only` — **write nothing, re-preview under the new mapping, and ask again.** One confirmation covering the batch is sanctioned; one confirmation covering a batch that then changed is not.
 
 **Titles land in a shared tracker permanently.** Say so at the confirmation where the tree's own worked examples are customer-facing domains: a title carrying customer, claim, or otherwise sensitive free text is created as written, visible to everyone with project access, and **this mode has no delete path**. There is no field-level filtering — the operator reading the preview is the only review that content gets.
 
@@ -501,6 +564,7 @@ Then, in the same report:
   | **attempted** | every invocation issued, failures included |
 
   **`succeeded` versus `previewed` is the reconciliation that matters** — a mismatch there means the batch did not do what was approved, and is the failure this check exists to catch. **`attempted` minus `succeeded` is the count of failed writes**, which must equal the number of `failed`/`UNKNOWN` rows in the per-item table above; if it does not, a failure went unrecorded and *that* is a reportable defect regardless of the other two numbers agreeing.
+- **The raw backlog-level evidence, as observed values rather than as the conclusion drawn from them:** per examined team, the levels the route returned with their `id`, `name` and type list, plus the category route's grouping. Log the evidence, not the verdict — a line reading "no same-level condition observed" preserves nothing, because that *is* the output. **The point is that a later reader can see what the service actually said when the conclusion turns out to be wrong**, and this mechanism has been wrong three times and re-derived four, with every probe harness discarded afterwards.
 - The resume instruction.
 - **No rollback is offered, ever.** Created items stay, tagged and recoverable. Deleting items from a shared tracker on our own initiative is a worse outcome than leaving recoverable ones behind.
 

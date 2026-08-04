@@ -6,6 +6,32 @@
 **Overrides-convention:** no
 **Related-to:** 2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md, 2026-08-04-challenge-ado-pair-report.md, 2026-08-04-decision-ado-pair-report-states-facts-only.md, docs/plans/bar-cost-and-first-run.md
 
+## AMENDED 2026-08-04 (third time, same day) — THIS FILE'S TITLE IS WRONG. Read this before anything else.
+
+**The predicate is the backlog LEVEL, not the work item type CATEGORY, and this file is named after the
+wrong object.** The filename and every "category" in the text below say a thing that was never read.
+Executed 2026-08-04 across eight projects, two zero-write routes — full record in
+`memory/known-issues/2026-08-04-ado-backlog-level-is-not-work-item-type-category.md`:
+
+- A backlog **level** and a work item type **category** are separately-configured objects that carry the
+  **same reference names**. The `Microsoft.RequirementCategory` *level* held `Bug`; the
+  `Microsoft.RequirementCategory` *category* did **not** — in **four of the six** projects that returned
+  data, **agreeing in one**, which is why a spot check ratifies the wrong claim.
+- The refused pair was **co-level and not co-category**, so **a rule keyed on categories stays silent
+  exactly where the service refuses.** That is not a wording defect; it is the mechanism.
+- **Never read a level `id` as a category reference name.** It is documented as only *"can be"* one. The
+  sound signal is two types appearing in the **same returned level object**.
+
+**The file is not renamed, deliberately.** Three other files and this session's commits cite it by path,
+and a rename buys a correct title at the cost of dead references. **The title is the warning**; this
+section is the correction. `skills/devops-azure/SKILL.md` was corrected separately in `ad837df`.
+
+**What was verified and still stands:** the harm's trigger, the executed refusal at both scopes, the UI
+divergence, and per-team bug placement moving a type between **levels**. What changes is only what the
+grouping is called — and that the design built on it is now a **facts display** rather than a classifier.
+**Open decisions 0, 3 and 4 are settled;** see `docs/plans/ado-pair-report-v4.md`
+`## REVISED DESIGN` for what shipped, and read that in preference to `## Open decisions` below.
+
 ## AMENDED 2026-08-04 after devils-advocate — read this before the table below
 
 **Challenged in `memory/known-issues/2026-08-04-challenge-ado-pair-report-v4.md`. Verdict: build it, but
@@ -175,6 +201,13 @@ rather than taken from documentation: the child cannot be reordered at either AP
 sprint board the UI disables reordering **board-wide** and hides the **parent**.
 
 ## Open decisions — do not implement before settling these
+
+> **Decisions 0, 3 and 4 below are SETTLED — the text is kept as the record of what was open, not as an
+> open question.** 0: runtime discovery, area-path narrowing, a **measured** invocation budget (`az`
+> measured ~3.3s per call, so the 20-team cap this file contemplated meant ~135s before a preview) and a
+> **default-team fallback** rather than a refusal. 3: no three-state classifier — an unresolved type prints
+> as an observed fact, and read failure is reported **per team**, which the probe showed is ordinary rather
+> than exceptional. 4: the `SPIKE` claim is **dropped**, and the alias dedupes on the mapped ADO type pair.
 
 0. **NEW: which team's configuration is read, and is it named in the preview?** **This is a required
    input and a wording constraint, NOT a blocker** — an earlier draft of this file called it blocking and
