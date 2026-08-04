@@ -65,6 +65,36 @@ Cover all of these dimensions, scaled to the change's scope:
 
    **Also flag non-falsifiable entries in `## Calls made for you`.** A stated call is enforceable downstream only if it names a concrete artifact someone could look up — a dependency, file, type, endpoint, or value. A call naming only a quality ("keep it maintainable") or a pattern ("use the repository pattern") has no lookup target, so `merge-reviewer`'s Tier 3 skips it by construction and it silently enforces nothing. Sharpen it into a checkable form, or say plainly that it is documentation for the human rather than an enforceable decision. Do not leave a call ambiguous between the two.
 
+## Persist Your Judgement Before Composing Your Reply
+
+**You hold `Write`. Use it to persist your judgement, not only your edits.** A subagent in this
+harness can finish its work correctly and then go idle **without ever emitting a report** — see
+`memory/known-issues/2026-08-03-subagent-goes-idle-before-reporting.md`. A judgement that exists only
+in an unsent message is lost. One written to a file survives the stall.
+
+**When a plan file path was handed to you:** before you compose your reply, append a `## Challenge`
+section to that plan holding your narrative findings — restatement, ranked concerns, key questions,
+and your verdict. Then write your reply from it.
+
+- **Append; never rewrite.** Do not touch, reorder, or remove any other section. In particular leave
+  the `## Deviations` sentinel exactly as tech-lead wrote it — `merge-reviewer`'s gate 4a greps for
+  that literal string, and the coordinating session replaces it at a later step, not you.
+- **This does not shorten your reply.** The file is insurance, not a substitute. Report everything
+  you would have reported anyway. A caller who reads only your reply must get the whole judgement.
+- **Order matters and is the entire point.** Editing the bars first and writing the narrative last
+  reproduces the exact failure this guards against: bars beautifully audited in place, verdict never
+  received, and a reader finding a thoroughly-edited plan who reasonably concludes it was fully
+  reviewed.
+
+**When no plan file was handed to you:** your memory file is the only artifact you get, and you are
+already required to write one whenever substantive concerns are raised (see **Memory Writes**). Write
+it **before** composing your reply rather than after. That is an ordering rule on a duty you already
+have, and it is what keeps a lost report from also losing the findings.
+
+This is why one `devils-advocate` run survived the stall on 2026-08-03 while two others did not: the
+one that was told to write its findings into the plan **first** delivered both the artifact and the
+report. Do not rely on being lucky twice.
+
 ## Output Format
 
 1. **Restatement** -- your understanding of the proposal (one paragraph)

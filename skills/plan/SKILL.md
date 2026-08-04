@@ -39,6 +39,35 @@ substitute.
 
 Note the resulting `plan_id` from tech-lead's output — step 5 hands it forward.
 
+**Then validate the plan's structure before presenting it.** This is a **blocking gate**, and it is
+the coordinating session's job — merge-reviewer deliberately does not run it:
+
+```bash
+bash scripts/lint-plans.sh docs/plans/<plan-id>.md
+```
+
+- **Pass the plan path as a discrete argument.** Never interpolate it into a longer shell string and
+  never build a command around it. The directory half comes from a `docs/CONVENTIONS.md` value the
+  host repository controls, which makes an interpolated path a command-substitution risk rather than a
+  style question; `agents/merge-reviewer.md` documents that reasoning in full.
+- **Pass only the plan this run produced.** The script never globs the plan directory, for the same
+  reason consumption is opt-in: a glob would validate and report on a plan belonging to unrelated work.
+- On a machine where `bash` is not on the shell's PATH, use the Bash tool rather than skipping the
+  step — the same rule `/implement` step 5c applies to `scripts/lint-agents.sh`.
+
+**A non-zero exit blocks.** Missing frontmatter keys, a missing `## Acceptance bars` or
+`## Deviations`, duplicate bar ids, an untyped `Evidence:` line, or a `Gated:` field with no `Cost:`
+line all mean the plan cannot be enforced by merge-reviewer's gate 4a. Route the named failure back to
+tech-lead and re-run until it exits 0. Every one of these is something the plan's author can fix
+before any pipeline starts, which is exactly why the check belongs here and not at the end.
+
+One output line is **not** a failure: `[--] ## Deviations still holds its sentinel` is correct at this
+point — that section is filled in at `/implement` step 10, not now.
+
+**A PASS is not a reviewed plan.** The script checks structure and makes no claim about truth. Whether
+a bar's evidence proves anything, and whether a stated `Cost:` is accurate, is step 3's job and the
+bar-soundness table's.
+
 The tech-lead will:
 - Identify which specialist agents are needed
 - Determine the correct invocation order (sequential vs. parallel)
@@ -64,6 +93,13 @@ only check on bar quality anywhere in the pipeline — tech-lead writes the bars
 whose work they measure, so unreviewed bars tend toward the unfalsifiable. Specifically ask it to
 flag any bar whose `Evidence:` line names something that cannot actually be produced.
 
+**Expect a `## Challenge` section appended to the plan.** devils-advocate is required to persist its
+narrative findings there *before* composing its reply, because an agent that goes idle without
+reporting otherwise takes its judgement with it. Treat that section as expected output, not drift.
+It does **not** substitute for the report: if the plan gained a `## Challenge` section and no report
+arrived, the stage did not complete — re-request once, and if that is also silent, say so in the
+record rather than reading the artifact as a verdict.
+
 **In the same pass, ask it to flag non-falsifiable entries in `## Calls made for you`.** A stated
 call is only enforceable downstream if it names a concrete artifact someone could look up — a
 dependency, a file or directory, a type or endpoint, a specific value. A call naming only a quality
@@ -72,6 +108,13 @@ merge-reviewer's Tier 3 skips it by construction and it silently enforces nothin
 devils-advocate either sharpen such a call into a checkable form or say plainly that it is
 documentation for the human rather than an enforceable decision. Gate coverage is a direct function
 of how well these are written, and this pass is the only place it gets checked.
+
+**If devils-advocate edited the plan file, re-run `scripts/lint-plans.sh` on it** — same command and
+same blocking rule as step 2. This is not redundant with the step 2 run: devils-advocate edits bars in
+place, so it can sharpen a vague bar into a gated one and introduce a `Gated:` field with no `Cost:`
+line, which is a row-6 failure that did not exist when step 2 passed. Also confirm it left the
+`## Deviations` sentinel alone; it is instructed not to touch it, and the script reports which state
+that section is in.
 
 If its output ends with an `## Obsidian sync request` section, handle it per step 6.
 

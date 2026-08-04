@@ -190,8 +190,14 @@ judgement, so it is indistinguishable from success at a glance.
   the two gated scripts above, a `git` fact — should be executed rather than believed. This is why
   merge-reviewer holds `Bash` and why its gates 2a and 2b run their checks directly.
 - **Reviewers whose only artifact is the report** (code-reviewer, security-reviewer,
-  performance-reviewer, smell-reviewer, devils-advocate) have nothing to re-run, so the first rule is
-  the whole defence there.
+  performance-reviewer, smell-reviewer, and devils-advocate when no plan file was handed to it) have
+  nothing to re-run, so the first rule is the whole defence there.
+- **An agent holding `Write` should persist its judgement, not only its edits.** This is the one
+  mitigation that demonstrably worked, and `agents/devils-advocate.md` now carries it: the narrative
+  findings go into the plan as a `## Challenge` section *before* the reply is composed. It does not
+  fix the stall — it stops the stall taking the findings with it. It also relieves nobody of rule 1.
+  A plan edited by an agent that never reported is the **most** misleading state of the lot, because
+  it reads as fully reviewed.
 
 The stall is in the harness and cannot be fixed from inside this pack. What the pack controls is
 whether silence is read as assent. See
@@ -232,7 +238,10 @@ a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `t
   rejected — do not restate the conditions here or anywhere else.** An enumeration copied into a
   second file goes stale the first time the table grows a row, and a stale list that reads as
   authoritative is worse than a pointer.
-- **devils-advocate** pressure-tests the bars in the plan file, editing in place. It is the only
+- **devils-advocate** pressure-tests the bars in the plan file, editing in place, **and appends a
+  `## Challenge` section holding its narrative findings before it composes its reply** — so a stall
+  cannot take the judgement with it. That section is the only part of the plan file it writes rather
+  than edits, and it leaves the `## Deviations` sentinel alone. It is the only
   check on bar quality; tech-lead both writes the bars and is measured by them. It applies the
   **`### Bar soundness` table in `agents/tech-lead.md`**. That table is the single authority and
   **defines its own scope** — do not restate its rows, its row count, or its scope here or in any other
@@ -257,8 +266,13 @@ a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `t
   on what each tier checks, so do not restate them here.
 
 **`scripts/lint-plans.sh` checks a plan's structure, and it is the coordinating session's job, not
-merge-reviewer's.** Run it after tech-lead writes a plan and after devils-advocate edits one, passing
-the plan path. It validates frontmatter keys, the presence of `## Acceptance bars` and
+merge-reviewer's.** Three triggers, each blocking, each passing the plan path: after **tech-lead
+writes** a plan (`/plan` step 2), after **devils-advocate edits** one (`/plan` step 3, `/implement`
+step 3), and when **`/implement` adopts** one (step 2). The adoption trigger exists because
+`/implement` acts on plans it did not write — a plan handed in by a caller other than `/plan` may have
+been through neither the writer nor the audit, and without it a structurally unenforceable plan first
+fails at gate 4a, after every engineer, reviewer, and test stage has run. It validates frontmatter
+keys, the presence of `## Acceptance bars` and
 `## Deviations`, unique bar ids, an `Evidence:` line typed `tests`/`manual`/`files` on every bar, and
 one substantive rule: **a bar carrying a `Gated:` field must also carry a `Cost:` line** —
 bar-soundness row 6 made mechanical, because a missing cost statement is visible to a script while a

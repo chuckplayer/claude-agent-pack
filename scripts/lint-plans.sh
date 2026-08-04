@@ -95,11 +95,27 @@ for plan in "$@"; do
 
         # Per-bar checks. A bar's body runs to the next bar or the next ## heading.
         starts=$(printf '%s\n' "$bar_lines" | cut -d: -f1)
+        headings=$(grep -n '^## ' "$plan" | cut -d: -f1 || true)
         total_lines=$(wc -l < "$plan" | tr -d '[:space:]')
         prev_start=""
         for start in $starts $((total_lines + 1)); do
             if [ -n "$prev_start" ]; then
                 end=$((start - 1))
+
+                # Stop the LAST bar's body at the next ## heading rather than at
+                # end-of-file. Everything below the bars -- ## Deviations, and the
+                # ## Challenge section devils-advocate writes before composing its
+                # reply -- would otherwise be read as that bar's own body, so a
+                # Gated: or Evidence: line in prose *about* bars gets attributed to
+                # whichever bar happens to be last. Observed: a ## Challenge section
+                # discussing a gate failed an unrelated final bar for row 6.
+                # $headings is ascending, so the first match is the nearest.
+                for h in $headings; do
+                    if [ "$h" -gt "$prev_start" ] && [ "$h" -le "$end" ]; then
+                        end=$((h - 1))
+                        break
+                    fi
+                done
                 body=$(sed -n "${prev_start},${end}p" "$plan")
                 id=$(printf '%s\n' "$body" | head -1 | sed 's/^- \(BAR-[0-9]*\):.*/\1/')
 

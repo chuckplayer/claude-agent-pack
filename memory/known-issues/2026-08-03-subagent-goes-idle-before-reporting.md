@@ -73,6 +73,16 @@ questions that mattered.
    report" in the record rather than quietly counting it as a pass. Note that `devils-advocate` **with**
    a plan file path is the partial case in rule 3 instead, not this one.
 
+**The one mitigation that worked is now shipped, as of 2026-08-04.** `agents/devils-advocate.md`
+carries a **Persist Your Judgement Before Composing Your Reply** section requiring the narrative
+findings into the plan as a `## Challenge` section *before* the reply is composed — with the
+memory-file write as the equivalent ordering rule when no plan file was handed to it. That is the
+inverse of rule 3 above: rule 3 tells a reader how to describe the half that went missing; this stops
+the narrative half being the half that goes missing at all. It does not fix the stall and it does not
+soften rule 1 — a plan carrying a `## Challenge` section from an agent that never reported is still an
+incomplete stage, and the most misleading state of all, because it reads as fully reviewed. `/plan`
+step 3 and `/implement` step 3 both say so explicitly.
+
 **Not fixed, and cannot be fixed from inside the pack.** The stall is in the harness, not in any
 agent file. What the pack can do is stop treating silence as assent, which is what the rules above
 and merge-reviewer's "verify mechanically" language do.

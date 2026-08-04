@@ -27,9 +27,23 @@ Run the full agent pipeline for the task the user described:
 
    When you adopt a plan, carry its `plan_id` and path through to steps 9 and 10. (Creating a plan is `/plan`'s job — it owns the directory resolution and the write instruction. `/implement` adopts; it does not create.)
 
+   **On adoption, validate the plan's structure before invoking anything else.** Blocking gate, same footing as 5c:
+
+   ```bash
+   bash scripts/lint-plans.sh <the path you were handed>
+   ```
+
+   Pass the path as a **discrete argument** — never interpolated into a longer shell string, for the command-substitution reason `agents/merge-reviewer.md` sets out in full. Pass only the plan handed to this run; the script never globs the directory. If `bash` is not on the shell's PATH, use the Bash tool rather than skipping.
+
+   **A non-zero exit stops the run** — report the failure and ask the user to fix the plan. This is worth one command at the start: `/implement` adopts plans it did not write, and a plan handed in by a caller other than `/plan` may have been through neither tech-lead's writer nor devils-advocate's audit. Without this, a plan missing `## Deviations` or carrying an untyped `Evidence:` line fails at merge-reviewer's gate 4a instead — after every engineer, reviewer, and test stage has already run. `[--] ## Deviations still holds its sentinel` is **not** a failure here; step 10 is where that section gets filled in.
+
 3. **devils-advocate** — invoke before implementation if the task introduces a new pattern, a new dependency, or an irreversible architectural change. Skip for small bug fixes and established patterns.
 
    **If a plan governs this run, pass it the plan path and ask it to pressure-test the plan file in place** — both the acceptance bars and the entries in `## Calls made for you`. It holds `Write`, and it is the only check on either. Ask it to flag any bar whose `Evidence:` line names something that cannot be produced, and any stated call that names no concrete artifact (a quality or a pattern name rather than a dependency, file, type, or value) — those have no lookup target, so merge-reviewer's Tier 3 skips them by construction and they enforce nothing. Sharpen them or mark them as documentation for the human. This is the same duty `/plan` step 3 carries; on the adoption path `/plan` already ran it, so skip it rather than repeating it.
+
+   **If devils-advocate edited a plan file in this run, re-run `scripts/lint-plans.sh` on it** — same command and same blocking rule as the step 2 adoption run. It edits bars in place, so it can introduce a `Gated:` field with no `Cost:` line, a row-6 failure that did not exist when the plan was adopted. This applies only when devils-advocate actually edited a plan *here*; on the adoption path it did not run at all and `/plan` already covered both the challenge and the lint.
+
+   **Expect a `## Challenge` section appended to the plan** — devils-advocate persists its narrative findings there before composing its reply, so a stall cannot take the judgement with it. That is expected output, not drift, and it is **not** a substitute for the report: a plan with a fresh `## Challenge` section and no report means the stage did not complete. Re-request once; if that is silent too, record "challenge findings written to the plan; narrative verdict never received" rather than treating the edits as a pass.
 
 3a. **Obsidian sync requests** — tech-lead (step 2) and devils-advocate (step 3) write memory files to `./memory/` but cannot reach the vault themselves; neither grants `Bash` or `Agent`. If either one's output ends with an `## Obsidian sync request` section, you own the dispatch:
 
