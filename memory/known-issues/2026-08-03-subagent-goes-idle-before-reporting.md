@@ -11,6 +11,31 @@ Observed **seven times in one session** on 2026-08-03: `obsidian-writer`, `codex
 `code-reviewer`, `security-reviewer`, `git-engineer` (twice), and `test-engineer` each completed
 their work correctly and then went idle **without emitting a report**.
 
+## Recurred 2026-08-04 — and the mitigation worked, and recovery was cheaper than re-dispatch
+
+**Eighth instance, on `devils-advocate` for the fourth time overall**, challenging the pair-report v4
+design. It went idle with `idleReason: "available"` having sent nothing. Three things this run
+established that the original entry could not:
+
+1. **The write-first mitigation works.** `agents/devils-advocate.md` now requires the narrative findings
+   to be written to a file *before* the reply is composed. A 17 KB challenge file was on disk when the
+   stall hit, so **no analysis was lost** — only the delivery. That is the difference between an
+   expensive re-run and a cheap one.
+2. **Re-messaging the idle agent recovers the report, and costs far less than re-dispatching.** A
+   `SendMessage` asking for the verdict — explicitly stating the file would *not* be read as a
+   substitute — produced the complete report from the agent's own retained context. **Try this before
+   re-dispatching:** a fresh agent re-reads every source file and re-derives the whole analysis.
+3. **The mitigation does not soften rule 1, and this run is the proof of why.** The file's presence was
+   *not* treated as the stage completing. The lead session refused to summarise it, because a verdict on
+   the sharpest open question — whether to ship a hard stop — is exactly the kind of judgement a reader
+   can talk themselves into either way from the same prose. When the report arrived it recommended
+   **against** the stop the design was leaning toward, on an argument (the flagged thing is the
+   *reversible* half of the batch) that was in the file but easy to under-weight. **Reading the artifact
+   instead of demanding the report would plausibly have produced the opposite decision.**
+
+Also of note: `scripts/lint-identifiers.sh` was run against the agent-written file and passed — the first
+use of that gate on output the lead session did not write, which is the case it exists for.
+
 **The work was right every time. Only the reporting failed.** That combination is what makes this
 dangerous rather than merely annoying:
 
