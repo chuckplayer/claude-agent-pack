@@ -35,6 +35,12 @@ dist/
 *.log
 npm-debug.log*
 
+# Local denylist read by scripts/lint-identifiers.sh -- never commit.
+# It holds the real organisation/project/product strings that must not appear in
+# this public repo, so committing it would publish exactly what it exists to
+# catch. That is why the checker itself ships only STRUCTURAL rules.
+.identifier-denylist
+
 # Machine-local Claude Code settings -- never commit.
 # This entry existed from the start and was silently INEFFECTIVE: the file was
 # already tracked, and .gitignore does not apply to tracked files. It was

@@ -100,6 +100,29 @@ implementation.
   because 131 passing tests went un-invoked by any pipeline until 2026-08-03, several of them named as
   regressions for bugs already fixed once -- found by auditing `scripts/` for other unrun checks after
   the `lint-agents.sh` gate above was added, which is the same failure arriving a second time.
+- **`scripts/lint-identifiers.sh`** on **every** changeset, after the files are written and before
+  code-reviewer. **Blocking on non-zero exit**, same footing as `lint-agents.sh`, and enforced by
+  merge-reviewer's gate 2c. **This repository is public.** The script fails when a real organisation,
+  project, host, user path, or email appears where the placeholder convention requires a placeholder —
+  see `memory/context/2026-08-04-this-repo-is-public-never-write-real-identifiers.md` for the
+  convention and the exact placeholder tokens.
+
+  **Unlike the other two script gates, the trigger is every changeset, not a path.** An identifier can
+  be introduced by any file in any commit, so there is no narrower trigger that would be honest — and
+  therefore **no legitimate skip**. If it is not run, say so; do not imply it passed.
+
+  Three properties worth knowing before editing it. It ships **no denylist**, because a list of the
+  forbidden strings would have to contain them in a public repo; exact-token matching comes from a
+  **gitignored** `.identifier-denylist` if present. It **self-tests before scanning** and exits **2**
+  (distinct from a finding's exit 1) if any rule fails to fire on a violating fixture or fires on a
+  compliant one — a checker that matches nothing otherwise reports a clean repo. And its greps treat
+  **exit ≥2 as an error rather than "no matches"**, because `grep -iF` aborts on this machine and the
+  first draft swallowed that and printed a pass while core-dumping.
+
+  This gate exists because the rule already existed and nothing enforced it:
+  `docs/azure-devops-github-skills-brief.md` forbade hardcoded org names four lines above a list of
+  them, and a scrub of 115 references then required rewriting all 172 commits — which **still does not
+  remove them from a public host.** Prevention is the only control that works.
 - **code-reviewer** after any output from csharp-engineer, frontend-engineer, or mcp-engineer
 - **security-reviewer** when changes touch authentication, authorization,
   data access, PII handling, API endpoints, or configuration with secrets

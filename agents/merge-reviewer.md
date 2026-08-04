@@ -250,6 +250,20 @@ Check whether the changeset touches `scripts/obsidian-stop-hook.js` or `scripts/
 
 > Why this is a gate, and why the trigger is two filenames rather than `scripts/`: the suite covers those two hooks only, so running it after a change to any other file in `scripts/` yields a PASS that verified nothing in the changeset. It became a gate because 131 passing tests sat un-invoked by any pipeline until 2026-08-03 — several of them named as regressions for bugs already fixed once, which is precisely what an unrun suite fails to protect. Same class as gate 2a, found by auditing for it.
 
+### 2c. Identifier lint gate
+
+**Runs on every changeset. There is no skip branch — do not look for one.** You hold `Bash`: run it yourself.
+
+```bash
+bash scripts/lint-identifiers.sh
+```
+
+- Exit **0** → PASS.
+- Exit **1** → **FAIL**, `reason: real identifier present in a public repo`. Report the `file:line` hits verbatim and route to whoever wrote them.
+- Exit **2** → **FAIL**, `reason: identifier checker self-test failed`. This is *not* a finding about the changeset: the script could not prove its own rules fire, so its verdict is meaningless. **Never convert an exit 2 into a PASS.** Route it as a defect in the checker.
+
+> Why this gate has no path trigger, unlike 2a and 2b. Those two check specific trees and specific files, so a changeset outside their scope legitimately skips them. An identifier can be introduced by **any** file in **any** commit, so a path trigger would be a hole rather than a scope, and a skip branch would be the thing that lets one through. This repository is **public**, and the reason this gate exists is that the rule pre-existed and nothing enforced it — `docs/azure-devops-github-skills-brief.md` forbade hardcoded org names four lines above a list of them. Enforcing it late required scrubbing 115 references and rewriting all 172 commits, and **the pre-rewrite commits remained publicly fetchable afterwards.** A leak here is not undoable, which is why this is the one gate whose justification is prevention rather than a missed check.
+
 ### 3. Security review gate
 
 Check whether security-reviewer was required for this task (changes touched authentication, authorization, data access, PII, external endpoints, or secrets).

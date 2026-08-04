@@ -145,6 +145,20 @@ Run the full agent pipeline for the task the user described:
 
    > **Why this is a step.** 131 tests, exit 0, and until 2026-08-03 **no pipeline invoked them** — found by auditing `scripts/` for other unrun checks after 5c was added. Several are named as regressions (`"regression: it never closed"`), meaning they encode bugs already fixed once; nothing was stopping a hook edit from reintroducing one silently. This is the same class as 5c, found by asking the question 5c raised.
 
+5e. **Identifier lint** — run on **every** changeset, after the files are written and **before code-reviewer**. **Blocking gate**, same footing as 5c and 5d:
+
+   ```bash
+   bash scripts/lint-identifiers.sh
+   ```
+
+   **This repository is public.** The script fails when a real organisation, project, host, user path, or email address appears where the placeholder convention requires a placeholder. On a failure it prints `file:line` for each hit — fix the file, do not add a suppression marker unless the line is genuinely showing an example.
+
+   **The trigger is every changeset, and that is deliberate — there is no path-based narrowing and therefore no legitimate skip.** 5c triggers on two directories and 5d on two filenames, because each check only covers those. An identifier can be introduced by *any* file in *any* commit, so a path trigger here would be a hole rather than a scope. If it did not run, say so plainly; never let its absence read as a pass.
+
+   **Two exit codes, and they mean different things.** Exit **1** is a finding: an identifier is present, fix it. Exit **2** means the checker's own self-test failed — it could not prove its rules fire on violating fixtures — so its verdict on the repo is worthless and must not be reported as clean. Treat exit 2 as "fix the checker first", not as a finding.
+
+   > **Why this is a step.** The rule pre-existed and nothing enforced it: `docs/azure-devops-github-skills-brief.md` forbade hardcoded org/project names **four lines above a list of them**. Enforcing it late cost a scrub of 115 references across 20 files plus a rewrite of all 172 commits — and a force push provably does **not** remove them from a public host, so the exposure could not be fully undone. Unlike 5c and 5d, this gate cannot be justified by "a check existed and nothing ran it"; it exists because prevention is the only control that works at all.
+
 6. **code-reviewer** — always after any engineer agent output.
 
 7. **security-reviewer** — invoke if changes touch authentication, authorization, data access, PII, external endpoints, or secrets.
