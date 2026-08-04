@@ -47,10 +47,21 @@ permissive on the product backlog. **Do not derive one from the other.** The ite
 route (`_apis/work/iterations/{id}/workitemsorder`) was missed in the first probe and is a distinct
 endpoint from the product-scope one; both were tested for this amendment.
 
-**Still unconfirmed:** whether the UI's successful drag of the child survives a hard page refresh. The
-child carries a computed-looking `BacklogPriority` and its parent link is intact, which is consistent
-with a real write, but a UI that optimistically renders a move it later reverts would look identical at
-that moment.
+**Confirmed by hard refresh:** the UI's drag of the same-category child **persists**. So this is not an
+optimistic render that reverts — **the product backlog UI permits and saves a reorder that the REST API
+refuses outright at both scopes.**
+
+**That is the single most useful thing this probe found, and it generalises past ADO.** The API's
+`SameTypeHierarchyException` is a **stricter guard than the product's own UI applies**, so the two
+enforce genuinely different rules for the same user-visible operation. Consequences for this pack:
+
+- **An `az` refusal is not evidence that the operation is forbidden** — only that this endpoint refuses
+  it. A human can accomplish it in the UI.
+- **An `az` success is not evidence the board is healthy** — the sprint-wide lockout and the hidden
+  parent are invisible to every read available here.
+- **Neither direction of inference is safe**, which is why `8f` now states both surfaces rather than
+  picking one. Any future control built on "ADO won't let you" needs to say *which surface*, and any
+  control built on "the API said yes" is checking the wrong thing.
 
 ## Summary
 
