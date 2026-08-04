@@ -197,6 +197,10 @@ az devops invoke --area wit --resource workitemtypes --route-parameters project=
 
 If that fails, fall back to step 5's sample-an-existing-item, then to asking the operator directly.
 
+**Two parse hazards land on that read specifically, and both were executed 2026-08-04.** `az boards work-item type list` **is not a command** — it exits **2** with *"'type' is misspelled or not recognized"*, so a run that suppresses stderr prints `types defined: 0` for a project with seventeen of them. And the `workitemtypes` response is **~750 KB** for a seventeen-type project, because every type carries a full `fieldInstances` array — which **exceeds PowerShell 5.1's `ConvertFrom-Json` limit**, failing with `Cannot process argument because the value of argument "name" is not valid`. **That message names a parameter and is really a size limit**, and writing the output to a file first fails identically, so it is the parser rather than the pipeline.
+
+**Project the response with `--query "value[].name"` for this read** — a bracket-and-dot path is the one `--query` form that survives this platform. **Do not reach for a richer query:** a `--query` containing a **double quote** (which every ADO field path needs, since they all contain dots) is destroyed by PowerShell at the native boundary, and one containing **parentheses** (`keys(@)`, `length(value)`) is eaten by the `az.cmd` shim, which re-parses the line and reports `--output was unexpected at this time`. Item-scoped responses are ~4 KB and need no `--query` at all — parse them directly and read `$o.fields.'System.Title'`. Full record: `memory/context/2026-08-04-az-query-and-json-parse-hazards-on-windows.md`.
+
 **Discovery returns types that exist, including types that are BLOCKED for creation. Run a second, cheap check before proposing a mapping.** A customized process can leave a type present in `workitemtypes` while refusing every create against it:
 
 ```

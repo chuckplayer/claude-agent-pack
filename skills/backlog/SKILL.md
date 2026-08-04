@@ -244,12 +244,15 @@ the spec or a plan makes them stale, and the auditor says so rather than blaming
 **There is no work item state field here on purpose:** the tracker owns work item state and hours,
 and a copy of it here would drift.
 
-**The join to a tracker is recorded in an `external_refs` entry, and no item above carries one.**
-That absence is the record: **no such entry means no tracker holds this item.** It is a fact, not
-a placeholder awaiting a value. `/backlog` never writes the field and never asks about trackers;
-it is written by whatever creates the work items — `devops-azure` batch write mode, its sole
-writer. The field is a **list keyed by system**, never a single id, because one story can
-be tracked in two systems.
+**The join to a tracker is recorded in an `external_refs` entry, and no item above carries one
+as this tree was written.** That absence is the record: **an item with no such entry is held by no
+tracker.** It is a fact, not a placeholder awaiting a value. **This sentence is scoped to
+generation time deliberately** — once a tracker mode runs, items *do* carry entries, and that mode
+is forbidden from editing any line but the entries themselves, so an unscoped claim here would be
+left standing and false in every tree it ever touched. Do not read it as a standing claim that none
+exist. `/backlog` never writes the field and never asks about trackers; it is written by whatever
+creates the work items — `devops-azure` batch write mode, its sole writer. The field is a **list
+keyed by system**, never a single id, because one story can be tracked in two systems.
 This pipeline is **tracker-agnostic by design** and **ADO-first by circumstance**.
 Its shape, and the reciprocal key written back into the tracker, are documented
 in `/backlog`'s own step 6 — deliberately not shown here, because nothing this skill emits
