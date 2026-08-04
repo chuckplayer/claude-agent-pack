@@ -34,4 +34,11 @@ dist/
 # Logs
 *.log
 npm-debug.log*
+
+# Machine-local Claude Code settings -- never commit.
+# This entry existed from the start and was silently INEFFECTIVE: the file was
+# already tracked, and .gitignore does not apply to tracked files. It was
+# untracked on 2026-08-04 (git rm --cached) after it was found publishing one
+# machine's permission allowlist, including an AD username, to a public repo.
+# Machine-level settings belong in ~/.claude/settings.json.
 .claude/settings.local.json

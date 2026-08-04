@@ -6,7 +6,7 @@
 **Overrides-convention:** no
 **Related-to:** n/a
 **Last-updated:** 2026-08-04
-**Verified-at-commit:** 2d49bbe
+**Verified-at-commit:** b7f59f2
 
 # Repo Map
 
@@ -14,6 +14,14 @@ Directory-level map of the Claude Agent Pack. One entry per meaningful directory
 with its key files. Maintained by `/repo-map`; read by `/onboard`, tech-lead,
 `/plan`, `/refactor`, and `/scaffold`. Refresh when `git diff` shows drift from
 `Verified-at-commit`.
+
+> **Re-stamped 2026-08-04 after a history rewrite, not after a normal refresh.** The previous stamp
+> pointed at a commit that **no longer exists** — an identifier scrub rewrote all 172 commits, so every
+> SHA changed and the stamp dangled. `/repo-map`'s rule for an unreachable stamp is to regenerate
+> fully; a surgical re-stamp was taken instead because the diff *is* known: the scrub replaced
+> identifier strings and altered no directory structure, and the only structural change since was
+> untracking `.claude/settings.local.json`, corrected under **Root** below. **Any future dangling stamp
+> without that guarantee should regenerate rather than re-stamp.**
 
 ## agents/
 Sub-agent definitions, 20 files (one `.md` per agent). Each file's frontmatter `description`
@@ -108,4 +116,4 @@ Pack installation and metadata.
 - `CLAUDE.md` — agent orchestration rules, plan-spine rules, engineer responsibilities, and Obsidian capture instructions. Its `backlog-auditor` routing section deliberately explains why `/backlog` is *not* one of the four plan-spine-exempt skills, since the two exemptions have different causes and get conflated. The same section records that `/devops-azure` batch write mode is the only writer of `external_refs:` and enters no gate — stated there rather than in a routing list, because the routing sections govern agents and batch mode is not one. Also holds **"A stage is complete when it reports, not when its agent stops"**: seven agents in one session finished correctly and went idle without reporting, so the file now forbids inferring a verdict from process state and prefers a re-runnable check over a trusted report — which is why the three script gates exist and why merge-reviewer holds `Bash`.
 - `README.md` — flow selection, gate authority, the pack's design patterns, and the "Plan Spine" section documenting the three artifact-path keys and their defaults. Its spelled-out agent and skill counts are always recounted, never incremented.
 - `VERSION` — pack version stamp checked by `check-updates.sh`.
-- `.claude/settings.local.json` — project-scoped permission allowlist. The only tracked file under `.claude/`; machine-level settings live in `~/.claude/settings.json`.
+- `.claude/` — **holds no tracked files.** `settings.local.json` was untracked 2026-08-04: it published one machine's permission allowlist, including an AD username, to a public repo. `.gitignore` had listed it from the start but the entry was inert, because gitignore does not apply to an already-tracked file. Machine-level settings live in `~/.claude/settings.json`.
