@@ -43,6 +43,60 @@ that follows from the mapping.
 stop in 8c–8h fires on an **observed service response** or a **reconciliation mismatch**. A stop here
 would be the first on a **derived prediction** — the least reversible thing in the design.
 
+## SECOND REVIEW 2026-08-04 — cross-model (Codex, `gpt-5.5`), read-only, exit 0
+
+**It converged with devils-advocate on every major call, independently.** Same disposition
+(warning-with-acknowledgement, not a stop), and it reproduced the *reversible-vs-irreversible asymmetry*
+argument without being handed that framing — blocking a removable link while permanent item and tag
+creation proceeds under a preview line is an indefensible policy boundary. It also independently arrived
+at the need for an explicit third state. **Two models reaching the same conclusion from different priors
+is the strongest signal this design has had**, and it is the first time any version of this feature got
+one.
+
+**Adopt these four, all new relative to the internal review:**
+
+1. **Three states, and the middle one is not "safe".** `RISK` (both types resolve to the same category for
+   the selected team) · `NO_KNOWN_RISK` (both resolve and differ — **no guarantee**) · `UNKNOWN` (a type is
+   missing, ambiguous, duplicated across levels, or the read shape is suspect). **`UNKNOWN` is surfaced
+   separately and folded into neither bucket.** The check may say "this pair matches a configuration
+   pattern empirically observed to break reordering"; it may **never** say or imply "unflagged pairs are
+   safe". Given amendment 2 — the OK direction is inferred, not executed — that phrasing constraint is
+   the honest ceiling on what this check can claim.
+2. **Separate the classifier from the policy.** Type→category lookup (team-scoped, predictive) should be
+   architecturally distinct from disposition logic (what to do with `RISK`/`UNKNOWN`/read failure). Cheap
+   now, before any text exists; it makes a later disposition change local instead of a rewrite.
+3. **A failed read must not be silent.** "Degrade to unavailable and proceed" is right, but *silently*
+   proceeding makes "check failed" indistinguishable from "checked and clean" — the exact failure class
+   this repo keeps producing. **Proceed, yes; silently, no.** Emit a visible "backlog hierarchy risk check
+   unavailable" line. This tightens open decision 3 rather than restating it.
+4. **A silent default team is unacceptable, not merely under-specified.** If a team is chosen implicitly
+   that choice must be visible in the preview, because the same work items are viewed through other
+   teams' boards. Acceptable claim forms are scoped ones: *"using team `<team>`'s configuration, these
+   links may degrade reordering on that team's boards"*, or *"no team selected, so backlog-category risk
+   could not be determined"*. **"This pair is invalid for the project" is overclaiming.**
+
+Also: the `SPIKE` alias needs **display-side normalisation**, not just corrected wording. Two logical tree
+names mapping to one ADO type must dedupe in the output, or an operator reads two independent risks where
+one exists. Amendment 3 called the claim vacuous; this extends it to the report's rendering.
+
+**Framing both models endorse:** a *preflight advisory*, not a validation gate. Hard-fail on deterministic
+contract violations; warn or require acknowledgement for configuration-scoped predictions and provider
+quirks. Wording follows: "may degrade under the observed configuration", never "will fail".
+
+**What Codex did not address, so these stay open rather than resolved:** the `workitemtypecategories`
+trap (open decision 0), type→category being a **relation** so a type on two levels makes the inversion
+order-dependent (open decision 3's third bullet — Codex folded this into `UNKNOWN` without treating
+order-dependence as its own hazard), and the **precedent** question of this being the first check in this
+mode to act on a derived prediction. Its recommendation implicitly accepts that precedent by shipping an
+advisory rather than a stop, but it did not argue the point.
+
+**One correction to the handoff, recorded so it does not propagate.** The synthesis characterised the
+flagship `story-type -> bug-type` row as vendor-recommended parenting that the check would flag.
+devils-advocate said the reverse: under *track bugs as Tasks* those types sit in **different** categories
+and the check **correctly stays silent**. The real objection is narrower and still stands — that row is
+the **most configuration-volatile** one in the table, so it is a poor choice of headline evidence even
+though the check handles both configurations correctly.
+
 ## Summary
 
 **The pair report finally has a mechanism that was verified before any design text was written**, which
