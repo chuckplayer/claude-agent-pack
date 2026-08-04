@@ -104,13 +104,21 @@ accepted and links may fail". Also: `az devops invoke --area wit --resource work
 type **list**, not the hierarchy, so if the hierarchy is not discovered the file must say the link pass
 learns it by attempting a link and failing.
 
-### 9. `System.Tags` pollutes an org-wide namespace, and that is the objection that killed the title prefix
+### 9. `System.Tags` pollutes a tag namespace, and that is the objection that killed the title prefix
+**Scope overstated — tags are per-project, not org-wide.** The argument below is left exactly as it was
+written, both of its "org-wide" claims intact, because this file records what devils-advocate argued and
+editing the argument would misrepresent it. The verified scope, and the part of the concern that
+survives, are in the correction block at the end of this section. **Read that before acting on
+anything here.**
+
 **Unresolved, labelled.** Every created item adds a tag value visible in tag autocomplete to **every user
 in the org** — a 36-item tree adds 36. The four rejected alternatives were all evaluated on
 queryability; a title prefix was rejected specifically because it "pollutes the board", and the same
 objection applied to the chosen field is unexamined. The choice may still be right, but the preview
 should say so out loud, and BAR-015's gate is not "throwaway items" — the mode has no delete path, so it
-is permission to create ~10 permanent work items plus ~10 permanent org-wide tags.
+is permission to create ~10 permanent work items plus ~10 permanent org-wide tags. *(This is the sentence
+that propagated into BAR-015's consent gate. `org-wide` is its false half — the permanence, and the absent
+delete path that makes it permanent, are not.)*
 
 > **Correction, 2026-08-03 (after BAR-015 ran): the scope above is wrong — ADO work item tags are
 > per-project, not org-wide.** Verified against `<org>`: `<project-a>` held one tag value and `<project-a>`
