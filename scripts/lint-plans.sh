@@ -155,11 +155,25 @@ for plan in "$@"; do
     # --- Deviations sentinel ------------------------------------------------
     # An unfilled sentinel is NOT a failure: it is correct until step 10. But an
     # empty section is indistinguishable from one nobody looked at, so say which.
+    #
+    # Match the sentinel by its LITERAL TEXT, never by the word "sentinel". This
+    # is the same structured-vs-prose distinction the Gated: check above already
+    # makes, and it was missed here in the same commit that made it there: a
+    # case-insensitive search for "sentinel" matched two plans whose *filled-in*
+    # departure prose discusses the sentinel mechanism (spec-intake.md, 5 hits;
+    # plan-spine-deviations.md, 15 -- the plan that introduced the sentinel), so
+    # both completed sections were reported as unfilled. That is bar-soundness
+    # row 5 in the checker itself, and it reports the opposite of the truth on
+    # the one question the sentinel exists to answer.
+    #
+    # This literal is the single authority shared with agents/merge-reviewer.md
+    # Tier 1, which greps the same string. Keep them identical: if tech-lead's
+    # sentinel line in agents/tech-lead.md ever changes, all three move together.
     if grep -qF "## Deviations" "$plan"; then
         dev_body=$(sed -n '/^## Deviations/,$p' "$plan" | tail -n +2 | grep -v '^[[:space:]]*$' || true)
         if [ -z "$dev_body" ]; then
             fail "## Deviations" "section is empty -- must hold the sentinel, 'None.', or one bullet per departure"
-        elif printf '%s\n' "$dev_body" | grep -qi 'SENTINEL'; then
+        elif printf '%s\n' "$dev_body" | grep -qF 'Deviations not yet reviewed'; then
             echo "  [--] ## Deviations still holds its sentinel (correct before step 10)"
         else
             pass "## Deviations filled in"
