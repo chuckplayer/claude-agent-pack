@@ -6,15 +6,52 @@
 **Overrides-convention:** no
 **Related-to:** 2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md, 2026-08-04-challenge-ado-pair-report.md, 2026-08-04-decision-ado-pair-report-states-facts-only.md, docs/plans/bar-cost-and-first-run.md
 
+## AMENDED 2026-08-04 after devils-advocate — read this before the table below
+
+**Challenged in `memory/known-issues/2026-08-04-challenge-ado-pair-report-v4.md`. Verdict: build it, but
+as a warning requiring acknowledgement, not a hard stop.** Three corrections land on *this file*, each
+verified rather than accepted on the agent's word:
+
+1. **`category(type)` is TEAM-scoped, and this file called it a project fact.** `team` is a **required**
+   path parameter on the backlog-levels route — the verification run passed one without noticing what
+   that implied — and bug placement is a per-**team** setting, so a bug type can sit in a different
+   category for two teams in the same project. **This mode resolves no team at all:** verified that
+   `skills/devops-azure/SKILL.md:305` resolves org, project, area path and iteration path, and nothing
+   in the skill resolves a team. So "one zero-write read" quietly requires a **new resolved input**, and
+   the flagship `story-type -> bug-type` row is precisely the row that moves between configurations.
+   Reading one team and reporting a project verdict is bar-soundness **row 2** — a category claim on
+   instance evidence.
+2. **"All six agree with executed behaviour" overstates the table below.** Two rows put *reasoning* in
+   the executed-truth column (`conventional`; `unconventional, different category, fine`). **No nested
+   different-category child was ever reorder-tested.** So `same category => refused` has executed
+   evidence in **one** category, while `different category => fine` — the direction the check relies on
+   for its **silence** — has none. Every false negative this check can produce lives in the untested
+   half. That is bar-soundness **row 1** applied to this file's own claim.
+3. **The `SPIKE` note in open decision 4 is vacuous.** `SPIKE` maps to the *same ADO type* as `STORY`,
+   so `FEATURE -> SPIKE` **is** the same type pair as `FEATURE -> STORY`, and the check can never produce
+   a SPIKE-specific finding. Saying "the check finds it" credits a capability the fixed mapping makes
+   impossible.
+
+**Open decision 2 is settled:** no second confirmation. Verified that `SKILL.md:306` (8e item 2) already
+carries "including any warning requiring acknowledgement", so acknowledgement is reachable **inside the
+single confirmation at zero cost** — and it lands the feature inside the numbered nine that BAR-002
+checks, rather than in the un-numbered bucket nothing checks. **Disposition and checkability turn out to
+be the same question.** But `SKILL.md:321` **is** an edit site: the pair verdict becomes a fourth thing
+that follows from the mapping.
+
+**A precedent worth naming, which the original version of this file did not discuss:** every existing
+stop in 8c–8h fires on an **observed service response** or a **reconciliation mismatch**. A stop here
+would be the first on a **derived prediction** — the least reversible thing in the design.
+
 ## Summary
 
 **The pair report finally has a mechanism that was verified before any design text was written**, which
 is the one thing all three previous attempts got wrong. It keys on **backlog category**, derived from a
-single zero-write read, and it was checked against six pairs whose real behaviour had already been
-executed — including the case a "same type" rule cannot see.
+single zero-write read, and it was checked against six pairs — **two genuinely executed; see amendment 2
+for what the other four actually rest on** — including the case a "same type" rule cannot see.
 
-**Nothing is implemented.** This records the verified mechanism and the open decisions so the next
-attempt starts from executed ground instead of re-deriving it.
+**Nothing is implemented.** This records the mechanism and the open decisions so the next attempt starts
+from executed ground instead of re-deriving it.
 
 ## The mechanism, and the check that it is right
 
@@ -26,22 +63,28 @@ az devops invoke --area work --resource backlogs \
   --org https://dev.azure.com/<org> --http-method GET --api-version 7.1
 ```
 
-Invert it into `type -> category`, then a required parent/child pair degrades **iff
-`category(parent) == category(child)`**. Verified 2026-08-04 against a live project:
+Invert it into `type -> category`. The **executed** direction is: a required parent/child pair is refused
+when `category(parent) == category(child)`. **Do not write `iff`** — see the evidence column below, and
+read this table as one team's configuration, not a project's.
 
-| pair | derived | executed truth |
+| pair | derived | status of the "truth" column |
 |---|---|---|
-| `User Story -> Task` | OK | reorders fine |
-| `Feature -> User Story` | OK | reorders fine |
-| `Epic -> Feature` | OK | conventional |
-| `Feature -> Task` | OK | unconventional, different category, fine |
-| `User Story -> User Story` | **FLAG** | `SameTypeHierarchyException` |
-| `User Story -> Bug` | **FLAG** | `SameTypeHierarchyException` |
+| `story-type -> story-type` | **FLAG** | **EXECUTED** — `SameTypeHierarchyException`, both API scopes |
+| `story-type -> bug-type` | **FLAG** | **EXECUTED** — `SameTypeHierarchyException`, both API scopes |
+| `story-type -> task-type` | OK | **executed for a *flat* item and for the parent** — not for a nested different-category child |
+| `feature-type -> story-type` | OK | same as above |
+| `epic-type -> feature-type` | OK | **INFERRED.** "Conventional" is reasoning, not a result |
+| `feature-type -> task-type` | OK | **INFERRED.** "Different category, fine" is reasoning, not a result |
 
-**All six agree.** The last row is the whole reason this keys on category: `User Story` and `Bug` are
-different *types* in the same *category*, so a same-type rule reports it as safe while ADO refuses it.
-In that project `Product Backlog Item`, `User Story` and `Bug` share `Microsoft.RequirementCategory`,
-and `Task` shares `Microsoft.TaskCategory` with `Defect`.
+**Both FLAG rows are executed, and both sit in the SAME category.** No nested *different-category* child
+was ever reorder-tested, so the OK direction — the direction the check relies on for its **silence** — is
+inferred throughout. **Every false negative this check can produce lives in that untested half.**
+
+The `story-type -> bug-type` row is still the reason to key on category rather than type: those are
+different *types* in the same *category*, so a same-type rule reports it safe while the service refuses
+it. In the team configuration that was read, the backlog-item types shared one category and the task
+types shared another — **but bug placement is a per-team setting, so that grouping is exactly what varies
+between teams.**
 
 ## Why this survives what killed v1, v2 and v3
 
@@ -50,9 +93,11 @@ and `Task` shares `Microsoft.TaskCategory` with `Defect`.
 - **v3** asserted no ADO behaviour at all, but computed **false project history**: it published 101
   parent-child edges against 96 possible children. Its axis (has this project used the pair before?)
   was also uncorrelated with the harm, and *inverted* on the one case where they met.
-- **v4 needs no edge list, no client-side join, no `MODE` question, no history, and no inference.**
-  Category membership **is** the harm's trigger, and the mapping is read from the target project so it
-  cannot be wrong about a different process template.
+- **v4 needs no edge list, no client-side join, no `MODE` question and no history.** Category membership
+  **is** the harm's trigger — that part holds and is v4's real achievement. **But "no inference" was
+  overclaimed** (amendment 2), and **"cannot be wrong about a different process template" was wrong for
+  a different reason than process templates**: the read is *team*-scoped, so it can be right about the
+  project's process and still wrong about the team whose board actually degrades (amendment 1).
 
 **This is the first version permitted to predict**, because the consequence was executed on 2026-08-04
 rather than taken from documentation: the child cannot be reordered at either API scope, and on the
@@ -60,21 +105,47 @@ sprint board the UI disables reordering **board-wide** and hides the **parent**.
 
 ## Open decisions — do not implement before settling these
 
-1. **Disposition.** Informational line, warning requiring acknowledgement, or a stop? Batch mode has no
-   delete path, and the damage is invisible afterwards to every read available to this pack. That argues
-   for more than an informational line — but v2 died from making a check fatal on a false premise, so
-   the bar for a stop is high even now that the premise is true.
-2. **Where the mapping comes from.** The operator confirms `type` per tree level in preview item 2, so
-   the pairs are derivable there without new questions. Confirm it adds no second confirmation —
-   step 7's one-confirmation rule and 8e's single-confirmation rule are **not** edit sites.
-3. **Read failure.** If the levels read returns nothing, the report must degrade to "unavailable" and
-   let the batch proceed — never a stop. Needs a positive control: at least two levels, each with at
-   least one type. `az devops invoke` is known to serve a **sibling route** silently when route params
-   do not disambiguate, so an unguarded read can manufacture a wrong answer.
-4. **`SPIKE`.** It maps to the same ADO type as `STORY`. Under the fixed grammar
-   `FEATURE -> STORY|SPIKE -> TASK` a SPIKE is a *sibling* of STORY, so no same-category pair arises
-   from it by default — but it does if the operator maps `FEATURE` to a requirement-category type.
-   That is exactly the case worth catching, and it is worth stating that the check finds it.
+0. **NEW, and it now precedes everything: which team's configuration is being read, and how is it
+   resolved?** Until answered the derived value has no defined meaning, because `category(type)` is
+   team-scoped (amendment 1) and this mode resolves no team. Area path is already resolved and does
+   **not** uniquely determine a team — more than one team can include an area path. Note the trap: the
+   project-scoped `wit/workitemtypecategories` route needs no team and looks like the fix, but it is
+   project-scoped *by construction* and therefore cannot represent a per-team bug override — it would
+   silently lose the flagship `story-type -> bug-type` row, the whole reason v4 keys on category. **Do
+   not "simplify" the design into losing its best case.**
+1. **Disposition — recommendation on record: warning requiring acknowledgement, not a stop.** The
+   argument that changed the call: the flagged thing is a **link**, and links are the *reversible* part
+   of this mode, while the irreversible half (item creation, permanent per-project tags) proceeds under a
+   preview line. A stop would block the reversible half and wave through the irreversible one. Also
+   "the damage is invisible afterwards" is **half false** — the *condition* is re-derivable by the same
+   zero-write read at any time; what is invisible is the *board state*. **The bar for a stop is now
+   specific: name a case where the remedy is unavailable to the operator.** None is on record — the UI
+   warning itself names both remedies.
+2. **SETTLED — no second confirmation.** `SKILL.md:306` already carries "including any warning requiring
+   acknowledgement", so it fits inside the single confirmation at zero cost *and* lands inside the
+   numbered nine that BAR-002 checks. `SKILL.md:321` **is** an edit site.
+3. **Read failure — WIDER than first stated.** Three cases, not one:
+   - the read returns nothing → degrade to "unavailable", never a stop;
+   - **the read returns levels but a mapped type appears in none of them** → that type has no category.
+     Naive comparison of two absent values says *equal* (false flag); one absent says *not equal*
+     (silence indistinguishable from a clean verdict). **Bar-soundness row 3.** Needs a printed per-pair
+     `UNKNOWN`, not a silent fallthrough;
+   - the inversion assumes `type -> category` is a **function**; the schema makes it a relation. A type in
+     two levels makes the result array-order-dependent, `isHidden` levels are returned and unfiltered, and
+     a level id is only *"can be"* the category refname — so on an inherited process it may be neither
+     meaningful nor printable.
+
+   The positive control must also grow: "≥2 levels each with ≥1 type" is **shape-only** and cannot detect
+   that the *wrong team's* configuration was read, and the response carries no team echo to check against.
+   `az devops invoke` silently serves a **sibling route** when route params do not disambiguate — this
+   route family is the documented instance — and the PS 5.1 `ConvertFrom-Json` double-wrap and native-arg
+   mangling both apply at the parse site, the latter because a conventional team name contains a space.
+4. **`SPIKE` — CORRECTED, see amendment 3.** It maps to the *same ADO type* as `STORY`, so
+   `FEATURE -> SPIKE` is the identical type pair to `FEATURE -> STORY` and **the check can never yield a
+   SPIKE-specific finding.** The original wording here credited it with exactly that capability. What
+   remains true: if the operator maps `FEATURE` to a requirement-category type, `FEATURE -> STORY` flags
+   — and that finding covers the SPIKE branch implicitly rather than distinctly. **Either correct the
+   claim or drop it; do not state that the check finds SPIKE problems.**
 5. **Review.** This feature has killed three designs. It should get an adversarial pass before shipping,
    and the session that verified the mechanism is not the right check on its own design.
 
