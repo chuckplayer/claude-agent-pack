@@ -2,9 +2,10 @@
 
 **Date:** 2026-07-27 (revised 2026-07-29 — proposed additions cut from 4 skills + 1 agent to 3 skills + 1 agent + 2 modes on existing skills; all three remaining skills scope-checked; see Scope revision)
 **Status:** design settled on nine points; all proposals scope-checked; not yet specified in full, not implemented
-**Origin:** reading `<internal-repo>/docs/<delivery-playbook>.docx` — a BA/PM playbook
-derived from the <internal-repo> Claims module build (June–July 2026), and mapping its five stages against
-what the pack actually covers today.
+**Origin:** reading an internal BA/PM feature-delivery playbook supplied by the business, derived from a
+claims-module build (June–July 2026), and mapping its five stages against what the pack actually covers
+today. **The source document is deliberately not named or located here** — it is internal to the
+adopting organisation and this repository is public.
 
 **Blocked on:** workstream 2 of `obsidian-cli-and-plan-spine-brief.md` (the durable plan spine),
 for two independent reasons — the shared CONVENTIONS.md path key, and `/backlog` reading the plan's
@@ -552,6 +553,6 @@ than a specified one.
 
 ## Reference
 
-- Source playbook: `<internal-repo>/docs/<delivery-playbook>.docx`
+- Source playbook: an internal BA/PM feature-delivery document, intentionally unnamed here (see **Origin**)
 - Prerequisite brief: `docs/obsidian-cli-and-plan-spine-brief.md` (workstream 2)
 - Related: `docs/azure-devops-github-skills-brief.md`

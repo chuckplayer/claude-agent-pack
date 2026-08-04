@@ -367,7 +367,7 @@ For a recap, use the target date's daily note (`daily/<YYYY-MM-DD>.md`), not
 today's — recaps may be generated for a past date.
 
 Wikilinks must use forward slashes, relative to vault root, no `.md` extension.
-Example: `[[<org>/claude-agent-pack/recaps/2026-07-01]]`
+Example: `[[<vault-folder>/claude-agent-pack/recaps/2026-07-01]]`
 
 1. Read the existing daily note with the Read tool (it may not exist yet).
 2. **If missing:** create it as `# <effective-date>\n\n<new line>` **through the transport chain**

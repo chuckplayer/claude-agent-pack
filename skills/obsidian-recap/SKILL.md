@@ -149,11 +149,11 @@ then the filesystem, and reports which one succeeded.
 
 Report the recap path and write method. Example:
 
-> "Daily recap written to `<org>/claude-agent-pack/recaps/2026-07-01.md` (via Obsidian CLI)"
+> "Daily recap written to `<vault-folder>/claude-agent-pack/recaps/2026-07-01.md` (via Obsidian CLI)"
 
 or:
 
-> "Daily recap written to `<org>/claude-agent-pack/recaps/2026-07-01.md` (filesystem)"
+> "Daily recap written to `<vault-folder>/claude-agent-pack/recaps/2026-07-01.md` (filesystem)"
 
 ## Gotchas
 

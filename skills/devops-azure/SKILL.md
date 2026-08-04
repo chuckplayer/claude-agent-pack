@@ -178,7 +178,7 @@ ERROR: VS403074: Work item creation or migration to the target work item type
 'Product Backlog Item' is blocked. Enable the work item type to unblock the operations.
 ```
 
-Verified against `<org>/<project-a>` on 2026-08-03: the project is built on a process named "<project-a> Scrum" and lists **both** `Product Backlog Item` and `User Story`, but PBI is blocked and the whole batch failed at item 1. **Two lessons, and the second is the one that costs a run:**
+Verified by execution 2026-08-03: in a project whose process was *named* Scrum, `workitemtypes` listed **both** `Product Backlog Item` and `User Story`, but PBI was blocked and the whole batch failed at item 1. **Two lessons, and the second is the one that costs a run:**
 
 - **The process template's *name* predicts nothing.** A project named for Scrum had the Agile type enabled and the Scrum type blocked. Never infer the mapping from the template name — that inference is what produced this failure.
 - **`workitemtypes` alone cannot tell you what is creatable**, so its output is a *candidate* list rather than an answer.
@@ -206,7 +206,7 @@ The mapping is **persisted nowhere.** Not in the tree — it is ADO-specific, an
 
 **Discovery yields the type *list*, not the type *hierarchy*.** `az devops invoke --area wit --resource workitemtypes` returns which types exist in the project; it does **not** return which types may parent which.
 
-**There is no type-pair constraint to discover, and this file previously said there was.** `System.LinkTypes.Hierarchy` restricts **one parent per item** and **no cycles**. It does **not** restrict which type may parent which. Verified 2026-08-03 against `<org>/<project-a>`: work item `706537` (a `User Story` with zero parent relations) was linked as the child of `706531` (a `Task`) — a pair that project does not use anywhere, and one that inverts the conventional order — and the link was **accepted, exit 0**. It was then removed, exit 0. The Epic → Feature → Story → Task ordering is a **convention**, not an enforced rule.
+**There is no type-pair constraint to discover, and this file previously said there was.** `System.LinkTypes.Hierarchy` restricts **one parent per item** and **no cycles**. It does **not** restrict which type may parent which. Verified by execution 2026-08-03: work item `706537` (a `User Story` with zero parent relations) was linked as the child of `706531` (a `Task`) — a pair that project does not use anywhere, and one that inverts the conventional order — and the link was **accepted, exit 0**. It was then removed, exit 0. The Epic → Feature → Story → Task ordering is a **convention**, not an enforced rule.
 
 **So the hazard is acceptance, not refusal, and that inverts what a careful reader would expect.** An unconventional pair does not fail loudly at link time; it succeeds and then degrades the board — Microsoft documents that a hierarchy nesting items of the same type or category prevents backlog reordering and can stop intermediate items appearing on sprint backlogs and taskboards. **That downstream degradation is documented rather than executed here** — this file has verified the *acceptance* directly and takes the *consequence* from Microsoft's guidance, and the distinction is stated so a later reader knows which half rests on a live probe.
 
@@ -218,7 +218,7 @@ The mapping is **persisted nowhere.** Not in the tree — it is ADO-specific, an
 
 **The reason it cannot be cosmetic — restated 2026-08-04, and this is the third justification this paragraph has carried.** The first said parent/child validity is type-constrained by the process template, so a mixed-type hierarchy would **fail the link pass** mid-run. False: per 8c every pair is accepted. The second said the damage is *a board that will not reorder, and items missing from sprint backlogs, silently*. **That was also false, and it was finally executed on 2026-08-04** — see `memory/known-issues/2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md`. **The STOP is still right. Do not restate the mechanism from memory; the mechanism is what keeps being wrong here.**
 
-**What actually happens, executed against `<org>/<project-a>` — both surfaces, because they disagree:**
+**What actually happens, executed 2026-08-04 against a live project — both surfaces, because they disagree:**
 
 - The pair is **created successfully**, exit 0. Confirmed on every surface.
 - **The trigger is the backlog *category*, not the type.** `Microsoft.RequirementCategory` holds `Product Backlog Item`, `User Story`, **and** `Bug`, so `User Story → Bug` behaves identically to `User Story → User Story`. **A rule keyed on "same type" misses that case** — the exception's own name is misleading.
@@ -241,7 +241,7 @@ az boards query --wiql "SELECT [System.Id], [System.Tags], [System.WorkItemType]
 
 **Query the anchor tag `<feature>`, never the key prefix `<feature>:`.** This is not a stylistic choice and getting it wrong breaks the mode completely:
 
-**`[System.Tags] CONTAINS` is whole-tag membership, not substring matching.** Verified against `<org>/<project-a>` on 2026-08-03 with a real work item carrying the tag `zzprobe-a:STORY-1`:
+**`[System.Tags] CONTAINS` is whole-tag membership, not substring matching.** Verified by execution 2026-08-03 against a real work item carrying the tag `zzprobe-a:STORY-1`:
 
 | Query | Result |
 |---|---|
@@ -263,7 +263,7 @@ Then **one ID-scoped read per already-recorded entry** — work item ids are uni
 
 **The read-failure rule applies here, not only to creation** — but it needs one mechanical step, because on this CLI **blank output is the normal result for zero rows.**
 
-`az boards query --output json` emits **nothing at all** when the result set is empty — not `[]`, not `{}`. Verified 2026-08-03 against `<org>/<project-a>`: a query with matches returned a JSON array; the same query form with an impossible tag prefix returned blank with `$LASTEXITCODE` 0. So a blank key query is **genuinely ambiguous** — it means either "no item carries this key yet" (the expected state of every first run) or "the read failed silently", which is a documented failure mode on this machine.
+`az boards query --output json` emits **nothing at all** when the result set is empty — not `[]`, not `{}`. Verified by execution 2026-08-03: a query with matches returned a JSON array; the same query form with an impossible tag prefix returned blank with `$LASTEXITCODE` 0. So a blank key query is **genuinely ambiguous** — it means either "no item carries this key yet" (the expected state of every first run) or "the read failed silently", which is a documented failure mode on this machine.
 
 **Resolve the ambiguity with a positive control before trusting a blank result. Never guess:**
 
@@ -311,7 +311,7 @@ The preview shows nine things, in order:
 7. **The total count of `az` write invocations**: **creates plus parent/child link additions, and nothing else.**
 8. **The tag values that will be written**, shown literally — both of them: the per-item key tag (e.g. `claims-intake:STORY-3`) and the shared anchor tag (`claims-intake`). The operator is granting writes into the **project's tag namespace**, visible in tag autocomplete to every user with access to that project, so the values they are creating are theirs to see before they approve them. Say that the anchor is one value shared by every item in the batch, not one per item.
 
-   **State the scope accurately: the tag namespace is per-project, not org-wide.** Verified against `<org>` on 2026-08-03 — `<project-a>` returned one tag and `<project-a>` returned seventeen, and each tag's REST URL is namespaced by project GUID (`/_apis/wit/tags/` under the project id). This file, `docs/ado-delivery-pipeline-brief.md`, and `BAR-015`'s own gate text all previously said org-wide. **Overstating it is not the safe direction:** the operator is approving an irreversible write, and a preview that inflates the blast radius trains them to discount the preview. Say what is true — permanent, unremovable by this mode, and confined to one project.
+   **State the scope accurately: the tag namespace is per-project, not org-wide.** Verified by execution 2026-08-03 — two projects in the same org returned one tag and seventeen respectively, and each tag's REST URL is namespaced by project GUID (`/_apis/wit/tags/` under the project id). This file, `docs/ado-delivery-pipeline-brief.md`, and `BAR-015`'s own gate text all previously said org-wide. **Overstating it is not the safe direction:** the operator is approving an irreversible write, and a preview that inflates the blast radius trains them to discount the preview. Say what is true — permanent, unremovable by this mode, and confined to one project.
 9. **An explicit statement that the tree is modified in place, naming which items gain an `external_refs:` entry**, plus the statement that no rollback is available and created items stay.
 
 One informational line sits **beyond** those nine: where an item matched by key carries a different title in ADO than in the tree, say so. It is additive, never a stop, and never an update.
