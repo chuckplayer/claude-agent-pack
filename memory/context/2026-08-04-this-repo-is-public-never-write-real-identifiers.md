@@ -48,11 +48,24 @@ literal env-var values.** The rule was correct and nothing checked it. A stated 
 mechanical check is the failure mode this repository has produced repeatedly; see
 `memory/known-issues/` for the same shape in four other places.
 
-**If a check is ever added for this, key it on the structured thing** — a candidate identifier
-pattern — not on prose, and beware case-insensitive matching: during the audit, a case-insensitive
-search for `ReFac` matched every occurrence of "**refac**tor" and produced ~75 false hits twice, once
-in the audit itself and once in the post-rewrite verification. Every scan needs a positive control
-proving it can still see text it *should* match.
+**The check now exists: `scripts/lint-identifiers.sh`, blocking on every changeset** (CLAUDE.md,
+`/implement` 5e, merge-reviewer 2c). It keys on **structured positions** rather than prose, ships no
+denylist for the reason above, and reads a gitignored `.identifier-denylist` for exact tokens.
+
+Two traps it was built around, both hit for real during the audit:
+
+- **Case-insensitive matching without `-w`.** One project name was a prefix of an ordinary English
+  word that appears ~700 times in this repo, so a case-insensitive substring search matched all of
+  them — **~75 false hits, twice**: once in the audit and again in the post-rewrite verification. Word
+  boundaries (`-w`) kill that class outright. See [[2026-08-04-grep-iF-aborts-on-this-machine]] for why
+  the matcher cannot also be case-insensitive on this machine.
+- **A scan with no positive control.** Every scan needs to prove it can still see text it *should*
+  match, or a broken pattern reads as a clean repo. The script self-tests two-sidedly and exits **2**
+  rather than reporting a result it cannot stand behind.
+
+**Do not use a real identifier as an example**, not even in a file explaining why not to. The first
+draft of the checker used one as its self-test fixture and the structural scan could not see it,
+because the script excludes itself. Use `Zzsynth` or similar.
 
 ## Provenance belongs in memory, not in a skill
 

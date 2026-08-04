@@ -92,8 +92,26 @@ RULE_WHY=(
 EMAIL_RE='[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
 EMAIL_ALLOW='noreply@anthropic\.com|users\.noreply\.github\.com|@example\.(com|org)'
 
+# Two file lists on purpose.
+#
+# files()     -- excludes THIS script. It has to: the structural rules are regexes
+#                like `dev\.azure\.com/[^<]`, and the literal text of that regex
+#                matches itself, so every rule would flag its own definition.
+#
+# files_all() -- includes this script, and is used for the DENYLIST scan. The
+#                self-exclusion above is a genuine blind spot: a real identifier
+#                written into this file would be invisible to the check that
+#                exists to find it. That is not theoretical -- the first draft
+#                used a real project name as its self-test fixture, in a tracked
+#                public file, and the structural scan could not see it. Denylist
+#                tokens have no legitimate reason to appear here, so this list
+#                closes the hole without reintroducing the self-match problem.
 files() {
     git ls-files | grep -E '\.(md|json|sh|js|ya?ml|txt)$' | grep -v "^${SELF}$" || true
+}
+
+files_all() {
+    git ls-files | grep -E '\.(md|json|sh|js|ya?ml|txt)$' || true
 }
 
 # NEVER let a grep failure look like "no matches". grep exits 0 for a match,
@@ -187,15 +205,27 @@ EOF
     # abort on this machine before trusting its verdict. `grep -iF` SIGABRTs here
     # (GNU grep 3.0), which is why the denylist matcher is case-sensitive; this
     # asserts the replacement actually runs rather than assuming it does.
-    printf 'ReFac\n' > "$tmp/dl.txt"
-    printf 'Project ReFac notes\nnothing to refactor here\n' > "$tmp/subject.txt"
+    printf 'Zzsynth\n' > "$tmp/dl.txt"
+    printf 'Project Zzsynth notes\nnothing to refactored here\n' > "$tmp/subject.txt"
     if ! grep -nwF -f "$tmp/dl.txt" "$tmp/subject.txt" >/dev/null 2>&1; then
         echo "  [SELFTEST] the denylist grep (-nwF -f) failed or aborted on this machine"; broken=1
     fi
     # and prove -w really does prevent the substring false positive that cost
-    # two wasted verification passes on 2026-08-04 ("ReFac" vs "refactor")
+    # two wasted verification passes on 2026-08-04, where a project name was a
     if grep -nwF -f "$tmp/dl.txt" "$tmp/subject.txt" 2>/dev/null | grep -q 'refactor'; then
-        echo "  [SELFTEST] -w did not prevent the substring match (ReFac matched refactor)"; broken=1
+        echo "  [SELFTEST] -w did not prevent a substring match"; broken=1
+    fi
+
+    # The blank-line landmine: an empty line in a `grep -f` pattern file matches
+    # EVERY line, so one stray blank in a hand-maintained denylist would flag the
+    # whole repo and read as a catastrophic leak. Prove the stripping works.
+    printf 'Zzsynth\n\n# a comment\n' > "$tmp/dl2.txt"
+    grep -v '^[[:space:]]*$' "$tmp/dl2.txt" | grep -v '^[[:space:]]*#' > "$tmp/dl2c.txt" || true
+    if grep -nwF -f "$tmp/dl2c.txt" "$tmp/subject.txt" 2>/dev/null | grep -q 'refactor'; then
+        echo "  [SELFTEST] blank/comment stripping failed -- denylist matched an unrelated line"; broken=1
+    fi
+    if [ "$(wc -l < "$tmp/dl2c.txt" | tr -d '[:space:]')" != "1" ]; then
+        echo "  [SELFTEST] blank/comment stripping kept the wrong number of tokens"; broken=1
     fi
 
     if [ "$broken" -ne 0 ]; then
@@ -244,12 +274,26 @@ if [ -f "$DENYLIST" ]; then
     if git ls-files --error-unmatch "$DENYLIST" >/dev/null 2>&1; then
         fail "denylist -- $DENYLIST is TRACKED. It contains the very strings this guards; add it to .gitignore and untrack it."
     else
-        dn_hits=$(files | xargs -r grep -nwF -f "$DENYLIST" 2>/dev/null | grep -vF "$MARKER" || true)
-        if [ -n "$dn_hits" ]; then
-            fail "denylist -- a token from $DENYLIST appears in a tracked file"
-            printf '%s\n' "$dn_hits" | head -20 | sed 's/^/         /'
+        # STRIP BLANKS AND COMMENTS FIRST. `grep -f` treats every line as a
+        # pattern, and an EMPTY line is a pattern that matches EVERY line -- so a
+        # single stray blank would flag every file in the repo and read as a
+        # catastrophic leak. A '# comment' line becomes a literal pattern too.
+        # The denylist is hand-maintained, so both are inevitable.
+        dl_clean=$(mktemp)
+        trap 'rm -f "$dl_clean"' EXIT
+        grep -v '^[[:space:]]*$' "$DENYLIST" | grep -v '^[[:space:]]*#' > "$dl_clean" || true
+        dl_count=$(wc -l < "$dl_clean" | tr -d '[:space:]')
+        if [ ! -s "$dl_clean" ]; then
+            echo "  [--] $DENYLIST holds no usable tokens (all blank or comment) -- structural rules only."
         else
-            pass "denylist ($(grep -cve '^[[:space:]]*$' "$DENYLIST") token(s), word-boundary matched)"
+            # files_all, NOT files -- this scan must cover this script too.
+            dn_hits=$(files_all | xargs -r grep -nwF -f "$dl_clean" 2>/dev/null | grep -vF "$MARKER" || true)
+            if [ -n "$dn_hits" ]; then
+                fail "denylist -- a token from $DENYLIST appears in a tracked file"
+                printf '%s\n' "$dn_hits" | head -20 | sed 's/^/         /'
+            else
+                pass "denylist ($dl_count token(s), word-boundary matched, case-sensitive)"
+            fi
         fi
     fi
 else
