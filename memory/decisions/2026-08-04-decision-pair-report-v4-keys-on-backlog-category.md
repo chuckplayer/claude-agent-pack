@@ -12,15 +12,32 @@
 as a warning requiring acknowledgement, not a hard stop.** Three corrections land on *this file*, each
 verified rather than accepted on the agent's word:
 
-1. **`category(type)` is TEAM-scoped, and this file called it a project fact.** `team` is a **required**
-   path parameter on the backlog-levels route — the verification run passed one without noticing what
-   that implied — and bug placement is a per-**team** setting, so a bug type can sit in a different
-   category for two teams in the same project. **This mode resolves no team at all:** verified that
-   `skills/devops-azure/SKILL.md:305` resolves org, project, area path and iteration path, and nothing
-   in the skill resolves a team. So "one zero-write read" quietly requires a **new resolved input**, and
-   the flagship `story-type -> bug-type` row is precisely the row that moves between configurations.
-   Reading one team and reporting a project verdict is bar-soundness **row 2** — a category claim on
-   instance evidence.
+1. **`category(type)` is TEAM-scoped, and this file called it a project fact.** Challenged by the
+   operator — *"a work item has no team field, where are you getting this from?"* — which is **correct
+   about the work item** and is exactly what makes this subtle. The chain was then executed rather than
+   argued:
+
+   - **A work item carries no team.** Every field on a real story was listed: the only team-ish one is
+     `System.TeamProject`, which is the **project**. Teams are not a work item property.
+   - **A team is *defined by* area paths.** `teamsettings/teamfieldvalues` returns team field
+     `System.AreaPath` with the node values that team owns. So a work item reaches a team's board
+     *indirectly*, through the `System.AreaPath` field you can see on it.
+   - **Bug placement is a team setting.** `{project}/{team}/_apis/work/teamsettings` returned
+     `bugsBehavior = asRequirements`, and that is precisely why the bug type grouped with the story type
+     in the backlog-levels read. Two independent reads agree. Under `asTasks` the bug type moves to the
+     task category and the flagship pair stops being same-category.
+   - **The backlog-levels route cannot be called without a team.** Verified: dropping the team segment
+     returns a non-zero exit, not a project-wide answer.
+
+   **So the derived value is one team's configuration, and a team had to be supplied to obtain it.** That
+   is bar-soundness **row 2** — a category claim on instance evidence. What this mode resolves today is
+   org, project, area path and iteration path (`skills/devops-azure/SKILL.md:305`); nothing resolves a team.
+
+   **Two teams disagreeing about the same pair is DOCUMENTED AND STRUCTURAL BUT WAS NOT OBSERVED.** The
+   project used for every probe has **exactly one team**, so the ambiguity cannot arise there and no
+   divergence was demonstrated. Recorded this way deliberately: the first version of this amendment
+   asserted the divergence with more force than the evidence carried, which is the same overclaiming
+   amendment 2 catches elsewhere in this file.
 2. **"All six agree with executed behaviour" overstates the table below.** Two rows put *reasoning* in
    the executed-truth column (`conventional`; `unconventional, different category, fine`). **No nested
    different-category child was ever reorder-tested.** So `same category => refused` has executed
@@ -159,14 +176,23 @@ sprint board the UI disables reordering **board-wide** and hides the **parent**.
 
 ## Open decisions — do not implement before settling these
 
-0. **NEW, and it now precedes everything: which team's configuration is being read, and how is it
-   resolved?** Until answered the derived value has no defined meaning, because `category(type)` is
-   team-scoped (amendment 1) and this mode resolves no team. Area path is already resolved and does
-   **not** uniquely determine a team — more than one team can include an area path. Note the trap: the
-   project-scoped `wit/workitemtypecategories` route needs no team and looks like the fix, but it is
-   project-scoped *by construction* and therefore cannot represent a per-team bug override — it would
-   silently lose the flagship `story-type -> bug-type` row, the whole reason v4 keys on category. **Do
-   not "simplify" the design into losing its best case.**
+0. **NEW: which team's configuration is read, and is it named in the preview?** **This is a required
+   input and a wording constraint, NOT a blocker** — an earlier draft of this file called it blocking and
+   said the derived value "has no defined meaning" until settled, which was too strong. The resolution is
+   nearly mechanical: **enumerate the project's teams; if there is exactly one, use it and say which; if
+   there are several, either ask or state the scope of the answer.** Two things must hold whichever branch
+   runs — the team is **named in the preview**, and the claim is scoped to it ("using team `<team>`'s
+   configuration…") rather than asserting a project-wide verdict. A **silent implicit default is not
+   acceptable**, per the cross-model review: the same items are viewed through other teams' boards.
+
+   Area path is already resolved and does **not** uniquely determine a team, since more than one team can
+   include an area path — but note this is the *reason to name the team*, not evidence that a project
+   verdict is impossible.
+
+   **The trap to reject consciously:** the project-scoped `wit/workitemtypecategories` route needs no team
+   and looks like the fix. It is project-scoped *by construction*, so it cannot represent a per-team bug
+   override and would silently lose the flagship `story-type -> bug-type` row — the whole reason v4 keys
+   on category. **Do not "simplify" the design into losing its best case.**
 1. **Disposition — recommendation on record: warning requiring acknowledgement, not a stop.** The
    argument that changed the call: the flagged thing is a **link**, and links are the *reversible* part
    of this mode, while the irreversible half (item creation, permanent per-project tags) proceeds under a
