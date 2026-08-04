@@ -6,6 +6,52 @@
 **Overrides-convention:** no
 **Related-to:** 2026-08-04-challenge-ado-pair-report.md, 2026-08-03-ado-workitemtypes-lists-blocked-types.md, docs/plans/bar-cost-and-first-run.md
 
+## AMENDED 2026-08-04 (same day) — the UI was then tested, and two "NOT REPRODUCED" rows below were wrong
+
+**Read this section before the table.** The findings below are correct **for the REST surface** and are
+left unedited. But the table marked *hidden items* and *the board will not reorder* as **NOT
+REPRODUCED**, and a human then drove the Azure DevOps UI against the same fixture. **On the sprint
+backlog, both reproduce.** The file caveated that only REST had been tested and still wrote "not
+reproduced" in a results column — which reads as a finding about the world rather than as an untested
+surface. **That is this pack's recurring failure in a new costume: the caveat was present and the table
+still overstated.** State "not tested on the surface where the claim lives," never "not reproduced."
+
+**What the UI does, on the Sprint backlog page, verbatim from the warning it displays:**
+
+```
+There is same category hierarchy on this backlog. You cannot reorder work items and
+work item(s) 706828 are not shown. See work item(s) 706829, 706830 to either remove
+the parent to child link or change the link type to 'Related'
+```
+
+Three things in that message that no REST call revealed:
+
+1. **Reordering is disabled for the entire sprint backlog**, not for the offending item. The docs'
+   "a board that will not reorder" was right about the sprint board.
+2. **The item hidden is the PARENT (`706828`), not the nested child.** Every earlier version of this
+   pack's text, and the intuition behind it, assumed intermediate *children* go missing. It is the
+   other way round, and a check written on the intuition would look for the wrong item.
+3. The UI **names the offending children and both remedies**, so it is loud where it fires.
+
+**The UI diverges from the API in BOTH directions**, which is why neither surface alone is sufficient:
+
+| | REST | UI |
+|---|---|---|
+| Reorder same-category **child** | refused, `SameTypeHierarchyException`, at **both** product and iteration scope | **succeeded and persisted** on the backlog page (pending a refresh re-check) |
+| Reorder a **clean** item in the affected sprint | **allowed**, exit 0, iteration scope | **blocked** — board-wide disable |
+| Sprint backlog contents | returns all three, **including** the parent | **hides the parent** |
+
+So the API rule is simple and consistent — *the same-category child cannot be reordered, everything
+else can* — and the **UI guard is a different rule entirely**, stricter on the sprint board and more
+permissive on the product backlog. **Do not derive one from the other.** The iteration-scoped reorder
+route (`_apis/work/iterations/{id}/workitemsorder`) was missed in the first probe and is a distinct
+endpoint from the product-scope one; both were tested for this amendment.
+
+**Still unconfirmed:** whether the UI's successful drag of the child survives a hard page refresh. The
+child carries a computed-looking `BacklogPriority` and its parent link is intact, which is consistent
+with a real write, but a UI that optimistically renders a move it later reverts would look identical at
+that moment.
+
 ## Summary
 
 **The board-degradation claim was finally executed against a real project, and it is narrower and
