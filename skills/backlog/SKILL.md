@@ -213,7 +213,7 @@ plan_hash_at_generation:
 reference_epic: "<project-a> > Claims Intake (epic <epic-id>)"
 sizing: coarse                      # coarse | numeric — numeric only on operator supply/approval
 narrowed_by_depth: false            # true when the item cap forced stopping at story level
-audit: not run                      # not run | findings open | findings addressed
+audit: not run                      # not run | no findings | findings open | findings addressed
 audited: n/a
 created: 2026-07-31
 ---
@@ -407,13 +407,26 @@ a re-audit is the one sanctioned re-run because it regenerates nothing.
 
 ## 8. Record the audit outcome
 
-Write `audit:` — one of `not run`, `findings open`, `findings addressed` — and `audited:`, which
-carries **who and when** beside the value, e.g.
+Write `audit:` — one of `not run`, `no findings`, `findings open`, `findings addressed` — and
+`audited:`, which carries **who and when** beside the value, e.g.
 `2026-07-31 by backlog-auditor (run 2); 2 critical, 1 high; all addressed`. A status with no
 attribution reads exactly like a status that happened.
 
 `audit: not run` is the value a batch write mode must refuse to create from, so the enum has a named
 future reader rather than being decoration.
+
+**`no findings` exists because the other three are all false for a clean audit, and the first draft of
+this enum omitted it.** The audit ran, so `not run` is false — and writing it would additionally make a
+batch write mode refuse a tree that passed. Nothing is outstanding, so `findings open` is false. And
+`findings addressed` asserts that findings existed and were fixed, which did not happen; a tree whose
+audit found nothing is not the same artifact as one that was repaired, and recording it as though it
+were loses the distinction permanently. Observed 2026-08-05 on a tree that audited clean across all
+seven dimensions, where the only compliant value available was a false one.
+
+**Consumers test `!= not run`, never `== findings addressed`.** Stated because the difference is
+invisible until a clean tree meets a gate written the second way and is refused for having passed. The
+enum is append-only for the same reason item ids are: a value already written into a committed tree
+cannot be renamed without orphaning whatever reads it.
 
 ## 9. Report and hand off
 
