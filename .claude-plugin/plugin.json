@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "claude-agent-pack",
+  "displayName": "Claude Agent Pack",
+  "version": "0.1.0",
+  "description": "An opinionated, gate-heavy delivery pipeline for Claude Code: 30 skills and 20 agents covering requirements intake, planning with enforceable acceptance bars, backlog decomposition, tracker writes, implementation with worktree isolation, and a final merge gate that refuses to pass a stage nobody reported.",
+  "author": {
+    "name": "Chuck Player",
+    "url": "https://github.com/chuckplayer"
+  },
+  "repository": "https://github.com/chuckplayer/claude-agent-pack",
+  "license": "MIT",
+  "keywords": [
+    "pipeline",
+    "code-review",
+    "acceptance-bars",
+    "backlog",
+    "azure-devops",
+    "memory",
+    "subagents"
+  ]
+}

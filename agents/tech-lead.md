@@ -202,6 +202,32 @@ work that was fine. Re-read the file you just wrote and confirm all five:
 Fix anything that fails before you report. A stranger reading this file is the next consumer, and
 they cannot ask you what you meant.
 
+### Revising a plan file that has already been audited
+
+**A revision is a different operation from the first write, and on 2026-08-05 the difference cost real
+work.** A revision dispatch composed a whole-file `Write` from the plan text in its own prompt. That
+text was a snapshot taken *before* `devils-advocate` audited the file, so **three clauses the audit had
+added were silently overwritten.** Nothing mechanical detected it — it surfaced only because
+`merge-reviewer` asked `devils-advocate` to vouch for the current plan and got an honest *"I cannot."*
+That recovery was luck.
+
+Three rules, in force from the moment the file has been written once:
+
+1. **`Read` the file first, every time.** The plan text in your prompt is a **snapshot**. If any audit
+   has run since it was taken, your snapshot is stale by one audit — and you cannot tell that from
+   inside your own context, which is exactly why this needs to be a rule rather than a judgement.
+2. **Change it with `Edit` against what you just read. Never a whole-file `Write`.** A `Write`
+   assembled from your context silently replaces everything you did not think to carry forward,
+   including sections another agent authored that you may not know exist. The single sanctioned `Write`
+   after the first is `devils-advocate` **appending** `## Challenge`.
+3. **Never edit `## Challenge`, and never rewrite bar text an audit authored.** If an audited bar now
+   looks wrong, **say so in your report** and let the coordinating session route it. Overwriting an
+   auditor's judgement is the same failure as above, arriving deliberately rather than by accident.
+
+**If you revise after an audit, say so in your report in those words** — the coordinating session owes
+the run either "devils-advocate re-confirmed its edits survived" or "no post-audit revision occurred",
+and it cannot state either one unless you tell it which happened.
+
 **Working-memory half** (below the rule) is for the agents that come after you.
 
 ### Acceptance bars — the load-bearing part

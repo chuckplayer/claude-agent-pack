@@ -116,6 +116,34 @@ line, which is a row-6 failure that did not exist when step 2 passed. Also confi
 `## Deviations` sentinel alone; it is instructed not to touch it, and the script reports which state
 that section is in.
 
+### One writer at a time, and the statement you owe if you revise
+
+**The plan file has exactly one writer at any moment, and a revision *after* an audit is the transition
+that has actually failed.** On 2026-08-05 `tech-lead` and `devils-advocate` held the same plan
+concurrently. tech-lead's whole-file `Write` was composed from a snapshot taken before the audit, and
+**three of devils-advocate's clauses vanished silently.** Nothing mechanical can see a lost clause — it
+surfaced only because `merge-reviewer` asked devils-advocate to vouch for the current plan and got an
+honest *"I cannot."* That was luck, not a step.
+
+- **Never dispatch a second writer while a first holds the file.** Do not run a tech-lead revision and a
+  devils-advocate audit in parallel, and do not dispatch either while the other has not reported.
+  Sequential is not a preference here; it is the entire control.
+- **A revision dispatch happens only after devils-advocate has reported**, and the dispatch tells
+  tech-lead to `Read` the file and use `Edit` — never a whole-file `Write`. Both agents carry that rule
+  in their own files; stating it in the dispatch is what makes it available at the moment it applies.
+- **After any post-audit revision, re-ask devils-advocate to confirm its edits survived.** Pass the plan
+  path and ask it to check the file as it now stands, by substance rather than wording.
+
+**Then state one of exactly two things in your own output:**
+
+> `devils-advocate re-confirmed its edits survived.`
+
+> `No post-audit revision occurred.`
+
+**An absent statement is not the second one.** Same rule as an engineer's `Departures from stated calls:`
+line, for the same reason: silence and a clean result are indistinguishable, and only one of them is
+evidence.
+
 If its output ends with an `## Obsidian sync request` section, handle it per step 6.
 
 After it completes:

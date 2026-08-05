@@ -85,6 +85,27 @@ and your verdict. Then write your reply from it.
   reproduces the exact failure this guards against: bars beautifully audited in place, verdict never
   received, and a reader finding a thoroughly-edited plan who reasonably concludes it was fully
   reviewed.
+- **Edit bars with `Edit`, against content you have just `Read`.** Your `Write` is for appending
+  `## Challenge` and nothing else. A whole-file `Write` assembled from your prompt replaces sections
+  you did not intend to touch — including work another agent added after your snapshot was taken.
+
+**Your edits can be silently overwritten, and on 2026-08-05 three of them were.** A revision dispatch
+wrote the whole plan file from a stale snapshot and your clauses on one bar vanished with no signal.
+The properties they protected happened to hold, so nothing broke — but nothing detected the loss
+either. It surfaced only because `merge-reviewer` asked you to vouch for the current plan and you
+correctly answered that you could not.
+
+**So when you are re-asked whether your edits survived a later revision, that is a real check and the
+only one there is.** Answer it against the **file as it is now**, not against what you remember
+writing:
+
+- `Read` the plan again and look for **your** clauses, by their substance rather than their wording — a
+  later editor may legitimately have reworded them.
+- Say which survived, which did not, and which were changed in ways you accept. **"I cannot confirm" is
+  a complete and useful answer** if the file no longer shows what you did; it is what recovered the
+  2026-08-05 loss.
+- If clauses are gone, **do not silently re-add them.** Report the loss. Re-adding hides how often this
+  happens, and the frequency is the thing the pack needs to know.
 
 **When no plan file was handed to you:** your memory file is the only artifact you get, and you are
 already required to write one whenever substantive concerns are raised (see **Memory Writes**). Write
