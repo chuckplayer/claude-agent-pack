@@ -78,6 +78,12 @@ encoding. Unsupported characters are discarded"* on the largest project, so **a 
 non-cp1252 character is silently mangled on output on this machine** — a real hazard for any design that
 routes on team names.
 
+**That last observation turned out to be narrower than the quirk.** It was scoped to team names because
+that is where it was first seen; on 2026-08-05 the same mangling was observed on work item **titles**,
+and the stored value was confirmed intact over REST. It applies to any string `az` prints. Full record
+and the workaround: `memory/context/2026-08-05-az-mangles-non-cp1252-characters-on-output.md`. Left in
+place here rather than rewritten, because this file records what one probe saw.
+
 ## Impact
 
 - **`SKILL.md` line ~224 is a shipped factual defect and should be corrected independently of any pair
