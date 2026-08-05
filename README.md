@@ -105,6 +105,7 @@ Twenty-nine slash-command entry points are included. Invoke them directly in Cla
 | `/devops` | Help and routing entry point for the DevOps skill family — dispatches to `/devops-github` or `/devops-azure` based on intent. |
 | `/devops-github` | Read and create GitHub PRs/issues via the `gh` CLI for repos configured in `GITHUB_ORG`/`GITHUB_REPOS`. Strict repo targeting (never guesses); write operations always preview and require confirmation. |
 | `/devops-azure` | Read and create Azure DevOps work items/PRs via the `az` CLI (`devops` extension) for the org/projects configured in `AZURE_DEVOPS_ORG`/`AZURE_DEVOPS_PROJECTS`. Discovers work item type/field schemas at runtime per project; strict targeting and write-operation preview+confirm, same as `/devops-github`. Also provides **batch write mode**, which consumes a reviewed backlog tree from `/backlog` and creates the whole tree as work items in one pass, writing the resulting ids back into the tree. |
+| `/what` | Restates the immediately preceding reply in ASD-STE100 Simplified Technical English, keeping the domain's own vocabulary as approved Technical Names. Every fact, qualifier, negation, count, and identifier survives verbatim — a status word such as `NOT RUN` is a Technical Name and is never simplified away. **Not a summariser:** STE output is normally longer than its source. |
 
 ## Obsidian Vault Integration
 
