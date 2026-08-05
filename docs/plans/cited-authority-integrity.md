@@ -523,3 +523,78 @@ gap; it is not filled here, because filling it would be making the decision.
 If questions 1 and 2 have answers the author held and did not write down, change 2 is sound and my
 first two concerns are documentation defects rather than design defects. Change 1 I judge shippable
 as-is with BAR-007 corrected. I found no reason to narrow the cut beyond dropping BAR-008 to a task.
+
+## Appended 2026-08-05 after commit — pricing the survival marker, which would have passed on the incident
+
+**Appended, not rewritten, and `## Challenge` above is untouched** — per the rule this cut shipped. This
+section answers `## Challenge` question 4 and is the coordinating session's, not the auditor's.
+
+**The plain survival marker should not be planned. It would have passed cleanly on the very incident
+that motivates it.**
+
+The idea, restated so the reasoning is checkable: an auditor writes a marker into the plan; a later
+revision composed from a **pre-audit snapshot** cannot carry forward a string it never saw, so the
+marker's absence is mechanical evidence that the audit's work was overwritten. It is the pack's existing
+sentinel pattern with the polarity flipped — the sentinel proves *nobody looked* by being present, a
+marker proves *the audit is still here* by being present. One string, one grep, no agent alive.
+
+**Why it fails on the actual case.** On 2026-08-05 the loss was in **bar text**, not in the narrative.
+The revising agent **explicitly preserved `## Challenge`** while rewriting `BAR-008`. A marker living in
+that section would therefore have **survived**, reported "audit intact", and said nothing while three
+clauses were gone. So the marker's *location* is the entire design, and the only useful location is
+where the edits are — inside the bars.
+
+### A correction, and it sharpens deferred question 1
+
+An earlier reading of this plan claimed that a plan *about* the shared literal cannot satisfy the gate
+that greps it. **That is true of one consumer and false of the other, and the split is the finding.**
+
+- **`scripts/lint-plans.sh` bounds its search to the `## Deviations` body**, stopping at the next `## `
+  heading. So only an occurrence *inside that section* affects its verdict; the occurrences in
+  `## Acceptance bars` and `## Challenge` never did. This plan reports `## Deviations filled in`
+  correctly.
+- **`merge-reviewer` Tier 1 greps the whole plan file.** Those same occurrences **would fail it.**
+
+So this plan passes one consumer and fails the other **on the identical string**. Deferred question 1 is
+therefore not only *which string is the authority* but **over what extent each consumer applies it** — a
+section-bounded match and a whole-file match are different rules wearing one name, and a manifest that
+records only ids and locations would not capture the difference. Any `literal` class needs a **scope**
+field alongside its site list.
+
+**One fact worth having before anyone builds either version: nothing verifies `## Challenge` today.** It
+is referenced in six files — `agents/devils-advocate.md`, `agents/tech-lead.md`, `skills/plan/SKILL.md`,
+`skills/implement/SKILL.md`, `scripts/lint-plans.sh`, `CLAUDE.md` — and checked by none of them.
+`lint-plans.sh` names it only in comments, as a section to **exclude** from body scans, and requires only
+`## Acceptance bars` and `## Deviations`. `merge-reviewer` never greps it. An audit's whole narrative can
+disappear and no gate notices. There is consequently **no existing check to extend**; either version is
+new machinery, though small.
+
+### The variant worth planning instead: a per-bar fingerprint
+
+The auditor records, inside `## Challenge`, a short **verbatim phrase from each bar it edited**, in a
+machine-readable block — id, then fingerprint. A checker greps each phrase **inside the bar it names**;
+a missing phrase fails, naming that bar. This detects **content loss per bar, mechanically, with no
+agent alive**, and needs no hashing — which matters, because the auditor holds no `Bash` and could not
+compute one.
+
+Three limits, stated rather than discovered later:
+
+1. **It catches the accident, not the intent.** A reviser who reads current content and deliberately
+   removes a clause while updating the fingerprint defeats it. The 2026-08-05 loss was accidental, and
+   that is the common case.
+2. **A legitimate reword breaks the fingerprint**, producing a false positive. That is arguably the
+   correct behaviour: it forces a reviser to acknowledge they changed an auditor's text rather than doing
+   it silently — but it must be specified as a stop with a stated fix, not left to surprise someone.
+3. **It is another declared shared literal**, so it depends on the manifest that change 2 defers. Building
+   the fingerprint check before that manifest exists reproduces this cut's own criticism: a cross-file
+   string with no registry.
+
+### Disposition
+
+**The attestation shipped in change 1 stays, and is the weaker half rather than the wrong one.** The two
+are complementary: the fingerprint catches the accident with nobody alive, while the attestation catches
+what no string can show — *"I cannot confirm"* is the answer that actually recovered the 2026-08-05 loss,
+and no grep produces it. **Question 4 is therefore answered "neither alone", and the plain marker is
+withdrawn from consideration.** Credit where due: `devils-advocate` raised the marker explicitly as
+*"raising, not prescribing"* and did not price it; this section prices it and reaches a sharper
+conclusion than the challenge did.
