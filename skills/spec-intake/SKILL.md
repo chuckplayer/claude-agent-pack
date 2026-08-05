@@ -84,7 +84,7 @@ report the rung actually used.
 | `.md`, `.markdown`, `.txt` | none needed — ingest as-is (**preferred input**) | n/a |
 | `/interview-me` brief | none needed — already markdown | n/a |
 | `.csv` | parse with `Import-Csv` (never a naive split on `,`), render as a markdown table, report **rows × columns read**, and state what a CSV cannot carry | skip — `CSV could not be parsed` |
-| `.docx` | 1. `pandoc --sandbox -f docx -t markdown` when `pandoc` resolves — reads all parts. 2. PowerShell: copy the file out of the Word lock, bound-check the archive, `[System.IO.Compression.ZipFile]::ExtractToDirectory`, strip tags from `word/document.xml`, **then enumerate the remaining text-bearing parts and report them as omitted with a severity** | skip — `no .docx converter available on this machine` |
+| `.docx` | 1. `pandoc --sandbox -f docx -t markdown` when `pandoc` resolves — reads all parts. 2. PowerShell: copy the file out of the Word lock, bound-check the archive, `[System.IO.Compression.ZipFile]::ExtractToDirectory`, strip tags from `word/document.xml`, **then enumerate the remaining text-bearing parts and report them as omitted with a severity**. 3. **Then read `word/media/*` directly** if the harness can read images — see `### Rung 3` below. Rung 3 **adds to** rung 1 or 2 and never replaces one | skip — `no .docx converter available on this machine` |
 | `.xlsx` | not converted — but **probe `xl/workbook.xml` and name the sheets** | skip — `XLSX skipped; contains N sheets: <names>. Export **each** sheet as its own named file — Excel's Save As exports only the active sheet — then re-run` |
 | `.pdf`, `.pptx`, `.msg`, images | not attempted | skip, naming the type |
 
@@ -127,6 +127,47 @@ skill trusts.
 - Source hashes come from step 1's `Get-FileHash -Algorithm SHA256` pass — reuse those values here
   rather than re-hashing, so the manifest records what the run-state check actually compared.
 
+### Rung 3 — reading the images, anchored
+
+**Probe the harness, not the machine.** If the session can read an image file, the extracted
+`word/media/*` entries are readable content and their omission is a choice rather than a fact. Do not
+declare support: attempt one image and report the rung actually used, exactly as every other rung
+requires. Where it is unavailable, the images stay a high-severity omission and nothing else changes.
+
+**An unanchored image is worse than an unread one.** A picture with no position in the document
+carries the same defect the omitted-parts rule already names — no document order, no surrounding
+context, and therefore the ability to manufacture requirement context that the source does not
+support. Anchor every image before reading it:
+
+1. For each `<w:drawing>` in `word/document.xml` **in document order**, take the `r:embed`
+   relationship id from its `<a:blip>`.
+2. Resolve that id through `word/_rels/document.xml.rels` to its `word/media/*` target. **Match `Id`
+   and `Target` as independent attributes** — their order within the `<Relationship>` element varies
+   between producers, and a single regex assuming one order silently resolves nothing.
+3. Capture the nearest preceding non-empty paragraph text as the anchor.
+
+The locator is then `<file> · word/media/imageN.png · anchor "<text>"`, which is checkable: a reader
+opens the document, finds the anchor text, and looks at the next picture.
+
+**Label the evidence class, because it is not the same as text.** Every requirement whose only source
+is an image carries `image-derived` in its `Source refs` entry, and the spec states near the top what
+that label means: transcribed from a picture by a model, **not findable with Ctrl-F in the original**.
+This is the same discipline the omitted-parts rule applies with
+`unordered, decontextualized — verify against the original`, for the same reason — an evidence class
+that reads as verbatim text while being a transcription is the failure, not the transcription itself.
+
+**Two things rung 3 does not change.** It does not make a suspect read-back benign: report the ratio
+and the media bytes as before, since the ratio is what *found* the images. And it does not lower the
+acknowledgement bar — the operator still acknowledges the image omission at step 4's gate, because the
+decision to spend a vision pass on 38 pictures is theirs, and a run that cannot afford it must record
+them as unread.
+
+**Screenshots of live systems are the reason screen 2 exists.** A UI screenshot in a requirements
+document routinely carries production data its author never thought of as data — account numbers,
+customer names, staff names, live identifiers. Transcribe **structure**: columns, states, field
+metadata, picklist values, filter conditions. Never transcribe row values. A dashboard proves a field
+exists; who appears in row four is not a requirement.
+
 ### Read-back, three tests
 
 1. **Empty** — no non-whitespace output. That is **tool breakage, not a result**. Skip the file with
@@ -150,8 +191,9 @@ skill trusts.
    - **high** — **embedded images.** Count `word/media/*` entries and `<w:drawing>` occurrences in
      `word/document.xml`, and report **both** the count and their total bytes. A requirements
      document's diagrams, flowcharts, and UI screenshots are content, not decoration — a heading with
-     no prose beneath it followed by a drawing means the requirement *is* the picture. This rung reads
-     no image, ever, so every one is an omission by construction.
+     no prose beneath it followed by a drawing means the requirement *is* the picture. **The tag-strip
+     itself reads no image**, so every one starts as an omission — closed only by rung 3, and
+     remaining an omission on any machine where rung 3 is unavailable.
    - **medium** — `word/comments.xml` (reviewer intent, possibly unratified requirements)
    - **low** — `word/header*.xml`, `word/footer*.xml` (usually boilerplate)
 
@@ -384,6 +426,9 @@ exercises validation, a generated key, and a child collection in one place.
   in `word/numbering.xml`, so `§ 3.2` frequently exists nowhere in the conversion, and an invented
   one is worse than none because it looks like checkable evidence while being unfindable in the
   original. Verbatim words stay findable with Ctrl-F.
+- **An image locator names the media part and its anchor, and carries `image-derived`** — the one
+  evidence class where the Ctrl-F guarantee above does not hold, which is exactly why it is labelled
+  rather than left to look like the others. See `### Rung 3`.
 - **Requirements are written in the source's own words where possible.** This is documentation for
   the human, not an enforceable call — it names no artifact, so no mechanical gate can check it. It
   is stated anyway because it is the mitigation for this skill's largest residual risk, and a reader
