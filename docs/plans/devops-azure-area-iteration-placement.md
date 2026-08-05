@@ -186,7 +186,17 @@ row 5).
       "it came from the service" is simply not true of it. The enumerated set is already in hand — zero
       new reads.
 
-   b. **At the sink, where the value must become script text, it is written as a single-quoted
+   b. **OVERRIDDEN 2026-08-05 by measurement — do not act on this call as written; read the first entry
+      of `## Deviations` first.** The claim below that a single-quoted literal neutralises `;` is
+      **false**: `az` on Windows is `az.cmd`, so `cmd.exe` re-parses every argument after PowerShell and
+      truncates on `;` whenever the value reaches it unquoted. The primary control shipped instead is the
+      **non-batch invocation path**, with this literal demoted to defence in depth for the PowerShell
+      layer only. The call is left standing rather than rewritten, so the original reasoning stays
+      legible as what was believed; the deviation entry is the authoritative record and carries the
+      measurement. **The conclusion in (c) survives unchanged and is stronger for it** — the invocation
+      fix rejects nothing, so no character-class rejection was needed after all.
+
+      **At the sink, where the value must become script text, it is written as a single-quoted
       PowerShell literal with any `'` doubled.** A single-quoted literal does not interpolate and does
       not treat the backtick as an escape, which neutralises `` ` ``, `$` and `;` — the exact three
       residuals the memory file names — **while rejecting nothing**. Where the invocation path allows a
@@ -262,9 +272,64 @@ row 5).
 
 ## Deviations
 
-_Deviations not yet reviewed. The coordinating session replaces this line before
-merge-reviewer runs — with `None.` if nothing diverged, or one bullet per departure.
-Leave this line exactly as it is._
+- **Call:** `## Calls made for you` item 7(b) — *"where the value must become script text, write it as a
+  single-quoted PowerShell literal with any `'` doubled"*, as **the** sink control. **Shipped instead:**
+  the **non-batch invocation path is the primary control** (`python.exe -m azure.cli`, interpreter resolved
+  from `(Get-Command az).Source`), with the single-quoted literal **demoted to defence in depth for the
+  PowerShell layer only**. **Decided by:** the coordinating session, on measurement, after security-reviewer
+  raised the batch-file reparse as an unconsidered layer. `az` on Windows is `az.cmd`; `cmd.exe` re-parses
+  every argument after PowerShell, **expands `%VAR%` regardless of quoting** (confirmed against the real
+  binary — Azure DevOps echoed `Zz<username>Probe` for a payload of `Zz%USERNAME%Probe`), and truncates on
+  `;`/`&`/`^`/`<`/`>` whenever the argument is unquoted. **Call 7(b)'s claim that the literal "neutralises
+  `` ` ``, `$` and `;`" is false for `;`.** The call's *conclusion* — no character-class rejection — survives
+  and is stronger for it: the invocation fix rejects nothing, so 7(c) needed no weakening. Full measurement:
+  `memory/known-issues/2026-08-05-az-is-a-batch-file-so-cmd-exe-reparses-every-argument.md`.
+
+  **This deviation made `BAR-008` clause (b) unsatisfiable, so that clause was amended under the four
+  conditions — narrowly, and with its original wording quoted here verbatim so the edit leaves a trace
+  rather than erasing one.** The clause read:
+
+  > (b) The file states that where the value must become **script text** it is written as a **single-quoted
+  > PowerShell literal with `'` doubled**, and says what that buys: no interpolation and no backtick escape,
+  > which neutralises `` ` ``, `$` and `;` **while rejecting nothing**.
+
+  It required the shipped file to assert that the literal neutralises `;`. **Measurement disproved that** —
+  `;` truncates the argument at the `cmd.exe` layer whenever the value reaches it unquoted — so the corrected
+  implementation states the opposite, and the bar as written would have failed a correct file for telling the
+  truth. The amendment is confined to clause (b); clauses (a), (c) and (d) are untouched, and the bar was made
+  **harder**, not looser: it now fails a file that repeats the original claim. **Decided by:** the coordinating
+  session, as a named consequence of this deviation.
+
+  **Separately, and not an amendment: `BAR-008` lost devils-advocate's edits to a concurrent write.** Its
+  second pass added three clauses to this bar — fail if `;` appears in a rejection list, fail if the
+  title-guard character list is not byte-identical to `BASE`, and fail if the 2026-08-05 round-trip is cited
+  as general evidence — and tech-lead's nine-item revision rewrote the same bar at the same time without
+  seeing them. tech-lead's version is what stands. **All three properties were nonetheless verified by other
+  means:** no rejection list was added at all (so the `;` clause is moot), test-engineer confirmed the
+  title-guard line carries no hunk, and the narrow-citation requirement is met at `SKILL.md:508`. Recorded
+  because a bar silently losing a reviewer's clauses is worth knowing about even when the properties held.
+- **Call:** `/implement` step 1 — stop immediately if the branch is `main`. **Shipped instead:** the run
+  proceeded on `main`. **Decided by:** the coordinating session. That stop is justified in its own text by
+  worktree isolation (*"Engineer agents use worktree isolation, and worktrees must not be created from
+  `main`"*), and this run dispatches **no engineer agent** — the plan's `### Edit sites` assigns all thirteen
+  to the coordinating session — so no worktree exists and the hazard cannot occur. Verified before
+  proceeding that `agents/merge-reviewer.md` has **no refuse-on-main rule** (it stops only on detached HEAD)
+  and commits to the *current* branch without merging. The plan's frontmatter states `branch: main`.
+- **Call:** CLAUDE.md — invoke **git-engineer** before any engineer agent when the task involves code
+  changes. **Shipped instead:** skipped. **Decided by:** the coordinating session — there is no engineer
+  dispatch for it to precede, and the working branch was already fixed by the plan's frontmatter rather than
+  needing confirmation.
+
+**Not a deviation, recorded here only so it is not mistaken for one — and now resolved. See
+`## Bar corrections`.** BAR-010 failed on its own enumeration rather than on the text: its closed token set
+omitted **`C`** (mandated verbatim by call 4's discriminating case), **`…`** (the ellipsis in the
+canonical-form notation), and **`<sprint>`** (in this plan's own `### Observed facts` section) — **three
+omissions in a twelve-token list**, which is what condemned the shape rather than the entries. The text
+followed call 4 exactly, so there was no departure and therefore **no licence to amend the bar** from here:
+the amendment conditions require a recorded deviation as the trigger, and this was not one. It was routed to
+**tech-lead, the bar's author**, and corrected there with its own dated trail. **This entry is left in place
+rather than deleted** — a reader should be able to see that the bar was reported failing, by whom, and why
+the coordinating session declined to fix a bar it is measured by.
 
 ## Risks
 
@@ -569,19 +634,67 @@ parallel dispatch is possible here.
 - BAR-007: every count and enumeration this cut could falsify is still **true**, including the one nothing else checks
   Evidence: files -> `skills/devops-azure/SKILL.md`. Four phrases, each asserted **true of what the file now says**, not merely present — a stale count is present and wrong, which is the state this bar exists to catch. (i) 8e item 1's *"all four"*: still exactly org, project, area path, iteration path; a fifth resolved value displayed there falsifies it, which is why the team stays on item 2. (ii) 8e's *"nine things, in order"*: the numbered list is still nine items; nothing this cut adds became a tenth. (iii) 8a's *"four gates with three verdicts"*: **unedited** — confirm via `git diff $BASE` that no hunk touches it. (iv) **8g's `Where it lives` row for area and iteration path** — currently *"The preview (8e), resolved per run and never persisted"*, which this cut **falsifies**, since the values are now written onto the work item. Confirm it was corrected. Item (iv) is the site a reader editing 8f will not visit, and no other bar in any plan covers it.
 - BAR-008: the sink discipline for the two argument values is present and argued from the sink, the title guard is untouched, and no character-class guard was added
-  Evidence: files -> `skills/devops-azure/SKILL.md` 8f, site 7. **Four required parts, each independently able to fail, and the first two are what the plan's first cut lacked entirely.** (a) The file requires the resolved value to be **one of the paths the resolution read enumerated**, matched after normalisation, with a **stop** on anything else — and states *why*: 8a asks the operator when the area or iteration is ambiguous, so the value **can be operator-typed free text**, at which point no provenance argument covers it. A file omitting this fails; so does one that states the check without naming the operator-typed path, because the next reader will delete a check whose reason is not on the page. (b) The file states that where the value must become **script text** it is written as a **single-quoted PowerShell literal with `'` doubled**, and says what that buys: no interpolation and no backtick escape, which neutralises `` ` ``, `$` and `;` **while rejecting nothing**. (c) It applies **no allowlist by character class and no title-style rejected-character list**, and names the legal characters so a later reader does not add one — a **space**, `(`, `)`, `'`, `.`, `,`, `;`, `-`, `_`, non-ASCII letters, and `\` as the separator. (d) It **names the residual** rather than implying none: the **privilege gap** (naming a node needs project-admin in the project being written to; editing a tree needs a text editor) and **cp1252 output mangling**, caught by the probe.
+  Evidence: files -> `skills/devops-azure/SKILL.md` 8f, site 7. **Four required parts, each independently able to fail, and the first two are what the plan's first cut lacked entirely.** (a) The file requires the resolved value to be **one of the paths the resolution read enumerated**, matched after normalisation, with a **stop** on anything else — and states *why*: 8a asks the operator when the area or iteration is ambiguous, so the value **can be operator-typed free text**, at which point no provenance argument covers it. A file omitting this fails; so does one that states the check without naming the operator-typed path, because the next reader will delete a check whose reason is not on the page. (b) **AMENDED at step 10 — see `## Deviations`, which quotes this clause's original wording.** The file states that the **primary control is an invocation path that is not a batch file**, because `az` on Windows is `az.cmd` and `cmd.exe` re-parses every argument after PowerShell — expanding `%VAR%` regardless of quoting. It must state that the **single-quoted PowerShell literal with `'` doubled** is **defence in depth for the PowerShell layer only**, neutralising `` ` `` and `$` **while rejecting nothing** — and it must **not** claim the literal neutralises `;`, which measurement on 2026-08-05 disproved. A file asserting the original clause's claim now **fails** this bar. (c) It applies **no allowlist by character class and no title-style rejected-character list**, and names the legal characters so a later reader does not add one — a **space**, `(`, `)`, `'`, `.`, `,`, `;`, `-`, `_`, non-ASCII letters, and `\` as the separator. (d) It **names the residual** rather than implying none: the **privilege gap** (naming a node needs project-admin in the project being written to; editing a tree needs a text editor) and **cp1252 output mangling**, caught by the probe.
   **The half that fails on a wrong-axis justification.** Confirm the file argues from the **sink**, not from provenance. 8f's own reasoning at line 440 is sink-based — the value becomes *"a literal inside that generated script"* before any argument passing helps — and line 445 calls discrete-argument passing *"hardening on top of step 1, never as a substitute for it"* and *"a property of the caller, and this file cannot verify the caller has it"*. **A file whose stated reason is that the values are service-sourced fails this bar**, and it fails on fact, not on style: Microsoft documents the node-name restriction as a **UI** rule — *"when you use the Azure DevOps APIs rather than the user interface, you can directly specify a name that might include characters restricted in the UI"* — and the **backtick and `;` are not in the restricted set at all** (`memory/context/2026-08-05-ado-node-name-restrictions-are-ui-only.md`).
   **The negative half, which is the one that breaks a working project.** Confirm no character legal in an ADO node name was added to any rejection list applied to these two values, and confirm 8f's **title-guard character list is byte-identical to `BASE`** (`git diff $BASE` shows no hunk on it). **`;` is the trap here**: it is legal and ordinary in a node name *and* a statement separator in script text, so it is exactly the character a well-meaning implementer will add to a denylist — and rejecting it stops a batch on a legitimate configuration the operator often **cannot remediate**, because they do not own the node. That asymmetry with titles — a human can fix their own title, and cannot fix someone else's node name — is why stop-rather-than-sanitize is right for a title and wrong here, and the file should say so.
   **Cite the 2026-08-05 round-trip narrowly or fail.** Both values carried **spaces** and multiple segments, were passed as discrete arguments with no validator, and round-tripped byte-exact — evidence for the **space** hazard, which was the specific silent-mangling risk predicted for this path. **No value containing `` ` ``, `;`, `&`, `'`, `(` or a non-cp1252 character has been through it.** A file citing that run as general evidence that these values need no discipline fails this bar rather than passing it. **Then the half this bar can actually fail on, added because the plan's stated reason is argued on the wrong axis:** confirm the file justifies the absence of a guard **from the sink**, not from provenance alone, and confirm it **names the residual rather than implying none exists**. 8f's own reasoning at line 440 is sink-based — the value becomes a **literal inside generated script text** before any argument passing helps — and line 445 calls discrete-argument passing *"hardening on top of step 1, never as a substitute for it"* and *"a property of the caller, and this file cannot verify the caller has it"*. So a justification resting only on where the value came from removes the control 8f calls foundational while keeping the two it calls non-substitutes. Three facts fix what "the residual" means, all from Microsoft's published naming restrictions: ADO **node** names exclude `\ / : * ? " < > | # $ & * +`, which is why the negative half above is right that a space, `(`, `)`, `'` and `.` must stay legal; **the backtick and `;` are not excluded**, and both are live in PowerShell script text; and the restriction is documented as a **UI** rule, with API-created names able to *"include characters restricted in the UI"* — so "read from the service, therefore constrained" is not true as stated. The bar passes if the file argues from the sink and names that residual (the privilege difference between a project admin and a tree editor is a legitimate reason to accept it); it **fails** if the file's only stated reason is that the values are service-sourced. **One live observation now supports the call's choice of control, and it is worth citing in the file for exactly what it covers:** on 2026-08-05 both argument values carried **spaces** and multiple backslash-separated segments, were passed as discrete arguments with no validator, and round-tripped **byte-exact** — so *"the control is the round-trip probe, not a validator"* is evidence-backed **for the space hazard**, which was the specific silent-mangling risk predicted for this path. Cite it that narrowly. **It is one benign observation and says nothing about the hostile case:** no value containing `` ` ``, `;`, `&`, `'`, `(` or a non-cp1252 character has been passed through this path, so a file that cites this run as general evidence that these values need no guard fails this bar rather than passing it.
 - BAR-009: 8a's board claim is scoped to what it derived, and the rejected read stayed rejected
   Evidence: files -> `skills/devops-azure/SKILL.md` 8a. Confirm the team-resolution block no longer asserts unqualified that the derived teams' boards **will show** these items, that it names the team's `backlogIteration` window as a second condition this run does **not** read, and that it cites `memory/context/2026-08-05-ado-team-backlog-filters-by-iteration-too.md`. Then the cost half: count the `az` invocations 8a issues per run against `BASE` and confirm the number is **unchanged** — no `teamsettings` read was added, and the budget table's `1 + N + M` arithmetic still matches the invocations the text actually issues, with `M` now defined (site 2). **The cut-escape clause is removed.** An earlier revision ended *"if item 3 was cut, this bar is NOT RUN"*, which let any result be reclassified as compliant — bar-soundness row 5, self-exemption. Item 3 is **KEEP** (`## What ships`), so this bar has no NOT RUN path: it passes or it fails.
 - BAR-010: the new text carries no real identifier
-  Evidence: files -> `git diff $BASE -- skills/devops-azure/SKILL.md` and this plan. This cut writes **worked path examples**, which is precisely where a real path gets pasted out of the execution record, and `scripts/lint-identifiers.sh` keys on structured positions and ships no denylist, so a real node name inside a prose example is **not** something it can see. **A reader is therefore the only control that script offers — which is why this bar does not rest on one.** The examples this cut needs require only a closed vocabulary, so check it as a closed set: enumerate every `\`-separated path example on every added line and confirm each segment is drawn **only** from `<org>`, `<project>`, `<project-a>`, `<project-b>`, `<node>`, `<leaf>`, `<team>`, `Area`, `Iteration`, and the single-letter case tokens `A`, `B`, `BC` needed by BAR-002's discriminating case. **Any segment outside that list fails the bar** — including a plausible-looking invented substitute, which is the failure mode a reader is worst at catching because nothing about it looks wrong. State the set in the handoff with the segments actually found, so the check is reproducible rather than asserted. Two supporting facts, recorded because they bound the risk rather than excuse it: the likeliest paste source, `docs/plans/ado-pair-report-v4.md`, already records the probed path as `<project-a>\A\B`, and the plan's own worked cases are abstract by construction — so a real path reaching these lines requires a fresh paste from somewhere else.
+  Evidence: files -> `git diff $BASE -- skills/devops-azure/SKILL.md` and this plan. **Two clauses with different shapes, because the two ways an identifier reaches these files are different, and clause (a) provably cannot see clause (b)'s case.** *(Enumeration corrected 2026-08-05 — see `## Bar corrections`.)*
+  **(a) Path segments — admitted by shape for bracketed tokens, by closed list for bare ones.** Enumerate every `\`-separated path example on every added line. A segment matching `<[a-z][a-z0-9-]*>` is admitted **by shape**: an angle-bracketed token is self-evidently a placeholder, and the failure mode this bar exists to catch — a plausible invented substitute, or a real name pasted from probe output — arrives **bare**, never bracketed. A **bare** segment is admitted only from this closed list: `Area`, `Iteration`, `…`, and the case tokens `A`, `B`, `C`, `BC` that BAR-002's discriminating case and call 4 require verbatim (`<project>\A\B` covers `<project>\A\B\C` and does not cover `<project>\A\BC`). **Any bare segment outside that list fails the bar.** State the set found in the handoff, so the check is reproducible rather than asserted. **The shape rule replaces an explicit list of bracketed placeholders, and that is the whole point of the correction:** the earlier enumeration named eleven tokens, omitted `C`, `…` and `<sprint>`, and therefore failed a correct implementation — a closed list of placeholders goes stale every time the text needs a new one, which is the same defect as a stale count in a pointer. The shape rule cannot go stale; the bare list can only shrink.
+  **(b) Pasted command output and command strings — the class clause (a) is blind to, and the one that actually leaked.** For every added line that is pasted output, a shell or `az` command, or a quoted example value, check for **environment-expanded values**: an account or user name, a machine or host name, a home-directory path, an email address. **Check for them as substrings inside larger tokens, not only as whole words.** This is not hypothetical: during this changeset a real account name — the literal expansion of `%USERNAME%` — reached **three places across two files** inside a synthetic-looking token of the form `Zz<name>Probe`, and `scripts/lint-identifiers.sh` returned **9/9 clean** anyway. The token was **already in** the gitignored `.identifier-denylist`; the rule is **word-boundary matched**, so a name embedded in a longer token does not match. It was caught by a human reading the diff, one step before a push to a public host. Probe output is the likeliest source precisely because it arrives already carrying whatever the environment expanded, and it does not look like an identifier when it lands. **The expansion can be introduced by the tool chain rather than typed by anyone**, which is what makes a substring search the right instrument: `az` on Windows is `az.cmd`, so `cmd.exe` re-parses every argument and **expands `%VAR%` regardless of quoting** (`memory/known-issues/2026-08-05-az-is-a-batch-file-so-cmd-exe-reparses-every-argument.md`, measured during this cut). A probe sending the literal `Zz%USERNAME%Probe` gets the expanded name echoed back by the service, so an operator pasting that output has pasted a real identifier they never wrote and cannot see as one.
+  **What the script does and does not cover, stated accurately.** `scripts/lint-identifiers.sh` keys on **structured positions** and ships **no in-repo denylist** (a list of forbidden strings cannot live in a public repo), reading exact tokens from a **gitignored** `.identifier-denylist` when present. So it can see neither a real node name inside a prose example nor a denylisted name embedded in a longer token. **Both gaps are this bar's subject, and neither is a reader-only control:** clause (a) is a token enumeration and clause (b) is a substring search, both of which a checker can perform and report. A bar whose control is "a reader was careful" cannot fail in a way anyone can check.
+  One supporting fact, recorded because it bounds the risk rather than excuses it: the likeliest *path* paste source, `docs/plans/ado-pair-report-v4.md`, already records the probed path as `<project-a>\A\B`, so a real path reaching these lines needs a fresh paste from elsewhere. **That reassurance never applied to clause (b)**, which is why clause (b) is now written down.
 - BAR-011: the mechanical gates this changeset triggers were run, and the one it does not trigger is stated as skipped
   Evidence: tests -> invoke through `C:\Program Files\Git\bin\bash.exe` and **read the output every time**; blank output at exit 0 is this machine's documented Bash-tool failure signature, so "exits 0" is satisfied identically by a gate running clean and by a gate never running (bar-soundness row 3). Run three, **each invoked by that full path rather than a bare `bash`** — bare `bash` on this machine is the WSL stub, so a bare invocation is a fourth way to get output that is not a verdict, and this bar's own preamble names the full path while its commands did not. All three must exit **0 with non-blank output**, not merely exit 0: `scripts/lint-agents.sh`, whose output must **name the files it checked** — it fires because the changeset touches `skills/`; `scripts/lint-identifiers.sh`, where exit **2** is a self-test failure rather than a clean repo and blank output is a non-answer for the same reason as the other two; and `scripts/lint-plans.sh docs/plans/devops-azure-area-iteration-placement.md`, with the path passed as a **discrete argument** and never interpolated into a shell string. **Quote each exit code and the first line of each script's output in the handoff** — an unquoted "all three passed" is indistinguishable from three runs nobody read. Then confirm `node scripts/obsidian-stop-hook.test.js` is **correctly skipped and the skip is stated out loud** — no file in this cut is one of the two hooks it covers, and running it here yields a PASS that checked nothing in the changeset.
 
 - BAR-012: the placement stop has a sanctioned recovery, and the wrong move is named beside it
   Evidence: files -> `skills/devops-azure/SKILL.md` 8f. **Added by `devils-advocate`; no bar covered this and the plan supplies neither half.** The new failure row and the probe's mismatch stop both leave item 1 created at the wrong placement, and **this mode never updates a work item** (line 409) — so it cannot repair placement itself, and on a re-run reconciliation matches item 1 by its key tag and routes it to `skip` or `repair`, meaning **the mis-placed item is never re-placed and the batch proceeds past it**. Confirm the file states (i) one **sanctioned fix a human performs** — the placement corrected in ADO, or by `az boards work-item update`, which carries `--area` and `--iteration` — before or instead of re-running, and (ii) that **deleting the item's `external_refs:` entry is not the fix**, since line 358 already documents that it reaches the `create` case with the item present and produces a **second work item**. Both halves are required: 8f gets this shape right for the tag failure at lines 356 and 358, and a stop whose only instruction is "re-resolve before re-running" reads as though re-running repairs it, which it does not. The bar fails if the file states a stop with no recovery, and it fails if it names the fix without naming the wrong move — an operator finds the wrong move on their own.
+
+## Bar corrections
+
+A dated trail for edits made to a bar **after** implementation began. **Deliberately not `## Deviations`:**
+nothing departed from a stated call — the implementation followed call 4 exactly — so a deviation entry
+would misfile it. But a silently edited bar is indistinguishable from a retcon, so each correction is
+recorded here with what it said, what it says now, why, and who found it.
+
+### 2026-08-05 — BAR-010's enumeration was under-inclusive and failed a correct implementation
+
+**Found by:** merge-reviewer (**FAIL**, reading the diff rather than a summary), with code-reviewer and
+test-engineer independently agreeing the text was right and the bar was wrong. test-engineer enumerated
+the segments itself and found the `…` case nobody else had.
+
+**What it said:** clause-less evidence enumerating exactly `<org>`, `<project>`, `<project-a>`,
+`<project-b>`, `<node>`, `<leaf>`, `<team>`, `Area`, `Iteration`, `A`, `B`, `BC`, and *"any segment
+outside that list fails the bar"*.
+
+**What was wrong:** the shipped text contains three segments the list omitted. **`C`**, from
+`<project>\A\B\C` — which **call 4 mandates verbatim** as BAR-002's discriminating case, so the bar
+contradicted its own sibling call and the bar loses. **`…`**, from the canonical-form notation
+`<project>\<node>\…\<leaf>` that site 1 requires. And **`<sprint>`**, in this plan's own
+`### Observed facts` — a third omission found while enumerating against the actual text rather than
+patching in only the two that were reported. That last one is the reason the fix is not "add `C` and
+`…`": **an explicit list of placeholders goes stale every time the text needs a new one**, and shipping
+the same shape again would have queued the same failure.
+
+**What it says now:** two clauses. (a) path segments — **bracketed tokens admitted by shape**
+(`<[a-z][a-z0-9-]*>`), **bare** tokens admitted from a closed list that can only shrink
+(`Area`, `Iteration`, `…`, `A`, `B`, `C`, `BC`). (b) a new clause for **pasted command output and command
+strings**, checking environment-expanded values **as substrings inside larger tokens**.
+
+**Why clause (b) exists, and why this bar is closer to load-bearing than it looked:** a real account name
+— the literal expansion of `%USERNAME%` — reached three places across two files in this changeset inside
+a token of the form `Zz<name>Probe`, and `scripts/lint-identifiers.sh` passed **9/9**. The token was
+already in the gitignored `.identifier-denylist`, but that rule is **word-boundary matched**, so the name
+did not match as a substring. A human reading the diff caught it one step before a push to a public host;
+it is redacted and confirmed absent from history. Clause (a) could never have seen it — the token is not
+a path segment — so the widening is a new control, not a restatement. General lesson recorded by the
+coordinating session in `memory/context/2026-08-04-this-repo-is-public-never-write-real-identifiers.md`.
+
+**The mechanism was not weakened.** Both clauses remain checks a verifier performs and reports; neither
+resolves to "a reader was careful". The correction makes clause (a) unable to go stale and adds a clause
+that covers the observed leak class.
 
 ## Model Overrides
 

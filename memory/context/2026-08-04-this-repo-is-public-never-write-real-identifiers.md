@@ -59,6 +59,21 @@ Two traps it was built around, both hit for real during the audit:
   them — **~75 false hits, twice**: once in the audit and again in the post-rewrite verification. Word
   boundaries (`-w`) kill that class outright. See [[2026-08-04-grep-iF-aborts-on-this-machine]] for why
   the matcher cannot also be case-insensitive on this machine.
+
+  **The cost of `-w` was collected on 2026-08-05, and it is worth knowing before trusting a clean run:
+  a denylisted token embedded as a *substring* is invisible to it.** The machine's account name was
+  already in `.identifier-denylist`, and `lint-identifiers.sh` still passed **9/9** on a changeset
+  containing `Zz<name>Probe` — the literal output of a `%USERNAME%` expansion probe, pasted in as
+  evidence. No word boundary surrounds the name inside that token, so the rule cannot fire. It was
+  caught by **merge-reviewer reading the diff**, one step before a commit to a public host.
+
+  **Do not "fix" this by dropping `-w`** — that reinstates the ~75-false-hit class and the checker
+  becomes noise. The honest reading is that the structural rules and the denylist together cover
+  *positions* and *whole tokens*, and **a real identifier pasted inside an unrelated string is a case
+  only a reader covers.** `BAR-010` of `docs/plans/devops-azure-area-iteration-placement.md` says exactly
+  this about worked examples; the same limit applies to **any** pasted command output, which is the more
+  likely source, because probe output arrives already containing whatever the environment expanded.
+  **Placeholder-substitute machine-expanded values at the moment you paste them, not at review time.**
 - **A scan with no positive control.** Every scan needs to prove it can still see text it *should*
   match, or a broken pattern reads as a clean repo. The script self-tests two-sidedly and exits **2**
   rather than reporting a result it cannot stand behind.
