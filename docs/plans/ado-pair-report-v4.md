@@ -900,3 +900,115 @@ NOT RUN and expected to stay so.
 dash, while the same titles are intact over REST — the cp1252 output mangling, observed a second time and
 on titles rather than team names. It changes no decision here; the challenge already concluded that
 documenting the false-positive mode is the only unconditionally correct fix.
+
+## EXECUTED 2026-08-05 (second) — BAR-008's remaining halves, through the harness-loaded skill. Zero writes.
+
+Appended rather than edited, on the same handling as the two sections above: **BAR-008's `Note` still reads
+"Still NOT RUN: the multi-candidate branch" and its `Evidence` line still calls multi-team unexercised —
+both are superseded by this section and are left standing**, because a merged plan records what a change
+meant to do.
+
+**All three remaining halves are now RUN. The bar is satisfied.**
+
+**What "harness-loaded" means here, stated precisely because the bar rests on it.** `install.sh` was
+re-run before this section: the installed `skills/devops-azure/SKILL.md` is **596 lines and hash-identical
+to the repository copy**, with batch write mode present, against the **108 lines and no batch mode** the
+2026-08-04 note records. The specification reached this run through the harness's skill loader rather than
+by my reading the repo file by hand, which is the difference the bar asked for. **What it does not mean is
+that something other than an agent executed the steps** — no such executor exists, and a later reader
+should not take this section as claiming one.
+
+### The multi-candidate branch — RUN, against a 7-team project
+
+Target area path `<project-a>\A\B`, the same descendant path the section above used.
+
+| | |
+|---|---|
+| `N` (total teams) | **7** |
+| `M` (candidates) | **2** — team B by exact match, team A as **ancestor with `includeChildren: true`** |
+| Budget `1 + N + M` | **10, exactly at the cap of 10** → narrow fully, examine both |
+| Non-candidates | 4 teams with area values not covering the path; **1 team with no area value at all** |
+| Levels returned | **5 per examined team**, identical on both |
+| Required pairs | `Feature → Product Backlog Item` and `Product Backlog Item → Task`, both on **different** levels on both teams → `no same-level condition observed by this route` |
+
+**The type mapping was discovered, not assumed, and the stock mapping was wrong for this project.**
+`User Story` **does not exist** among the project's 16 types; the requirement level holds the Scrum
+requirement type instead, with 23 existing items proving it creatable. The operator confirmed the override,
+which is 8e's in-band-override path working as specified.
+
+**The additive category control was again exercised non-vacuously.** The two routes disagreed on the bug
+type **only** — present on the requirement *level*, absent from the requirement *category* — which is
+precisely the documented per-team override the design says **not** to surface, and no config-mismatch line
+was emitted. This is the second independent observation of that shape.
+
+### The per-team-read-failure branch — RUN, and the finding is that the budget hides it
+
+**This half needed an org-wide sweep to construct at all, and the sweep is the more valuable result.**
+Across **29 projects and 184 teams**, every team whose `work/backlogs` read fails returns HTTP 500 — and
+**28 of those 29 teams have no area path configured**, so the derivation excludes them as non-candidates
+*before* it would ever read their backlog. **The failure state and the benign "never a candidate" state
+coincide almost perfectly**, which is the opposite of what BAR-017 assumed when it called partial failure
+"the ordinary case rather than an edge".
+
+**The one exception is the whole finding.** In a 16-team project `<project-b>`, two teams carry the project
+root as an exact area value: one returns 5 levels, the other **fails with HTTP 500**. Point a tree at that
+root path and both are candidates, so the branch is reachable — **but `1 + 16 + 2 = 19` exceeds the cap of
+10, so 8a falls back to the default team, and the default team is the healthy one.** In the single project
+in this org where the failure branch can fire, **the read budget's fallback reads past it and reports a
+clean derivation.**
+
+With the budget **deliberately overridden on operator authorisation**, the branch behaves as BAR-008
+requires: the failing team prints `not determined for team <team> — read failed` **on its own line**, and
+the other candidate still reports its five levels beside it. **So the branch is correct and effectively
+unreachable at the same time**, and the second half of that sentence is not visible from reading the file.
+
+**One incidental observation from that project, recorded because it contradicts a natural assumption:** its
+requirement level carries **four** work item types and its task level carries four including the bug type —
+so the bug type sits on the **task** level there, not the requirement level. Level composition varies far
+more between projects than the two probed so far suggested, and any future reasoning from "the requirement
+level holds the requirement type and the bug type" is reasoning from a sample of two.
+
+### Zero writes, asserted rather than assumed
+
+**Zero `az` write invocations across everything in this section.** The two derivation runs issued **22** and
+**20** read invocations; the sweep issued **243** by construction (1 project list + 29 team lists + 184
+backlogs + 29 follow-up reads on the failures). The positive control the bar requires is the **61
+pre-existing work items** the reconciliation control query returned in `<project-a>` — a non-zero value
+whose presence proves the read mechanism worked, rather than an anchor-tag query that returns blank when
+nothing was created.
+
+The reconciliation path itself executed end to end: the anchor-tag query returned **blank at exit 0**, the
+**positive control returned 61 rows**, so the blank was resolved as *genuinely zero matches* rather than as
+a failed read — the normal first-run path, and the first time that control has been exercised live.
+
+### Two live defects in the shipped skill, found by executing it
+
+Neither is a bar failure; both are defects in `skills/devops-azure/SKILL.md` that this run found because it
+ran the file rather than read it. **Both are `/plan` work and are deliberately not fixed in this section.**
+
+1. **8a compares two area-path forms that never match literally.** `az boards area project list` returns the
+   path with a leading separator **and a classification segment** (`\<project>\Area\…`); `teamfieldvalues`
+   returns it with **neither**. 8a says a team is a candidate when one of its values "covers the area path
+   resolved above" and never mentions normalisation, so a literal comparison yields **zero candidates on a
+   correctly configured project** and falls to the default-team branch — whose printed reason says a
+   derivation defect is the likelier cause. It would be right. This run found 2 candidates only because the
+   normalisation was written into the probe.
+2. **The sanctioned create command sets neither the area nor the iteration.** Both parameters exist on
+   `az boards work-item create`; 8f's verbatim command omits both, while 8e item 1 promises the operator all
+   four resolved values. Items land at the project root instead — **already observed**: the 120-item batch of
+   2026-08-05 wrote every item to the project-root iteration, which is the confound that blocked BAR-012 for
+   a day. It also undercuts the derivation's own premise, since the team set is derived from an area path the
+   batch never writes.
+
+**And a correction to BAR-017's premise**, above: partial per-team read failure is **rare and mostly
+unreachable**, not ordinary. The bar's requirement — per-team lines, three states, one failure attributed to
+one team — remains right; its stated justification does not survive the sweep.
+
+### What the gates actually proved, stated because it is easy to overclaim
+
+The tree used here is **synthetic, and its `audit: findings addressed` line is one I wrote myself.** It
+passed the REFUSE gate on that claim — which is exactly the caveat 8a states about its own gates resting on
+hand-editable frontmatter that nothing binds to tree content. **This run is evidence about the derivation,
+not evidence that the audit gate works.**
+
+**Still NOT RUN and unchanged:** BAR-009, which remains expected to stay so.
