@@ -1004,6 +1004,18 @@ ran the file rather than read it. **Both are `/plan` work and are deliberately n
 unreachable**, not ordinary. The bar's requirement — per-team lines, three states, one failure attributed to
 one team — remains right; its stated justification does not survive the sweep.
 
+**Correction to defect 1, appended the same day by the `/plan` run that consumed it.** The paragraph above
+says a zero-candidate derivation "falls to the default-team branch — whose printed reason says a derivation
+defect is the likelier cause. It would be right." **That describes BAR-001(iii)'s requirement, not the
+shipped file.** Verified mechanically: `normalis`, `derivation defect`, `no candidates` and `zero candidates`
+all return **zero hits** in `skills/devops-azure/SKILL.md`, and the default-team fallback is gated on
+`1 + N + M > 10` **alone**. So `M = 0` does not reach the fallback at all — it takes the *"narrow fully;
+examine every candidate team"* row and examines none, naming no team, displaying no levels, and reporting a
+clean derivation. **Defect 1 is therefore worse than recorded above: the failure is silence, not a wrong
+message.** Left in place rather than rewritten, on the same append-don't-rewrite handling as the rest of this
+file; the corrected form is what `docs/plans/devops-azure-area-iteration-placement.md` BAR-003 is written
+against, and that bar fails against the file as it stands today.
+
 ### What the gates actually proved, stated because it is easy to overclaim
 
 The tree used here is **synthetic, and its `audit: findings addressed` line is one I wrote myself.** It
