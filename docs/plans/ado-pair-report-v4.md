@@ -829,3 +829,74 @@ rewrite* and caught one edit later.
 - Everything else shipped as the revised design stated it. **8e item 1, 8e item 7, 8a's gate table and
   step 7's one-confirmation rule were confirmed unedited**, as the design's "no longer edit sites" list
   requires — verified by reading each, not by assuming the absence of a diff.
+
+## EXECUTED 2026-08-05 — BAR-012's discriminating case, closed by observation. Zero writes.
+
+Appended rather than edited into the bar above. **BAR-012's `Note` still reads "NOT RUN on its
+discriminating case" and the 2026-08-04 section still says the strict-ancestor case was "not
+constructible" — both are superseded on that half by this section, and are left standing** because a
+merged plan records what a change meant to do. The same append-don't-rewrite handling the `## SECOND
+REVIEW` section already applies to the 2026-08-04 record.
+
+**The semantics half is SATISFIED, and the answer is the permissive one.** A team whose area-path value is
+a **strict ancestor** of a chosen path, carrying `includeChildren: true`, **is** the owner of items at the
+descendant path — and **ownership is not exclusive**. The same items appear in **both** teams' requirement
+backlogs at once. Observed in a 7-team project, `<org>/<project-a>`:
+
+| | area value | `includeChildren` | `backlogIteration` | requirement backlog returned | the four descendant-path items |
+|---|---|---|---|---|---|
+| team A (ancestor) | `<project-a>\A` | **true** | `\I` | **11** items | **all four present** |
+| team B (descendant) | `<project-a>\A\B` | false | `''` (project root) | **4** items | exactly those four |
+
+The four items are pre-existing `Product Backlog Item`s at `<project-a>\A\B`, on iterations `\I` and
+`\I\S1`. Both teams return the same five levels, and `Microsoft.RequirementCategory` holds
+`Product Backlog Item|Bug` on both — so the level route's grouping is not the variable here.
+
+**The confound that blocked this for a day is `backlogIteration`, and holding it constant is the whole
+method.** A team backlog filters by iteration *as well as* area path — a fact this repo's `memory/` does
+not yet record, and which nothing in either skill mentions. Team A's window is `\I`; the
+120-item batch of 2026-08-05 wrote every item to the **project-root** iteration, which is outside `\I`.
+Reading those items would have returned nothing for team A and proved nothing — indistinguishable from
+`includeChildren` not granting ownership. **The four items used here sit inside *both* windows**, so area
+path is the only variable that moves. **A run that does not state which iteration window each team carries
+has not executed this bar**, whatever it returns.
+
+**This closes the bar with zero writes, which its own `Evidence` line requires.** The route recorded in the
+2026-08-05 session notes as the fix — *create one item at the descendant area path* — **would have breached
+that constraint**, and was unnecessary: the discriminating items already existed and predate this feature
+entirely.
+
+**Two hazards found, one of them new and one a second sighting:**
+
+1. **`az devops invoke --area work --resource backlogs` silently drops a `backlogId` route parameter and
+   serves the sibling `backlogs` *list*.** Exit 0, envelope `{continuation_token, count, value}`,
+   `count=5`, first `value[0].id` the project's custom top level — i.e. **the level list, presented where
+   the caller asked for that level's work items**. Nothing in the response says the sub-route was not
+   reached. This is a **second confirmed instance of BAR-006's sibling-route hazard**, now with a concrete
+   reproduction rather than a documented-instance citation, and it is the reason this read went over REST.
+   The slashed form `--resource teamsettings/iterations` is rejected outright (exit 1), which is the benign
+   failure; this one is the dangerous shape.
+2. **`Invoke-RestMethod` needs its own read-failure doctrine, exactly as the 2026-08-03 challenge
+   predicted.** It **throws** on non-2xx instead of returning blank plus a non-zero exit, so the pack's
+   entire "blank output is `UNKNOWN`, trust `$LASTEXITCODE` never `$?`" rule — written for `az` — does not
+   transfer. The read here wraps each call and reports the status code, and distinguishes *no `workItems`
+   key* from *an empty list*, because only the second is a zero result.
+
+**The bearer-token cost was paid without the exposure the challenge feared** — concern 10 of
+`memory/known-issues/2026-08-05-challenge-backlog-title-guard-and-utf8-title-read.md`. The token was fetched into a
+variable **inside a single shell process**, used as a header, and never echoed; only its character length
+reached the agent transcript. Verified afterwards rather than asserted: **zero** strict three-segment JWTs
+in either session transcript or in any temp file written by the run. **Redacting a token after capture is
+the weaker mitigation** — it does not invalidate the credential and it has to catch every copy — so
+never-capture is the pattern this pack should use if a REST read is needed again.
+
+**Still NOT RUN, and unchanged by this section:** BAR-008's multi-team and per-team-read-failure halves,
+and its re-run through a harness-loaded skill. `install.sh` had not been re-run at the time of this
+section, so nothing here exercised `/devops-azure` as the harness would load it — **this was the
+specification followed by hand, which BAR-008 already records as the weaker evidence.** BAR-009 remains
+NOT RUN and expected to stay so.
+
+**One incidental confirmation.** Item titles read back over `az` carry `U+FFFD` where the tree wrote an em
+dash, while the same titles are intact over REST — the cp1252 output mangling, observed a second time and
+on titles rather than team names. It changes no decision here; the challenge already concluded that
+documenting the false-positive mode is the only unconditionally correct fix.
