@@ -27,6 +27,99 @@ fail() {
     FAIL=$((FAIL + 1))
 }
 
+# --- never pipe into a short-circuiting matcher under pipefail ---------------
+# `grep -q`/`grep -m1`/`head -1` exit as soon as they have what they need. When
+# the producer is still writing, it dies of SIGPIPE (141), and `set -o pipefail`
+# on line 2 makes THAT the pipeline's status -- so a successful match reports
+# failure. It is size-dependent: below the pipe buffer the producer finishes
+# first and the bug is invisible, which is why this survived every small plan.
+#
+# Observed 2026-08-05: a plan whose Deviations body reached 83 KB reported
+# "## Deviations filled in" while the sentinel sat untouched on the section's
+# first line -- the checker reporting the opposite of the truth on the one
+# question the sentinel exists to answer. That is the second time this exact
+# check has done that, for a different cause (see the comment above it).
+#
+# So: feed a variable to a matcher with a HERESTRING, never a pipe.
+
+# Echoes one of: empty | sentinel | filled
+deviations_state() {
+    local plan="$1" body
+    # Bounded at the NEXT '## ' heading, never end-of-file. The bar-body loop
+    # below already learned this and says why; reading to EOF here swept
+    # ## Risks, ## Acceptance bars and ## Challenge into the "Deviations body",
+    # so an empty section was undetectable whenever any later section existed --
+    # and it is what inflated the body past the pipe buffer above.
+    body=$(awk '
+        /^## Deviations[[:space:]]*$/ { f=1; next }
+        f && /^## / { exit }
+        f { print }
+    ' "$plan" | grep -v '^[[:space:]]*$' || true)
+
+    if [ -z "$body" ]; then
+        echo empty
+    elif grep -qF 'Deviations not yet reviewed' <<< "$body"; then
+        echo sentinel
+    else
+        echo filled
+    fi
+}
+
+# --- self-test: prove the mechanism before trusting any result ---------------
+# A checker that cannot demonstrate its own detection reports a clean plan for
+# the wrong reason. The filler below is deliberately larger than the pipe buffer,
+# because a small fixture cannot catch the regression described above.
+selftest() {
+    local d rc=0 got
+    d=$(mktemp -d)
+
+    _st_plan() {  # $1 = the Deviations body line ('' for none), $2 = output path
+        {
+            echo '---'
+            echo 'plan_id: zzselftest'
+            echo 'branch: main'
+            echo 'origin_skill: /plan'
+            echo 'created: 2026-01-01'
+            echo '---'
+            echo
+            echo '## Deviations'
+            echo
+            if [ -n "$1" ]; then echo "$1"; fi
+            echo
+            echo '## Filler'
+            echo
+            awk 'BEGIN{ for (i=0; i<1200; i++) print "filler line pushing this section past the pipe buffer, which is where the SIGPIPE regression lived." }'
+            echo
+            echo '## Acceptance bars'
+            echo
+            echo '- BAR-001: a bar'
+            echo '  Evidence: files -> something'
+        } > "$2"
+    }
+
+    _st_plan '_Deviations not yet reviewed. The coordinating session replaces this line before' "$d/sentinel.md"
+    _st_plan 'None.' "$d/filled.md"
+    _st_plan '' "$d/empty.md"
+
+    for case in sentinel filled empty; do
+        got=$(deviations_state "$d/$case.md")
+        if [ "$got" != "$case" ]; then
+            echo "  [!!] self-test: $case fixture reported '$got'"
+            rc=1
+        fi
+    done
+
+    rm -rf "$d"
+    if [ "$rc" -ne 0 ]; then
+        echo "  self-test FAILED -- not scanning. A checker that cannot detect its own cases proves nothing."
+        exit 2
+    fi
+    echo "  [ok] self-test: sentinel, filled and empty all detected on a section larger than the pipe buffer"
+    echo
+}
+
+selftest
+
 if [ "$#" -eq 0 ]; then
     echo "Error: no plan file given."
     echo "Usage: bash scripts/lint-plans.sh <path-to-plan.md> [<path> ...]"
@@ -55,7 +148,7 @@ for plan in "$@"; do
             fm=$(sed -n "2,$((fm_end - 1))p" "$plan")
             missing=""
             for field in $REQUIRED_FRONTMATTER; do
-                if ! printf '%s\n' "$fm" | grep -q "^${field}:[[:space:]]*[^[:space:]]"; then
+                if ! grep -q "^${field}:[[:space:]]*[^[:space:]]" <<< "$fm"; then
                     missing="$missing $field"
                 fi
             done
@@ -117,13 +210,15 @@ for plan in "$@"; do
                     fi
                 done
                 body=$(sed -n "${prev_start},${end}p" "$plan")
-                id=$(printf '%s\n' "$body" | head -1 | sed 's/^- \(BAR-[0-9]*\):.*/\1/')
+                # `head -1` and `grep -m1` short-circuit; herestrings keep them
+                # off the downstream end of a pipe. See the note above fail().
+                id=$(sed -n '1s/^- \(BAR-[0-9]*\):.*/\1/p' <<< "$body")
 
                 # Evidence: required, and must name a recognised kind.
-                ev=$(printf '%s\n' "$body" | grep -m1 '^[[:space:]]*Evidence:' || true)
+                ev=$(grep -m1 '^[[:space:]]*Evidence:' <<< "$body" || true)
                 if [ -z "$ev" ]; then
                     fail "$id" "no Evidence: line"
-                elif ! printf '%s\n' "$ev" | grep -qE '^[[:space:]]*Evidence:[[:space:]]*(tests|manual|files)\b'; then
+                elif ! grep -qE '^[[:space:]]*Evidence:[[:space:]]*(tests|manual|files)\b' <<< "$ev"; then
                     fail "$id" "Evidence: must begin with tests, manual, or files"
                 else
                     pass "$id Evidence: present and typed"
@@ -140,8 +235,8 @@ for plan in "$@"; do
                 # only referenced another bar's gate. That is bar-soundness
                 # row 5 (pattern fragility) in the checker itself. A field
                 # cannot be tripped by a bar talking about gates.
-                if printf '%s\n' "$body" | grep -qE '^[[:space:]]*Gated:[[:space:]]*[^[:space:]]'; then
-                    if printf '%s\n' "$body" | grep -qE '^[[:space:]]*Cost:[[:space:]]*[^[:space:]]'; then
+                if grep -qE '^[[:space:]]*Gated:[[:space:]]*[^[:space:]]' <<< "$body"; then
+                    if grep -qE '^[[:space:]]*Cost:[[:space:]]*[^[:space:]]' <<< "$body"; then
                         pass "$id Gated: -> Cost: present"
                     else
                         fail "$id" "has a Gated: field but no Cost: line (bar-soundness row 6)"
@@ -170,14 +265,14 @@ for plan in "$@"; do
     # Tier 1, which greps the same string. Keep them identical: if tech-lead's
     # sentinel line in agents/tech-lead.md ever changes, all three move together.
     if grep -qF "## Deviations" "$plan"; then
-        dev_body=$(sed -n '/^## Deviations/,$p' "$plan" | tail -n +2 | grep -v '^[[:space:]]*$' || true)
-        if [ -z "$dev_body" ]; then
-            fail "## Deviations" "section is empty -- must hold the sentinel, 'None.', or one bullet per departure"
-        elif printf '%s\n' "$dev_body" | grep -qF 'Deviations not yet reviewed'; then
-            echo "  [--] ## Deviations still holds its sentinel (correct before step 10)"
-        else
-            pass "## Deviations filled in"
-        fi
+        case "$(deviations_state "$plan")" in
+            empty)
+                fail "## Deviations" "section is empty -- must hold the sentinel, 'None.', or one bullet per departure" ;;
+            sentinel)
+                echo "  [--] ## Deviations still holds its sentinel (correct before step 10)" ;;
+            filled)
+                pass "## Deviations filled in" ;;
+        esac
     fi
 
     echo
