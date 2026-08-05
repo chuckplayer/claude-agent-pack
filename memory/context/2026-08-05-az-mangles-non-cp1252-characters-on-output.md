@@ -2,7 +2,8 @@
 **Type:** platform quirk
 **Status:** active
 **Superseded-by:** n/a
-**Scope:** any code path that compares, matches, or parses a string printed by `az` on this machine
+**Scope:** any code path that compares, matches, or parses a string printed by `az` on this machine — **and,
+per the section at the end, any checker whose own source text contains a non-cp1252 literal**
 **Overrides-convention:** no
 **Related-to:** memory/known-issues/2026-08-04-ado-backlog-level-is-not-work-item-type-category.md, memory/context/2026-08-04-az-query-and-json-parse-hazards-on-windows.md
 
@@ -58,3 +59,28 @@ a token from `az account get-access-token` and `Invoke-RestMethod`, or set the c
 duration of the read. **Do not "fix" a mismatch by rewriting the stored value** — the stored value is
 already correct, and a write issued to repair a phantom mismatch is a real change made on false
 evidence.
+
+## It also bites the checker's own source text, not only `az` output
+
+**Found 2026-08-05 while mechanising an acceptance bar.** The bar admitted `…` (`U+2026`) as a legal token,
+and a PowerShell checker holding that character as a **literal in its own source** reported the token as
+**unadmitted** — the comparison failed because the literal was mangled between the script file and the
+interpreter, not because the subject was wrong. Building the character from its **codepoint** fixed it:
+
+```powershell
+$ELL = [char]0x2026          # reliable
+$bad  = @('…')               # mangles between file and interpreter on this machine
+```
+
+**Why this is the same hazard rather than a new one, and why it is worse:** the mechanism above corrupts a
+value on its way *out of* `az`, so a comparison fails and the subject looks defective. Here the corruption
+happens on the way *into the comparison*, from the checker's own file — so a **correct** subject is reported
+as violating, and every instinct points at the subject. The instrument fails in a way indistinguishable from
+the thing it measures being broken, which is the shape of the `--query` false negative in
+[[2026-08-04-az-query-and-json-parse-hazards-on-windows]] and of the `grep -iF` abort in
+[[2026-08-04-grep-iF-aborts-on-this-machine]].
+
+**Workaround:** in any checker on this machine, express a non-ASCII literal as a **codepoint**, never as a
+character in the source. Where a check reports that a *correct* value is non-compliant, **suspect the
+checker's encoding before the value** — the same rule those two files already state for an unexpected
+negative, extended to the checker's own text.
