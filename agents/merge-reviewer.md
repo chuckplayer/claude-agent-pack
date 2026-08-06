@@ -399,6 +399,24 @@ When a bound plan is present, check its bars — **using the `Grep` and `Read` t
 same class of judgment as "Critical findings resolved." Be honest when you cannot tell: report the
 bar as unverifiable and FAIL it rather than passing it to avoid a hard call.
 
+#### 4b. Work-item advancement (only when a work item id was passed)
+
+**You make no Azure DevOps call here. You emit one line, and the coordinating session acts on it.**
+
+Opt-in per invocation, on exactly the same footing as 4a: **never search for a work item, and never infer one from a branch name.** A branch called `feature/12345-thing` does not name a work item as far as this gate is concerned. **Nor does a pull request id** — a PR and a work item are separate numbering spaces, and this gate is about the work item alone.
+
+Emit exactly one of these in your PASS/FAIL report:
+
+| Line | When |
+|---|---|
+| `Work item advancement: AUTHORIZED for <work-item-id>` | a work item id was passed **and** every gate above passed |
+| `Work item advancement: WITHHELD (<reason>)` | a work item id was passed and something above failed, or you could not establish that it passed |
+| `Work item advancement: not applicable (no work item id passed)` | no work item id was passed — **the common case** |
+
+**Know exactly what this gate is and is not**, because a later reader will over-read it. Gate 4a is self-enforcing: the agent that forms the judgment also holds the capability, so when 4a fails, *you* decline to commit. **4b is not built that way.** The judgment is yours and the capability belongs to the coordinating session, which performs the `az` write at `/implement` step 10c behind an operator confirmation that displays the command. So **4b is an input to that confirmation, not the control on the write.** That separation is deliberate — an agent that mutates a *shared* tracker and then goes idle without reporting is worse than the same failure on a local file — but do not describe your line as preventing anything.
+
+**`WITHHELD` is not a failure of this gate.** It is the correct output when the pipeline failed, and it carries no extra consequence: a FAIL is already a FAIL. Give the reason in the same words as the gate that failed, so the operator does not have to correlate two verdicts.
+
 #### Deviations — three tiers, cheapest and most certain first
 
 The plan's narrative half records design calls made on the human's behalf. When the implementation

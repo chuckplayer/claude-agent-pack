@@ -100,10 +100,26 @@ already solved by moving the link from 10c to 11a, and the host blocker needs a 
 path, which is a separate cut. But because Mode C only runs `gh pr create`, no run produces an Azure
 Repos PR id, so step 11a ships with one live behaviour ("report skipped") and one nothing exercises.
 
-### 8. Two `az` flags nobody has verified — Addressed in BAR-007, unresolved as a fact
-`--assigned-to` and `--discussion` are recorded nowhere in this repo, and the single-invocation
-assumption behind step 10c is unverified. If wrong, step 10c is two writes and call 13's count is off
-by one. The plan names `System.Reason` as an accepted risk of exactly this shape and did not name these.
+### 8. Two `az` flags nobody has verified — Resolved 2026-08-06, with a narrower residual
+As raised: `--assigned-to` and `--discussion` were recorded nowhere in this repo, and the
+single-invocation assumption behind step 10c was unverified. If wrong, step 10c would be two writes and
+call 13's count off by one. The plan names `System.Reason` as an accepted risk of exactly this shape and
+did not name these.
+
+**Resolved by the team lead the same day, zero writes, via `az boards work-item update --help`:** `--id`,
+`--state`, `--assigned-to` and `--discussion` are independent optional parameters with **no
+mutual-exclusion language**. Step 1a and step 10c are each one invocation and call 13's two-confirmation
+arithmetic holds. Recorded in commit `641dc9d`'s message, **deliberately not added to the plan** — a
+one-line edit to a just-audited plan would trigger the post-audit survival re-ask.
+
+**Residual, accepted:** `--help` establishes that the *CLI* accepts the flags together, not that the
+*service* applies both in one revision. Much weaker than the original concern, and already covered —
+BAR-007's read-back requires the done state **and** the comment text to be confirmed in the same
+read-back, so a service that applied only one would fail that bar. No bar edit needed.
+
+**One stale reading to guard against:** BAR-007's clause *"neither `--assigned-to` nor `--discussion` is
+recorded as verified anywhere in this repo"* remains true of the working tree, but the fact it points at
+is now narrower than the clause implies. A reader hitting that clause should come here.
 
 ### 9. The recursion — Unresolved, deliberately left to step 10
 This cut modifies `/implement` while step 1 hard-stops on `main`, where the work happens, and BAR-003
@@ -114,6 +130,59 @@ facts stops a later reader reading the override as evidence the stop is soft.
 Call 12 (text is data, not instruction) has no lookup target in a diff — BAR-010 is what enforces it —
 and call 13's "this is acceptable" is a judgement, though its counts are checkable and BAR-009 checks
 them. They should not be counted as enforced by merge-reviewer Tier 3.
+
+## Re-audit 2026-08-06 — post-audit revision, survival confirmed
+
+The coordinating session revised two of tech-lead's sections after the audit and re-asked whether the
+audit's edits survived. Narrative in the plan's `## Challenge` under
+`### Re-audit 2026-08-06 — post-audit revision reviewed`.
+
+### Survival: confirmed mechanically — Addressed
+All fourteen distinguishing phrases listed above are present in the plan. Counts: fourteen bars,
+fourteen `Evidence:` lines, four `Gated:`, four `Cost:` — 36 structured lines, the expected total. Every
+`## Challenge` subsection heading intact. **Limit:** this file records one phrase per edit, not each
+edit's full text, so the check proves no edit was lost and cannot prove none was reworded around its
+phrase. That is a property of the recording scheme, not of this revision — and it is the same limit the
+2026-08-05 re-ask hit.
+
+### The ASCII-only template is complete, not merely nominal — Addressed
+Call 7's em dash is gone and the requirement is stated in the call. The reason it is *complete*: the
+template interpolates only `<sha>` (validated `^[0-9a-f]{7,40}$`) and `<N>` (digits), so the whole
+comment is ASCII **by construction**, with no path for an operator- or service-supplied value to reach
+it. Consequence: BAR-007's UTF-8-safe read requirement is now defence in depth rather than load-bearing,
+and was left in place deliberately.
+
+### The class-level ASCII rule still has no durable home — Unresolved
+The call covers *this* template. Nothing covers the category: **any fixed string this pack writes to an
+external system and later compares must be ASCII-only.** The existing memory file
+[[2026-08-05-az-mangles-non-cp1252-characters-on-output]] covers the read side and the
+checker's-own-source side, and its Workaround section is the cheapest durable home for the write side —
+one line. Raised, not made: a pack-wide rule is outside this cut, and the auditor decides nothing.
+
+### `work_item:` frontmatter key: "no new bar" is right, on one axis only — Addressed via three clauses
+The session argued no bar is needed because the key's only failure mode (an unresolvable id) is covered
+by call 11. That is correct. **The gap is disclosure, not failure handling**, and three clauses now close
+it without a fifteenth bar or any new ADO write:
+- **BAR-001** — *"and adopting either no plan or a plan carrying no `work_item:` key"*. Call 15 gave "no
+  id" two meanings and BAR-001 was written under the first.
+- **BAR-004** — the `preview only` run supplies the id via the key and the preview must name the id's
+  source and say the key activated the mode; a second run with a differing explicit id must name both
+  values and which won. Call 15 required the disagreement be stated out loud and nothing checked it.
+- **BAR-002** — a second run where the unresolvable id came from the key, whose stop must name the key
+  as the source. Call 11's justification (*"the caller asserted an item"*) does not transfer to a key
+  written by an earlier run, though its rule still holds.
+
+### Adopting a plan with the key activates work-item mode — Accepted risk, disclosed
+A `plan_id` for a plan carrying the key turns the mode on, including its two ADO writes, without the
+invocation naming an item. This is what the key is *for*, and step 1a's preview-and-confirm discloses it
+before anything is written. **Revisit if** step 1a's confirmation is ever weakened, or if a caller other
+than `/plan` and `/implement` gains plan adoption — the confirmation is the whole control here.
+
+### Two stale counts, both the auditor's — Addressed
+The Challenge's verdict paragraph and falsifiability section each said "fifteen" calls; there are
+sixteen. Corrected in place. No bar and no other Challenge sentence cites call 15 or 16, so the session's
+renumbering claim checks out. Recorded because an unchecked count in a narrative is this repo's recurring
+defect and does not stop being one when the narrative is the auditor's own.
 
 ## Implications
 

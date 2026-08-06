@@ -26,6 +26,13 @@ Stage 1 (plan + adversarial review) and partial at Stage 3 (execution). Stages 0
 which the playbook identifies as the actual bottleneck and the actual leverage — have no coverage
 at all.
 
+> **Coverage as of 2026-08-06, since the assessment above is the brief's original framing and is now
+> partly historical.** Stage 0 has `/spec-intake` and `/interview-me`; Stage 2 has `/backlog` with
+> `backlog-auditor`; Stage 2B has batch write mode; **Stage 3's tracker half is now closed by
+> work-item mode** (item 4 below). **Stage 4 remains the open one** — `/verify-spec` is unbuilt and
+> the traceability matrix it needs has no format. Read the original assessment as the problem
+> statement, not as current state.
+
 The playbook's own framing: *"the bottleneck in this process is a BA/PM bottleneck, and the
 leverage is almost entirely upstream of any code being written."* Two full days of Claims'
 elapsed effort were pure requirements work with no feature code, and that is what made a single
@@ -103,7 +110,30 @@ sketched, not specified — each should be re-scoped as the one before it lands.
    gap between a 3 and a 5. A numeric value appears only when the operator supplies or approves one.
 3. **`/verify-spec`** — Stage 4. Walks the matrix against delivered code and the field inventory,
    reports gaps bidirectionally, opens stories for them, emits a stakeholder-readable document.
-4. **Work-item mode on `/implement`** (replaces the proposed `/deliver`) — Stage 3.
+4. **Work-item mode on `/implement`** (replaces the proposed `/deliver`) — Stage 3. **Shipped
+   2026-08-06** as steps 0, 1a, 10c and 11a in `skills/implement/SKILL.md` plus gate 4b in
+   `agents/merge-reviewer.md`. **Four things differ from this sketch**, each verified rather than
+   preferred:
+   - **The write is split off from the read.** This sketch put "assign + set In Progress" in step 0.
+     Writing there leaves the item saying in-progress for a run that stops at step 1's main/master
+     hard stop — so reads are step 0 and the write is **step 1a, after that check clears**.
+   - **merge-reviewer authorizes and writes nothing.** The operator's refinement had it setting done.
+     Gate 4b emits `AUTHORIZED` / `WITHHELD` / `not applicable` and makes **no ADO call**; the
+     coordinating session performs the write behind a confirmation. Preview-and-confirm needs a human
+     interlocutor a subagent cannot obtain, and an agent that mutates a shared tracker and then goes
+     idle is worse than the same failure on a local file.
+   - **The traceability row flip is dropped, not deferred-with-a-stub** — the matrix does not exist,
+     this brief defers its format at `:335`, and nothing reads the conventions key. Revisit trigger:
+     the cut that builds the matrix.
+   - **"Link PR at step 10c" is impossible and ships conditionally at 11a instead.** The PR is created
+     at step 11, so there is nothing to link at 10c; and `agents/git-engineer.md` Mode C runs
+     `gh pr create` with no `az repos pr create` path, so on the standard path no Azure Repos PR
+     exists to attach. Step 11a runs only when a **PR id** is genuinely available and otherwise
+     reports skipped with the reason. The commit SHA reaches the item through 10c's comment regardless.
+
+   Also narrower than the sketch implies: **hours are never set** — elapsed wall-clock goes in a
+   discussion comment that names `CompletedWork` as deliberately not set. Plan and audit:
+   `docs/plans/implement-work-item-mode.md`.
 5. **Batch write mode on `devops-azure`** — the only new ADO write surface `/backlog` needs. **Shipped
    2026-08-03** as `## 8. Batch write mode` in `skills/devops-azure/SKILL.md`, plus one check added to
    `backlog-auditor` dimension 6. Three things differ from this sketch: the reciprocal key lives in

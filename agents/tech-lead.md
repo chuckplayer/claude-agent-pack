@@ -82,6 +82,7 @@ plan_id: <the kebab-case slug, matching the filename>
 branch: <the git branch this plan governs>
 origin_skill: <the skill that dispatched you, e.g. plan or implement>
 created: YYYY-MM-DD
+work_item: <optional — see below. Omit the key entirely when there is no work item id>
 ---
 
 ## What ships
@@ -111,6 +112,23 @@ Leave this line exactly as it is._
 
 The frontmatter binds the plan to one run. `plan_id` and `branch` are what let a downstream stage
 confirm it is reading *this* run's plan rather than a stray file — record them accurately.
+
+**`work_item:` is optional, and you write it only when the caller supplied an Azure DevOps work item
+id with the task.** Omit the key entirely otherwise — an empty or placeholder value is worse than no
+key, because `/implement` step 0 reads the key to decide whether to run work-item mode at all.
+
+- **Record the id the caller gave you. Do not go looking for one**, do not infer one from a branch
+  name, and **make no `az` call** — you hold no `Bash` and this is not your read to perform. If the
+  caller included item text in the task description, that text is your input like any other; the key
+  records only the id.
+- **A work item id is not a pull request id.** They are separate numbering spaces in Azure DevOps.
+  This key holds the work item id and nothing else.
+- **The key is not required and `scripts/lint-plans.sh` does not check it**, so a plan without it is
+  valid and every plan written before it existed stays valid. Its only consumer is `/implement`
+  step 0, where an id passed explicitly with the invocation **wins** over the key.
+
+Why it exists: without it the id has to be supplied twice — once to plan, once to implement — and a
+plan and the work item it was planned from are unrelated files.
 
 **Narrative half** (the six sections above the rule) is for the human. Order the content by what
 they are most likely to want changed: user-facing shape first, data choices next, mechanical work
@@ -195,7 +213,7 @@ work that was fine. Re-read the file you just wrote and confirm all five:
    dropped, because it is the only section you do not author.
 3. **Every bar has its own `Evidence:` line on the next line, indented exactly two spaces.** Equal
    totals are not enough; each bar needs its own.
-4. **The frontmatter has all four keys**, and `plan_id` matches the filename.
+4. **The frontmatter has all four required keys**, and `plan_id` matches the filename. `work_item:` is a fifth, optional key — present only if the caller supplied a work item id, absent otherwise, and never empty.
 5. **The plan file is where you meant to put it** — inside the repo, under the resolved plan
    directory.
 

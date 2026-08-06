@@ -579,7 +579,8 @@ external_refs:
 | ADO fact | Where it lives |
 |---|---|
 | Work item **type** | **Re-read from ADO** on each run (8c). Never recorded in the tree. |
-| **State** and **hours** | **ADO**, advanced by `/implement` work-item mode. The tree carries no `state:`/`status:` field, deliberately — a copy here would drift. |
+| **State** | **ADO**, advanced by `/implement` work-item mode — set to in-progress at its step 1a and to done at its step 10c. The tree carries no `state:`/`status:` field, deliberately — a copy here would drift. |
+| **Hours** | **Nowhere. Deliberately never set by anything in this pack.** `/implement` work-item mode records elapsed wall-clock in a **discussion comment** and explicitly names `Microsoft.VSTS.Scheduling.CompletedWork` as not set, because that field feeds velocity reporting and an automated run's elapsed time is not effort. Do not add it here or there. |
 | **Org** and **project** | The **environment** (`AZURE_DEVOPS_ORG`/`AZURE_DEVOPS_PROJECTS`), resolved per run. |
 | Area and iteration path | **Set on the item at create** (8f) and **re-readable from ADO**, on the pattern of the work item type row above. Resolved per run in 8a and displayed in the preview; **never recorded in the tree.** |
 | Item **URL** | The **run report** (8i) — not the tree. |

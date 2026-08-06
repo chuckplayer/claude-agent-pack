@@ -19,6 +19,13 @@ If unclear, ask: "Do you have a plan already, or do you need one decomposed firs
 
 Invoke tech-lead with the full task description. Pass any constraints, related files, or architectural context. tech-lead reads `memory/architecture/repo-map.md` (if present) to accelerate routing and blast-radius assessment — if you already know the repo structure has changed a lot recently, suggest `/repo-map refresh` first so the plan is built against an accurate map.
 
+**If the user named an Azure DevOps work item, pass its id and tell tech-lead to record it as `work_item:` in the plan's frontmatter.** Asking *"plan 12345"* already works — you read the item and hand its title and acceptance criteria to tech-lead as the task description — but **without the key the id does not survive into the plan**, so `/implement` has to be given it again and a plan and the item it was planned from stay unrelated files. One key removes that.
+
+- **You do the read, not tech-lead** — it holds no `Bash`. Resolving the item is an ID-scoped read needing only the org (`skills/devops-azure/SKILL.md` step 2), and it stays a **read**: planning against an item must not move it. State advancement belongs to `/implement` step 1a, after that run's branch check.
+- **Pass the id, not just the item text.** Including the title and criteria in the task description is what makes the plan useful; recording the id is what makes it reachable.
+- **Omit it entirely when there is no work item.** `/plan` with a plain description is the common case and acquires no tracker dependency — the same property that keeps `/implement` working with no tracker at all.
+- **A work item id is not a pull request id**; this key holds the work item id only.
+
 **Instruct tech-lead to write a plan file, and pass it the resolved plan directory.** tech-lead
 writes a plan file only when told to, so this instruction is what creates the artifact. Resolve
 the directory first:

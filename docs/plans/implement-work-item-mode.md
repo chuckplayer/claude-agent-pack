@@ -115,7 +115,16 @@ Each of these is a decision I made on your behalf. Veto any of them.
 
    > `/implement` completed for this item. Pipeline PASS at commit `<sha>`. Elapsed wall-clock for
    > the automated run: `<N>` minutes, step 0 to merge-reviewer PASS. This is elapsed session time,
-   > not effort — `Microsoft.VSTS.Scheduling.CompletedWork` was deliberately not set.
+   > not effort. `Microsoft.VSTS.Scheduling.CompletedWork` was deliberately not set.
+
+   **The template is ASCII-only, and that is a requirement rather than a style choice.** An earlier
+   draft used an em dash before `Microsoft.VSTS...`. `az` cannot encode non-cp1252 characters on
+   **output** on this machine, so the read-back at step 10c would return `U+FFFD` where the write sent
+   the dash, and BAR-007's comparison would fail **looking exactly like a corrupted write** — the
+   false-positive shape `memory/context/2026-08-05-az-mangles-non-cp1252-characters-on-output.md`
+   exists to prevent. Corrected 2026-08-06 on devils-advocate's finding that the cost of leaving it
+   rises if it is discovered at verification time instead of now. **Any later edit to this template
+   stays ASCII-only.**
 
    Naming the field is what stops a human reading the comment as an effort figure.
 8. **Question 1 — already in progress, or assigned to someone else: warn in the preview, never stop,
@@ -161,15 +170,219 @@ Each of these is a decision I made on your behalf. Veto any of them.
     interpreter beside the shim, never bare `az` — **cited, never restated.** Same for §8b's value
     discipline, §8d's blank-output rule, `$LASTEXITCODE` over `$?`, and the cp1252 output hazard on
     the title read.
-15. **This mode never sets area path, iteration path, or any scheduling field**, and never creates or
+15. **An optional `work_item:` frontmatter key carries the id from `/plan` to `/implement`, added
+    2026-08-06 at the operator's request.** This is the smallest fix to a real gap: asking *"plan
+    &lt;id&gt;"* already works — an agent reads the item and hands its title and acceptance criteria to
+    tech-lead as the task description — but **nothing carries the id forward.** The plan spine's
+    frontmatter is `plan_id`, `branch`, `origin_skill`, `created`, and **no work-item field exists
+    anywhere** in `agents/tech-lead.md`, `skills/plan/SKILL.md`, `skills/implement/SKILL.md` or
+    `scripts/lint-plans.sh` — verified. So today the id must be supplied twice, gate 4b reports
+    `not applicable` unless the operator remembers it, and a plan and the item it was planned from are
+    unrelated files.
+
+    - **tech-lead writes `work_item: <id>`** only when an id was supplied with the task, and omits the
+      key entirely otherwise. It does **not** read the item itself and makes no ADO call — the caller
+      supplies the id and whatever item text it chose to include.
+    - **`/implement` step 0 reads the key** when no id was passed explicitly. An id passed explicitly
+      **wins** over the key, and a disagreement between the two is **stated out loud** rather than
+      resolved silently.
+    - **Not added to `REQUIRED_FRONTMATTER`, and `scripts/lint-plans.sh` is not touched.** The key is
+      optional by construction, so a plan without it is valid and every existing plan stays valid —
+      the retro-condemnation property the `Cost:` rule was built to preserve.
+    - **`/plan` gains no ADO dependency and no new syntax.** Nothing about invoking it changes; the
+      key records what the caller already told it. `/plan` with a plain description remains the common
+      case, exactly as `/implement` with no work item remains the common case.
+    - **No new bar.** The key is optional and inert when absent, so nothing fails if it is missing; its
+      only failure mode — an id in the key that will not resolve — is already covered by call 11's
+      stop-at-step-0 rule, which does not care where the id came from. **Stated rather than left as an
+      apparent omission**, since the auditor counted the bars in this cut.
+
+16. **This mode never sets area path, iteration path, or any scheduling field**, and never creates or
     deletes a work item. Its entire write surface is `System.State`, `System.AssignedTo`, one
     discussion comment, and one optional PR link.
 
 ## Deviations
 
-_Deviations not yet reviewed. The coordinating session replaces this line before
-merge-reviewer runs — with `None.` if nothing diverged, or one bullet per departure.
-Leave this line exactly as it is._
+- **Gate 4a was OVERRIDDEN by the operator. It was not passed, and nothing below claims the bars were
+  met.** merge-reviewer reported **12 of 14 bars unverified** — 8 `NONE`, 4 `NOT RUN, gated on consent
+  never sought` — leaving only **BAR-011** and **BAR-014** satisfied, both `files`-typed against shipped
+  text. **Decided by:** the operator, explicitly, after merge-reviewer declined to absorb the acceptance
+  into a PASS on its own authority and named the override as the only alternative to a re-plan.
+
+  **The grounds:** every one of the 12 tests *behaviour of skill text that cannot exist until this
+  commit ships and `install.sh` re-runs.* The dependency is circular by construction — the mode cannot
+  be exercised until its text is installed, `install.sh` installs from the committed pack, and the
+  commit is what gate 4a guards. Holding the commit would not produce evidence; it would only prevent
+  the evidence from ever becoming obtainable.
+
+  **This is a bar-design flaw, not a verification failure, and it is the durable lesson of this cut.**
+  Bars were written against runtime behaviour of a mode whose runtime does not exist at plan time.
+  A plan that ships *skill text* can only prove `files`-typed properties at its own merge gate;
+  anything `manual` against the new behaviour is necessarily post-install. The fix on any future cut of
+  this shape is to type the bars accordingly at plan time rather than discovering it at gate 4a —
+  either `files`-typed bars for this commit, or bars explicitly declared post-install with a named
+  owner and trigger. **devils-advocate audited these bars and did not catch it**, which is worth
+  noting: the bar-soundness table asks whether a bar can fail, not whether it can be *reached* in the
+  run that is gated on it.
+
+  **What was genuinely verified at this gate**, mechanically and by merge-reviewer itself rather than
+  from a summary: `lint-agents.sh` 50/0, `lint-identifiers.sh` 9/0, `lint-plans.sh` 24/0, no BOM on any
+  of the nine files, branch scope matching the claimed file list exactly, Deviations Tiers 1–3 clean,
+  and all five security remediations confirmed **by reading the actual command blocks** — the three
+  `az` templates showing `"$py" -m azure.cli`, the `^[0-9]+$` id validation, the identity-matched state,
+  and the backtick note. The code and security work is sound and checked. **The gap is the bar
+  mechanism alone.**
+
+  **Verification sequence that closes the 12, and it is owed:** commit → operator re-runs `install.sh`
+  → exercise work-item mode against a **throwaway item in a disposable test project**, never one
+  carrying real delivery work → obtain consent for the four gated bars at that point rather than
+  assuming it → append the results to **this** section of **this** plan. **An override with no
+  follow-through is just a skip with better paperwork.**
+
+  Which project is disposable is an operator fact and is **deliberately not named here** — this
+  repository is public. Naming the two candidates cost this entry a `lint-identifiers.sh` failure
+  before it was committed, which is the gate doing precisely its job: it is the only one that fires on
+  **every** changeset, and the reason given for that in `CLAUDE.md` is exactly this — *an identifier can
+  be introduced by any file in any commit.* A plan file recording a verification procedure is as
+  capable of leaking one as any script.
+
+  **One correction to the record, made because a claim I could not reproduce should not stand.** The
+  brief handed to merge-reviewer warned that three occurrences of the `## Deviations` sentinel needle
+  survived elsewhere in *this* plan, inside text the post-audit revision rule forbids editing, and that
+  a naive Tier 1 substring search would therefore trip on them. **That was wrong.** merge-reviewer
+  reported zero hits and was right: the three occurrences are in
+  `docs/plans/cited-authority-integrity.md` — the parked plan — and this file contains neither the
+  needle nor the word "sentinel". The warning was attached to the wrong file. No verdict changes, since
+  Tier 1 passes cleanly either way, and `lint-plans.sh` bounds the section with `awk` at the next
+  `## ` heading rather than searching the whole file. Recorded because merge-reviewer refusing to repeat
+  an unreproducible claim is the behaviour the *verify-rather-than-believe-a-summary* rule exists to
+  produce, and it worked here against **my** error.
+
+- **Call:** `## What ships` — "two substantive files" plus "four accuracy edits", six in total.
+  **Shipped instead: nine files.** `agents/tech-lead.md` and `skills/plan/SKILL.md` were added, and
+  `agents/merge-reviewer.md` was edited beyond gate 4b. **Decided by:** the coordinating session.
+  **Cause:** call 15 was added to this plan *after* it was audited, at the operator's request, and it
+  requires a writer for the `work_item:` key (tech-lead) and a caller that supplies the id
+  (`/plan`) — neither of which the file list was updated to name. **This is scope growth from a late
+  request, recorded as such rather than absorbed**: the call implied the files, but a reader comparing
+  the plan's list against the diff would otherwise find two unexplained files.
+- **Call:** the plan specifies no wording constraints on how ids are referred to. **Shipped instead:**
+  **every `id` reference in the new text is qualified as either a work item id or a pull request id.**
+  `--id <work-item-id>` in all three commands, "a **work item id** passed with the invocation", and an
+  explicit paragraph at step 11a stating that a PR id and a work item id are **separate numbering
+  spaces**, that step 11a is the only place in `/implement` taking a PR id, and that a work-item-id-only
+  run **skips** 11a rather than attempting it. Gate 4b got the same treatment, including that a PR id
+  authorises nothing there. **Decided by:** the operator, who caught the ambiguity in review — step 11a
+  read *"or an id the operator supplies"* immediately after naming a PR id, which invites supplying the
+  wrong number to the wrong step. **This edited text in `agents/merge-reviewer.md` the plan did not
+  name**, which is part of why the file count grew.
+- **Call:** `/implement` step 1 hard-stops on `main`. **Shipped instead:** this cut was built on `main`.
+  **Decided by:** the coordinating session, on the same basis recorded for `c2524ce` earlier the same
+  day — the stop is justified in its own text by worktree isolation, no engineer agent ran, so no
+  worktree existed and the hazard cannot occur; `agents/merge-reviewer.md` has no refuse-on-main rule
+  and commits to the current branch without merging; and the plan's frontmatter states `branch: main`.
+  **Worth naming the recursion:** this change modifies the very step it steps around. A future cut that
+  makes step 1's stop conditional on engineer dispatch would remove the need for this deviation
+  entirely, and is not in scope here.
+- **Not a design departure, recorded because the next person will hit it.** Three files —
+  `agents/merge-reviewer.md`, `skills/implement/SKILL.md`, `agents/tech-lead.md` — were written with a
+  **UTF-8 BOM** by PowerShell 5.1's `Set-Content -Encoding UTF8`. That put `EF BB BF` ahead of the
+  opening `---`, so `scripts/lint-agents.sh`'s `^---` test failed on line 1 and it parsed each entire
+  body as frontmatter: 50 checks became hundreds of spurious errors reporting `name` and `description`
+  missing from files that have both. **Caught by the gate, before commit**, and repaired with
+  `UTF8Encoding($false)`. The two files edited with the editor rather than a shell write were clean.
+  **The gate earned its place here** — the failure was introduced by the editing tool rather than by
+  the edit, and it would have been committed without a second thought.
+- **Call:** the plan's bars, as a set. **Shipped instead: the text ships with 12 of 14 bars unverified,
+  by operator decision, and the bars are recorded as acceptance criteria for the *feature* verified on
+  first live use — not for this authoring cut.** **Decided by:** the operator, on test-engineer's
+  mapping. **This is a bar-design flaw, not an implementation failure, and it is worth stating exactly:**
+  twelve bars carry `Evidence: manual` and require an **observed run** of work-item mode. That run
+  cannot occur until this text is committed **and** `install.sh` has been re-run, because the harness
+  loads `~/.claude/skills/implement/SKILL.md` and not the repository copy. **So the cut that authors the
+  behaviour can never satisfy its own bars** — the same committed-but-not-installed gap that opened this
+  session, arriving as a plan defect. What the plan should have carried is **`files`-type bars for the
+  text** plus **`manual` bars in a separate verification pass**; it has almost none of the former.
+
+  Mapping as produced by test-engineer, recorded here because gate 4a's requirement is that a mapping
+  *exist* and be honest, and its first FAIL was for having none at all:
+
+  | Status | Bars |
+  |---|---|
+  | **SATISFIED** | BAR-011 (`files`) — no scheduling-field flag on any of the three writes, verified by grep |
+  | **SATISFIED after a fix** | BAR-014 (`files`) — see below |
+  | **NOT RUN**, gated on consent never sought | BAR-005, BAR-007, BAR-010, BAR-013 |
+  | **NONE** — no `/implement` or `/hotfix` run occurred | BAR-001, 002, 003, 004, 006, 008, 009, 012 |
+
+  **To verify the rest**, in order: commit this text → the operator re-runs `install.sh` → exercise
+  work-item mode against a throwaway item in the disposable project, with consent for the four gated
+  writes. **Until then this feature is shipped and unverified, and no text in the pack should imply
+  otherwise.**
+
+  Two notes from the mapping worth keeping. **BAR-003 is not satisfied by this cut having been built on
+  `main`** — that is the authoring branch, not a demonstration that a run on `main` behaves as the bar
+  requires. And **BAR-007 is not satisfied by the `az boards work-item update --help` check**: the help
+  establishes that `--id`, `--state`, `--assigned-to` and `--discussion` are independent optional
+  parameters with no mutual-exclusion language, which bears on the single-invocation claim but proves
+  nothing about the service applying both fields in one revision, and touches none of the bar's other
+  halves.
+
+- **BAR-014 failed on presence-versus-truth and the text was fixed rather than the bar.** It requires
+  step 10c to state that a report carrying **no** advancement line is handled as `WITHHELD`, naming
+  silence explicitly. The text enumerated three defined lines plus *"anything other than `AUTHORIZED`"* —
+  correct behaviour, but it never named the absent-line case, and it said *"the run says which line it
+  got"*, which is incoherent when no line exists. **Found by test-engineer**, and fixed at
+  `skills/implement/SKILL.md` step 10c, which now names the case and cites the stall known-issue so a
+  reader understands an absent line is a **likely** state rather than an exotic one.
+
+- **A Critical security finding was shipped into the first draft and fixed before commit, and it is the
+  same defect this session fixed in another file hours earlier.** security-reviewer — a stage
+  merge-reviewer had to FAIL the run for skipping — found that all three new `az` command blocks were
+  written as **bare `az`**, while a paragraph four lines below claimed *"every `az` invocation in this
+  mode follows 8f's invocation rule — the interpreter beside the shim, never bare `az`."* **The
+  templates demonstrated the thing the prose forbade.** That is precisely the finding this session
+  already acted on in `skills/devops-azure/SKILL.md` 8f, where the fix was described at the time as
+  correcting *"the one artifact most likely to be copied verbatim showing the dangerous shape"* —
+  and then reproduced in a new file the same day. **Prose claiming a rule is not the rule; the shown
+  command is.**
+
+  Four remediations, all in `skills/implement/SKILL.md`:
+  - **All three blocks now show `"$py" -m azure.cli …`**, with the interpreter resolved from
+    `(Get-Command az).Source`. Verified: zero bare `az boards` templates remain.
+  - **The work item id is validated `^[0-9]+$` at first read, on both channels, stop-not-sanitise.**
+    It had **no shape check at all** while the SHA four lines away had a regex — and it is the one value
+    reaching a command from a **hand-editable file**. `&` in an unquoted argument is a `cmd.exe`
+    command separator; `%VAR%` expands unconditionally.
+  - **The chosen state value must match one the discovery read returned**, by identity against the
+    enumerated set, never by character class — the 8f(a) instrument, applied to a value that is
+    service-supplied but process-template-defined, where ADO's name restrictions are a **UI rule, not a
+    service guarantee.**
+  - **The backticks in the comment template are noted as markdown-only.** If one survived into a
+    PowerShell double-quoted string, `` `a `` `` `b `` `` `f `` `` `0 `` are escape sequences and every
+    one of those letters is a legal first character of a validated SHA — corrupting the write for *some*
+    commits, which is worse than failing for all.
+
+  **The insight worth keeping is why the interpreter form is load-bearing rather than hardening.** The
+  preview shown to the operator is composed in PowerShell **before** `cmd.exe` re-parses, so with bare
+  `az` the operator approves one string while a different command runs. *"The operator reads the exact
+  command"* — the control this mode leans on everywhere, and the reason gate 4b is permitted to be
+  advisory — **is false for the `%` channel.** The interpreter form is the precondition that makes the
+  confirmation true. That reasoning is now in the file so nobody reverts the blocks on the grounds that
+  a confirmation follows.
+
+  **One finding is accepted and not fixed:** work-item text is read as task input and flows into the
+  context that reaches merge-reviewer, and **nothing tests whether it can forge gate 4b's `AUTHORIZED`
+  line by prompt injection.** Call 12 and BAR-010 test only whether that text can make the *pipeline*
+  skip a stage. Rated Medium and advisory: it needs an actor holding ADO work-item-edit rights but not
+  repo rights, and the blast radius is that item's own state, comment and assignee. **Worth a bar if
+  this cut is revisited**, and devils-advocate's rejected alternative — a machine-shaped token from gate
+  4b rather than prose — would close it, since a token cannot be talked into existing by adjacent text.
+
+- **Everything else shipped as the plan and its audit state it.** Steps 0, 1a, 10c, 11a and the gotcha
+  are in `skills/implement/SKILL.md`; gate 4b is in `agents/merge-reviewer.md` and **makes no ADO
+  call**; the comment template is **ASCII-only**; hours are never set and `devops-azure`'s
+  `Where it lives` table now says so in a row of its own; the traceability row flip and the
+  standard-path PR link remain unshipped for the verified reasons in `## What does not ship`.
 
 ## Risks
 
@@ -344,13 +557,13 @@ after rather than in parallel — there is no parallelism worth the coordination
 ## Acceptance bars
 
 - BAR-001: `/implement` invoked with no work item id makes zero `az` invocations and still reaches merge-reviewer
-  Evidence: manual -> run /implement on a one-file change, passing no id; confirm the transcript holds no `az` call AND that the run reached merge-reviewer. Both halves are required: zero `az` calls is also what a run that died at step 1 produces, so the count alone cannot distinguish the property from the failure.
+  Evidence: manual -> run /implement on a one-file change, passing no id **and adopting either no plan or a plan carrying no `work_item:` key** — call 15 gives "no id" two meanings, and a run that adopts a plan holding the key is not this bar's subject even though the invocation named no item. Confirm the transcript holds no `az` call AND that the run reached merge-reviewer. Both halves are required: zero `az` calls is also what a run that died at step 1 produces, so the count alone cannot distinguish the property from the failure.
 - BAR-002: a work item id that does not resolve stops the run before git-engineer is dispatched, and names which state it hit
-  Evidence: manual -> invoke with a nonexistent id; confirm the run stops at step 0, names one of {not found, read failed/UNKNOWN, `az` absent, not authenticated}, and that no git-engineer dispatch appears. A stop that does not name the state fails this bar — an unnamed stop cannot tell the operator whether to fix an id or fix their CLI.
+  Evidence: manual -> invoke with a nonexistent id; confirm the run stops at step 0, names one of {not found, read failed/UNKNOWN, `az` absent, not authenticated}, and that no git-engineer dispatch appears. A stop that does not name the state fails this bar — an unnamed stop cannot tell the operator whether to fix an id or fix their CLI. **Run the same case a second time with the unresolvable id supplied by a plan's `work_item:` key instead of by the invocation, and confirm the stop names the key as the id's source.** Call 11's stated justification is *"the caller asserted an item"*, and a key written by an earlier run on a different day is not this caller; the rule still holds, but a stop silent about the source sends the operator hunting for an argument they never typed.
 - BAR-003: the in-progress write happens after step 1's branch check, never before
   Evidence: manual -> invoke with a valid id while checked out on `main`; confirm the run stops at step 1's main/master hard stop and that reading the item back shows `System.State` and `System.AssignedTo` unchanged. If the run stops earlier for an unrelated reason the bar is not satisfied — the stop must be step 1's branch check specifically.
 - BAR-004: no state name is hardcoded; the previewed values come from a discovery read and the run names the route that answered
-  Evidence: manual -> run step 0 against the disposable test project and answer `preview only`; confirm the preview lists the discovered candidate states, names which of the two routes in call 5 produced them, and that both proposed values appear in that list. A preview naming a state the discovery output does not contain fails the bar, and so does one that does not say which route answered. **When the fallback route answered, the preview must additionally say that the done-mapping is inferred from existing items and is not a statement by the service** — naming the route is not the same as telling the operator they are confirming a guess, and an operator who has not read §8c will not hear *evidence, not proof* in a route name.
+  Evidence: manual -> run step 0 against the disposable test project and answer `preview only`; **supply the id through a plan's `work_item:` key for this run, and confirm the preview names the id's source and says that the key activated work-item mode** — after call 15, call 11's *"no id passed → the mode does not run"* is true only of the explicit channel, so a run whose ADO writes were authorized by a file rather than by the invocation must say so. **Re-run once with an explicit id that differs from the key's**, and confirm the preview names both values and which one won; call 15 requires that disagreement be stated out loud, and silently preferring the explicit id leaves an operator believing they are working the other item. This whole bar is `preview only` and read-only, so neither run costs an ADO write. Then confirm the preview lists the discovered candidate states, names which of the two routes in call 5 produced them, and that both proposed values appear in that list. A preview naming a state the discovery output does not contain fails the bar, and so does one that does not say which route answered. **When the fallback route answered, the preview must additionally say that the done-mapping is inferred from existing items and is not a statement by the service** — naming the route is not the same as telling the operator they are confirming a guess, and an operator who has not read §8c will not hear *evidence, not proof* in a route name.
 - BAR-005: merge-reviewer withholds advancement on FAIL, and the session performs no ADO write
   Evidence: manual -> run with an unresolved Critical from code-reviewer and a work item id present; confirm merge-reviewer's FAIL report carries `Work item advancement: WITHHELD` with a reason, and that reading the item back shows the state unchanged from what step 1a set. **Then confirm the half that makes the silence honest:** on a final failure the session's closing report must state that the item was deliberately left in progress. Call 9 is right that the item genuinely *is* in progress, but a FAIL that writes nothing to ADO **and** says nothing to the operator leaves the board asserting a live run to everyone who reads it, and only the report can close that.
   Gated: the operator confirms this bar's run may set `System.State` and `System.AssignedTo` on one throwaway work item in the disposable ADO test project. Step 1a fires on every id-bearing run, so this bar cannot be evidenced without a write.
@@ -401,7 +614,8 @@ summary does not differ from the plan's stated intent.
 **Calibration: significant feature, mostly reversible.** Six files, no new script, agent, or gate. The
 one irreversible artifact in the whole cut is the discussion comment, and the plan already prices it.
 
-**Verdict: sound, and unusually well-specified.** Fifteen calls, a responsibility matrix that names an
+**Verdict: sound, and unusually well-specified.** Sixteen calls (fifteen at the time of the original
+audit; see the re-audit below), a responsibility matrix that names an
 unowned case as unowned, and every external-behaviour claim I checked is true. The findings below are
 about the bars and about three places where a stated property lives at a different step than the bar
 that guards it. None of them is a reason to delay. **What would change my mind:** if `--assigned-to`
@@ -514,8 +728,9 @@ count is wrong by one. Folded into BAR-007 as a stated-strength clause rather th
 
 ### Calls made for you — falsifiability
 
-All fifteen name a concrete artifact, a file, a field, a command, or a value, so merge-reviewer's
-Tier 3 can reach them. Two are weaker than the rest and are documentation for the human rather than
+All sixteen name a concrete artifact, a file, a field, a command, or a value, so merge-reviewer's
+Tier 3 can reach them — including call 15, whose lookup targets are the `work_item:` key itself and
+`REQUIRED_FRONTMATTER` in `scripts/lint-plans.sh`, which it requires to stay unchanged. Two are weaker than the rest and are documentation for the human rather than
 enforceable decisions: **call 12** (work item text is data, not instruction) is a behavioural property
 with no lookup target in a diff — BAR-010 is what actually enforces it — and **call 13**'s
 "this is acceptable" is a judgement, though the counts beside it are checkable and BAR-009 checks them.
@@ -540,3 +755,63 @@ this machine given `az`, authentication, and the disposable ADO test project, wi
 exceptions now carried in the bars themselves: BAR-004's preferred discovery route has never been
 executed here and may prove unusable, and BAR-014 checks text because its behavioural state cannot be
 produced without doctoring a report.
+
+### Re-audit 2026-08-06 — post-audit revision reviewed
+
+Written before the three bar clauses it describes, same discipline as the original audit. The
+coordinating session revised two of tech-lead's sections after the audit and re-asked whether the audit's
+edits survived.
+
+**Survival: confirmed, and by mechanical check rather than recollection.** All fourteen distinguishing
+phrases recorded in
+`memory/known-issues/2026-08-06-challenge-implement-work-item-mode.md` are present. Counts:
+fourteen bars, fourteen `Evidence:` lines, four `Gated:`, four `Cost:` — 36 structured lines, which is
+the expected total. Every `## Challenge` subsection heading is intact. **Limit, stated:** the memory file
+records a distinguishing phrase per edit, not each edit's full text, so this confirms no edit was lost
+and cannot prove no edit was reworded around its phrase. That limit is a property of the recording
+scheme, not of this revision.
+
+**Change 1 — the ASCII-only template holds, and it is complete rather than nominally complete.** The
+em dash is gone and the requirement is stated where a later editor will hit it. Worth recording *why*
+it is complete: the template interpolates only `<sha>` (validated `^[0-9a-f]{7,40}$`) and `<N>`
+(digits), so **the whole comment is ASCII by construction, not merely its fixed prose** — there is no
+path by which an operator-supplied or service-supplied value reaches it. One consequence: BAR-007's
+UTF-8-safe read requirement is now **defence in depth rather than load-bearing** for this comparison. It
+stays, because removing it would be a bar edit for no gain, and because the constraint that makes it
+redundant is one call away from being edited.
+
+**Change 2 — `work_item:` is a sound addition, and "no new bar" is right on the axis the session
+argued.** The failure mode it names — an id in the key that will not resolve — genuinely is covered by
+call 11, which does not care where the id came from. **The gap is on a different axis: disclosure, not
+failure handling.** Three specifics, all cheap, all now clauses on existing bars rather than a
+fifteenth:
+
+- **"No work item id" acquired a second meaning, and BAR-001 was written under the first.** Before call
+  15 there was one way to have no id; now there are two, and a run that adopts a plan carrying the key
+  is not BAR-001's subject even though it was invoked with no id. Clause added.
+- **Adopting a plan with the key activates work-item mode, including its two ADO writes, without the
+  invocation naming an item.** That is what the operator asked for and the step 1a confirmation
+  discloses it before anything is written, so it is not a hazard — but call 11 currently reads
+  *"No id passed → work-item mode does not run. This is the default and the common case"*, and after
+  call 15 that sentence is true only of the explicit channel. The plan should require step 0 to **name
+  the id's source**, on exactly the pattern BAR-004 already uses for naming which discovery route
+  answered. Clause added to BAR-004, whose run is `preview only` and read-only, so this costs no
+  additional ADO write.
+- **The explicit-wins rule has a quiet failure mode nothing checked.** Explicit id `X` and key id `Y`
+  resolving silently to `X` leaves an operator believing they are working `Y`. Call 15 already requires
+  the disagreement be stated out loud; that requirement had no evidence behind it. Folded into the same
+  BAR-004 clause.
+- **Call 11's justification transfers less cleanly than its rule.** *"The caller asserted an item; its
+  absence is a real problem"* is the stated reason for the hard stop, and a key written by an earlier
+  run on a different day is not this caller. The rule is still right — an unresolvable asserted id
+  should stop — but a stop that does not say the id came from the plan sends the operator hunting for an
+  argument they never typed. Clause added to BAR-002.
+
+**Two stale counts, both mine, both corrected.** The verdict paragraph and the falsifiability section
+each said "fifteen" calls; there are now sixteen. No bar and no other Challenge sentence cites call 15
+or 16, so the renumbering is otherwise clean — the session's claim on that point checks out. The counts
+are worth correcting rather than shrugging at: an unchecked count in a narrative is the defect class this
+repo has hit repeatedly, and it does not stop being one because the narrative is the auditor's.
+
+**Verdict after revision: unchanged.** Both additions improve the cut. Nothing here is a reason to
+delay implementation.

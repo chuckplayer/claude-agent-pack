@@ -344,6 +344,37 @@ rule, and their SKILL.md files need no plan-related logic. `/scaffold` never inv
 all. Do not add plan handling to any of the four without also deciding who owns the artifact for
 that path.
 
+## Work-item mode is opt-in per invocation, on the same footing as the plan spine
+
+**`/implement` work-item mode advances an Azure DevOps work item alongside the code**, and it runs
+**only** when a work item id reaches it — passed with the invocation, or carried in an adopted plan's
+optional `work_item:` frontmatter key. **No id, no mode:** steps 0, 1a, 10c and 11a are skipped, the
+run says so once, and everything else proceeds unchanged. **That is the default and the common
+case** — `/implement` against a repository with no tracker at all must keep working, and it does.
+
+**`/hotfix`, `/debug`, `/scaffold` and `/refactor` pass no work item id**, so merge-reviewer's gate
+4b is `not applicable` for them **by construction rather than by rule** — the same shape, and for the
+same reason, as their exemption from plan enforcement above: five skills dispatch merge-reviewer, so
+a gate that searched for a work item could advance an item belonging to unrelated work. **Nothing
+ever infers a work item from a branch name.**
+
+Two properties worth keeping straight, because each has already been the subject of a wrong
+assumption:
+
+- **merge-reviewer makes no ADO call.** Gate 4b emits one line — `AUTHORIZED`, `WITHHELD`, or
+  `not applicable` — and the **coordinating session** performs every write, behind an operator
+  confirmation that displays the command. So gate 4b is an **input to that confirmation, not the
+  control on the write**. The separation is deliberate: an agent that mutates a *shared* tracker and
+  then goes idle without reporting is worse than the same failure on a local file, and
+  preview-and-confirm needs a human interlocutor a subagent cannot obtain.
+- **Hours are never set.** Elapsed wall-clock goes in a discussion comment that explicitly names
+  `Microsoft.VSTS.Scheduling.CompletedWork` as not set, because that field feeds velocity reporting
+  and an automated run's elapsed time is not effort. `skills/devops-azure/SKILL.md`'s
+  `Where it lives` table is the authority on where each ADO fact belongs.
+
+**A work item id is not a pull request id.** They are separate numbering spaces; only `/implement`
+step 11a takes a PR id, and it is skipped rather than attempted when none is available.
+
 **Plans are committed and never deleted.** The plan lands in the same commit as the implementation
 so a reviewer can read intended shape against what was built. An accumulating `docs/plans/` is the
 intended end state, exactly as `memory/decisions/` accumulates — a kept plan is the record of what
