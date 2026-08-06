@@ -133,6 +133,10 @@ honest *"I cannot."* That was luck, not a step.
   in their own files; stating it in the dispatch is what makes it available at the moment it applies.
 - **After any post-audit revision, re-ask devils-advocate to confirm its edits survived.** Pass the plan
   path and ask it to check the file as it now stands, by substance rather than wording.
+  **The re-ask only works because the auditor wrote a memory file** — a later dispatch of it does not carry
+  the audit transcript, so without that artifact the only honest answer is *"I cannot"*. Established
+  2026-08-06. Treat the memory write and the re-ask as **one mechanism**: if the audit produced no memory
+  file, expect *"I cannot confirm"* and record it as such rather than reading it as a pass.
 
 **Then state one of exactly two things in your own output:**
 

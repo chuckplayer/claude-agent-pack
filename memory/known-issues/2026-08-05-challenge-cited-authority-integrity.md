@@ -154,3 +154,87 @@ gate.
   `/plan` step 3 and `/implement` step 3 already require `scripts/lint-plans.sh` after a
   devils-advocate edit — the edits were checked against the parser by reading it, which is not the same
   as running it.
+
+## Re-audit 2026-08-06 — survival re-ask, and two coordinating-session appends reviewed
+
+The coordinating session appended two sections to the plan **after it was committed** and re-asked
+devils-advocate to confirm its edits survived, under the rule this cut shipped in `cfe2918`. The
+narrative is in the plan's `## Challenge` under `### Re-audit 2026-08-06`. Summary of what is new:
+
+### Survival: confirmed, with three stated limits — Addressed
+Every concern in this file and every bar addendum it records is present in the plan. Confirmed against
+two artifacts outside the plan (this file, and the session's scratchpad snapshot), because the re-asked
+agent's context did not include the original audit transcript. **Limits:** this file is a summary and
+cannot prove bar *text* intact; the snapshot covered only the second of two appends; and the
+"eight bars edited" count in both this file and the plan is **wrong** — at least nine (BAR-011 is
+recorded as edited in concern 2 above), with a tenth addendum on BAR-014 unattributed. Nothing lost; the
+count was never checked, in a challenge that flagged an unchecked count.
+
+### "A scratch-copy diff dominates the fingerprint and the token" — Unresolved, overclaimed
+Six misses recorded in the plan. The two that matter: **(a)** the procedure triggers "after the writer
+reports", and a writer that writes then stalls is this pack's documented failure mode
+([[2026-08-03-subagent-goes-idle-before-reporting]]) — the trigger must be turn-end, not report; **(b)**
+a diff detects *change*, not *loss*, so someone must still judge which removals were intended, and the
+session is the party that wants the run to close. **Observed on its first live use:** only one snapshot
+exists and it postdates the first append, so the bracket covered one of two writes, and the diff it
+produced was read against an append rather than a rewrite. Session-scoped provenance also dies at the
+session boundary — the exact mirror of the in-file scheme's death by whole-file overwrite. **Neither
+dominates; they fail on orthogonal axes.**
+
+### The marker and the fingerprint are layers, not alternatives — Unresolved, and the plan now recommends neither
+The appends withdrew the plain survival marker (it would have passed the 2026-08-05 incident, whose loss
+was in bar text while `## Challenge` was preserved) and then undercut the per-bar fingerprint that
+replaced it (a whole-file overwrite removes the fingerprint block too, yielding a **vacuous pass**).
+Both critiques are correct. **The conclusion is not:** a rule requiring `## Challenge` fires exactly on
+the total-overwrite case the fingerprint misses, and the fingerprint fires on the partial rewrite the
+marker misses. The plan holds both sections with no ordering statement, so a later planner finds two
+answers to its own question 4.
+
+### `## Challenge` is verified by nothing today — Addressed as a fact, Unresolved as a gap
+`scripts/lint-plans.sh:164` requires only `## Acceptance bars` and `## Deviations`; it names
+`## Challenge` in comments only. `agents/merge-reviewer.md` never mentions it. So an audit's entire
+narrative can vanish with no gate noticing — and conversely the marker rule above is one line in an
+existing check, not new machinery.
+
+### Neither writing agent holds `Bash` — Addressed, claim verified
+`agents/tech-lead.md:9` = `Read, Write, Edit, Grep, Glob`; `agents/devils-advocate.md:12` adds only
+`WebFetch`. The append's hinge holds. One step of its reasoning is over-broad: a **session-issued** token
+echoed back by the agent is not forgeable into another dispatch's token, unlike a self-invented
+timestamp; the append folds both under "injected". Conclusion survives, the step does not.
+
+### Should change 2 be abandoned rather than deferred? — Unresolved, but the framing is a category error
+The manifest solves **cited-authority integrity**; the session-diff solves **lost update on one file**.
+The diff removes the fingerprint's dependency on the manifest and nothing else. The honest narrowing is
+different and is stronger after these appends, which *added* a dimension: ship the **`prose` class
+alone** (dangling citation, uncited authority, row naming an absent file — all fully specified today,
+covered by BAR-002 and BAR-014) and defer or drop the `literal` class, which is what cannot be specified.
+
+### The literal's class is per (literal, consumer) pair, not per file — Unresolved; BAR-004 edited again
+Extends concern 1 above. The two consumers apply the same string over **different extents**:
+`lint-plans.sh` bounds its match to the `## Deviations` body (`:53-57`), `merge-reviewer` Tier 1
+(`:419`) greps the whole file. A must-match/quotes-it flag per *file* cannot express this, and the
+manifest schema in `## What ships` has nowhere to put it.
+
+### Two live defects found while verifying — Unresolved
+- **The plan would fail `merge-reviewer` Tier 1 as committed.** The needle survives in BAR-003, BAR-004
+  and challenge concern 1. Its `## Deviations` says the quotation "was removed" — true only of
+  `## Deviations`, which is what satisfied the bounded `lint-plans.sh` check. The file holds two accounts
+  of its own gate state. Inert only because nothing hands this `plan_id` to a gate.
+- **`memory/architecture/repo-map.md:33` is still wrong** — still enumerates merge-reviewer's gates as
+  **2a and 2b**, omitting 2c. The cut added the missing `lint-identifiers.sh` entry (the narrower half)
+  and left the enumeration. That is concern 6 recurring **inside its own remediation**, and exactly the
+  pass-through BAR-013 was edited to prevent.
+
+### Implications of the re-audit
+
+- **A survival re-ask works, and its cost is that it needs an out-of-file record to be answerable.** This
+  file is what made the confirmation possible; without it the honest answer would have been "I cannot",
+  since the re-asked agent has no memory of what it wrote. **Any pack that relies on the re-ask must also
+  require the auditor's memory write** — they are one mechanism, not two.
+- **Every scheme proposed so far fails on some axis, and the axes are orthogonal**: in-file provenance
+  dies to whole-file overwrite, session provenance dies to the session boundary, the attestation dies to
+  a stalled agent, the diff dies to an unreported write. Layering is the only answer that has survived
+  review; picking a single winner has now been attempted twice and failed twice.
+- **`repo-map.md:33` should be fixed before anything else in this area ships.** It is the live
+  counterexample the deferred manifest is meant to prevent, it was already flagged once, and the fix
+  applied addressed the instance rather than the category.

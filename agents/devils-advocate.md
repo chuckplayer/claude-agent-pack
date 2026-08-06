@@ -107,6 +107,24 @@ writing:
 - If clauses are gone, **do not silently re-add them.** Report the loss. Re-adding hides how often this
   happens, and the frequency is the thing the pack needs to know.
 
+**The re-ask and your memory write are one mechanism, not two — and the rule above is worthless without
+the one below.** A later dispatch of you does **not** carry the audit transcript. Asked whether your edits
+survived, you have no recollection to check the file against; the only honest answer is *"I cannot"*
+unless you left yourself an artifact at audit time. **So the memory file you are already required to write
+is what makes the re-ask answerable at all.** Established 2026-08-06, when exactly this happened: the
+confirmation was possible only because a memory record existed to compare against.
+
+Two consequences worth carrying:
+
+- **Record what you edited, not only what you concluded.** A memory file that summarises your reasoning
+  proves nothing you *recorded* is missing; it cannot prove no **bar text** is missing, because it does not
+  hold the bar text. Naming the bars you edited, and a distinguishing phrase from each edit, is what makes
+  a later comparison possible. No other artifact in the repo holds that.
+- **Count nothing you have not counted.** The same 2026-08-06 re-audit reported "eight bars edited" in both
+  the plan and the memory file, and the true number was at least nine — an unchecked count, produced by the
+  auditor, in a plan whose thesis is that unchecked counts rot, on the page where it flagged someone else's.
+  If you state a total, derive it; otherwise list the ids and let the reader count.
+
 **When no plan file was handed to you:** your memory file is the only artifact you get, and you are
 already required to write one whenever substantive concerns are raised (see **Memory Writes**). Write
 it **before** composing your reply rather than after. That is an ordering rule on a duty you already

@@ -142,11 +142,27 @@ in their own words, and no rule proposed here pretends otherwise.
   draft of these deviations **quoted the sentinel needle verbatim** to record what had been replaced.
   `scripts/lint-plans.sh` then reported *"still holds its sentinel"* on a section that was fully filled
   in — and `merge-reviewer`'s Tier 1 **fails** while that string is present, so this plan would have
-  failed a gate for containing a quotation of the string it was describing. The quotation was removed.
+  failed a gate for containing a quotation of the string it was describing.
   **This is the `must-match` versus `quotes-it` question of deferred question (1), demonstrated rather
   than argued**, and it is the third time today a checker on this pack was defeated by its own subject
   matter — after `pipefail` breaking the sentinel check itself, and a mangled ellipsis making a compliant
   placeholder read as a violation.
+
+  **Corrected 2026-08-06, because the sentence above said "the quotation was removed" and that was true of
+  this section only.** The needle survives at three sites — inside BAR-003, inside BAR-004, and inside
+  `## Challenge`. `scripts/lint-plans.sh` passes the file regardless, because its search is bounded to the
+  `## Deviations` body; **`merge-reviewer` Tier 1 greps the whole file and would fail this plan today.**
+  For a while this file therefore held **two accounts of its own gate state**, and only the bounded-search
+  one was right — the defect this cut exists to prevent, committed by the cut's own record. Found by
+  `devils-advocate` in its 2026-08-06 re-audit and verified before correcting.
+
+  **The three occurrences are deliberately not removed, and the reason is itself the finding.** Two are in
+  bar text an audit authored and one is in `## Challenge`; the rule shipped in `cfe2918` forbids this
+  session from editing either. **So the only remedy available to the party that noticed is to correct its
+  own claim, not someone else's text** — which is the rule working as intended, and which leaves the plan
+  permanently ungateable by Tier 1. That is safe only while nothing hands this `plan_id` to a gate, and
+  `## Out of scope` already says nothing does. **Any future cut that wants this plan gateable must resolve
+  it through the `quotes-it` class, not by editing the bars.**
 
 _(This section was written at step 10 by the coordinating session, replacing the sentinel line
 
@@ -331,6 +347,7 @@ verifier is named as such in block 3 rather than left to look covered.
   Evidence: manual -> `grep -rlF 'Deviations not yet reviewed' --include='*.md' --include='*.sh' . | grep -v -e '^./docs/plans/' -e '^./memory/'` returns exactly the files in the manifest row — no more, no fewer. `-F` without `-i`: `grep -iF` aborts on this machine. Run the pipeline without `pipefail` set, or the short-circuiting-grep hazard in `memory/context/2026-08-05-pipefail-plus-short-circuiting-grep-returns-141.md` applies to the evidence itself.
   **The two exclusions are load-bearing and are the bar's defect as originally written.** `--include` plus `grep -v` reduces "the tree's actual set" until it equals the manifest, which is row 5 self-exemption: the bar asserts equality with the tree while filtering the tree. Both exclusions are required for a pass today — `memory/context/2026-08-05-pipefail-plus-short-circuiting-grep-returns-141.md:32` quotes the needle, and every file in `docs/plans/` holds it, **including this plan, twice: at its own `## Deviations` sentinel and inside this evidence line.** A file that documents the rule is an occurrence of it.
   This bar therefore fails unless `docs/rules/authorities.tsv` itself declares which files **must match** the literal and which merely **quote** it, and the checker's excluded scope is stated in `## Calls made for you` rather than inferred from this command. Verified count without the filters: **six occurrences across five non-plan files**, not the four-files/five-occurrences the narrative claims.
+  **A per-file must-match/quotes-it classification is still insufficient, established 2026-08-06.** The two consumers apply the *same string* over *different extents*: `scripts/lint-plans.sh` bounds its match to the `## Deviations` body (`:53-57`, `f && /^## / { exit }`) while `agents/merge-reviewer.md:419` Tier 1 greps the whole file. So one file can be must-match for one consumer and out of scope for the other — the class is a property of the **(literal, consumer) pair**, not of a file. The manifest schema named in `## What ships` (id, class, defining file, permitted files) cannot express that, so this bar also fails until the manifest carries a per-consumer **extent** field. Demonstrated by this plan itself, which passes `lint-plans.sh` and fails Tier 1 on the identical string.
 - BAR-005: `scripts/lint-plans.sh`'s sentinel comment states **no false claim**, not merely no count
   Evidence: files -> the sentinel comment block in `scripts/lint-plans.sh` names `docs/rules/authorities.tsv` and states no number. A filename cannot line-wrap, so the citation half is exact; the absence of a count is a reader's check and is stated as such rather than dressed up as mechanical.
   **Removing the count is not sufficient — the block holds two false claims and the original bar checked only one.** `scripts/lint-plans.sh:264-265` says "This literal is the single authority shared with `agents/merge-reviewer.md` Tier 1, which greps the same string", which reads as if merge-reviewer is the sole other holder; `skills/implement/SKILL.md:182` and the script's own self-test fixture at `:100` hold it too. Line 266's "all three move together" is stale by two sites *within the grep-needle class alone*. This bar passes with the count deleted and the false sole-sharer claim intact, which is row 1 — stated ≠ true — in the bar that exists to fix a stale statement.
@@ -524,6 +541,223 @@ If questions 1 and 2 have answers the author held and did not write down, change
 first two concerns are documentation defects rather than design defects. Change 1 I judge shippable
 as-is with BAR-007 corrected. I found no reason to narrow the cut beyond dropping BAR-008 to a task.
 
+### Re-audit 2026-08-06 — survival confirmed, and the two appended sections reviewed
+
+Re-asked by the coordinating session under the rule this cut shipped. Two jobs: confirm the audit above
+survived a post-audit revision, and review the two sections appended *below* this one. Both of those are
+the coordinating session's; `tech-lead` still has not reported. **Verdict: the edits survived; section
+1's central correction is verified and its argument holds; section 2 is right about its hinge and
+overclaims its conclusion; and the two sections do not sit together honestly — a reader reaching the end
+of this file finds two answers to question 4 with nothing saying which governs.**
+
+#### Survival: confirmed by substance, with the method stated because it bounds the claim
+
+Every concern recorded in `memory/known-issues/2026-08-05-challenge-cited-authority-integrity.md` at
+audit time is present in this file, and every bar that file records as edited still carries its addendum.
+This agent's context does not include the original audit transcript, so the confirmation is a comparison
+against **two artifacts written outside this file**: that memory record, and the coordinating session's
+pre-write snapshot in the session scratchpad. Snapshot lines 77-161 and 315-600 are identical to the same
+lines here, so the `## Calls made for you` call-8 reclassification and all bar addenda are intact.
+
+**Three limits, none of which I can close:**
+
+1. **The memory file is a summary, not a copy.** It establishes that nothing I *recorded* is missing. It
+   cannot establish that nothing I *wrote into a bar* is missing, because it does not hold the bar text.
+   No artifact in this repo does.
+2. **The snapshot covers the second append only** — it already contains section 1. The bracket was
+   applied to one of the two writes; the first append has no pre-image and its append-only character is
+   inferred rather than verified. See the next heading, because this is the recommended procedure failing
+   on its first live use.
+3. **My own "eight edited, six left alone" is wrong**, identically in this file and in the memory record.
+   At least nine bars carry audit addenda: the eight named plus BAR-011, which the memory file's concern 2
+   states was edited. BAR-014 carries a tenth addendum the memory record does not mention, so its
+   authorship is unattributed. Nothing was lost — the *count* was never checked. In a plan whose thesis is
+   that unchecked counts rot, the auditor who flagged the plan's "18 files" produced an unchecked count of
+   its own on the same page. Corrected here rather than by rewriting the sentence above.
+
+#### "The cheapest version dominates" is overclaimed, and its first live trial shows why
+
+The scratch-copy diff is the right thing to cost first. It does not dominate, and the timing objection
+the session raised against itself is the weakest of the available ones — with a pre-image you get
+*recovery*, which beats a refused write that also discards the writer's legitimate work. Five stronger
+misses:
+
+1. **"After the writer reports" is the load-bearing precondition, and it is the one this pack is
+   documented to fail.** Seven agents went idle without reporting in one session
+   (`memory/known-issues/2026-08-03-subagent-goes-idle-before-reporting.md`), and this plan's own author
+   did it twice. A writer that writes and then stalls produces no report, so no diff is taken, so a
+   silently modified plan file is indistinguishable from an undispatched one. The trigger must be the end
+   of the writer's *turn*, reported or not. As written, the procedure inherits the exact failure it is
+   meant to detect.
+2. **A diff detects change, not loss.** It shows everything the writer did. On an append it is trivially
+   readable; on a *rewriting* revision — the only kind that can lose a clause — three removed clauses are
+   a handful of `-` lines among many, and someone must still judge which removals were intended. That
+   judgement is what the attestation supplies, from the one party with standing to make it: the author of
+   the removed text. The session is the party that dispatched the writer and wants the run to close. The
+   fingerprint, by contrast, fails **by name** — *"BAR-008 lost its fingerprint"* — with nobody
+   interpreting anything. Raw data and a named failure are not the same product.
+3. **The first live trial demonstrates both of the above.** The only snapshot in the scratchpad postdates
+   section 1, so the procedure bracketed the second write and not the first; and the diff it produced
+   ("0 lines removed, append-only") was read against the easy case, an append. Either only one snapshot
+   was ever taken, or a single fixed scratch path was overwritten by the second bracket — and that second
+   reading is its own finding, because one path holds one bracket and a multi-write sequence needs a
+   history. This is an observed miss on run one, by the party proposing the procedure, not a hypothetical.
+4. **A procedure the session performs is enforced by nothing, which is the criticism levelled at the
+   attestation.** No script fails if the session skips a snapshot, and the session's own context is
+   summarised as it grows. "Cheap and unenforced" versus "costly and mechanical" is a trade, not
+   domination. And the diff has the same row-3 defect as everything else here: a diff produced and skimmed
+   is indistinguishable from a diff not taken, so any bar for this must require the comparison **window**
+   be named — which write, against which pre-image — and not merely that a diff was run.
+5. **Session-scoped provenance dies at the session boundary, which is the exact mirror of flaw 2.** A plan
+   written on one day, audited on the next, revised in a third session has no token and no scratch
+   pre-image; the file survives the process and the token does not. Flaw 2 says in-file provenance dies to
+   a whole-file overwrite; this says out-of-file provenance dies to a new session. **Neither dominates —
+   they fail on orthogonal axes**, and a plan file that outlives every session is squarely in the gap.
+6. **Scope.** The bracket only spans dispatches the session makes against the plan. An operator edit, a
+   concurrent session, or an out-of-band write between brackets is invisible to it.
+
+#### Yes, flaw 2 kills the fingerprint — and the conclusion drawn from that is the wrong one
+
+Section 2 is correct that a true whole-file overwrite composed from a pre-audit snapshot removes the
+fingerprint block along with the bar edits, leaving a checker with nothing to check and a **vacuous
+pass**. Silent, exactly as claimed.
+
+**But the thing that closes that hole is the plain marker section 1 withdrew.** A rule of the form *"a
+plan carrying an audit must carry `## Challenge`"* fires precisely when the whole-file overwrite removes
+everything — the case the fingerprint misses — while the fingerprint fires on the partial rewrite, the
+case the marker misses. **They are layers, not alternatives.** Section 1 withdrew the marker for missing
+partial loss; section 2 then undercut the fingerprint for missing total loss; the file now recommends
+neither in force, when the honest reading is that each covers the other's blind spot and the pair is
+cheap. This is the dishonest seam the session asked me to name: **section 1's heading still reads "The
+variant worth planning instead" and section 2 concludes the fingerprint "may not be worth building at
+all."** Both remain in the file with no ordering statement. Whoever plans the deferred cut will find two
+answers to question 4 and no rule for choosing.
+
+One fact makes the marker cheaper than section 1 assumed and is worth carrying: **nothing requires
+`## Challenge` today.** `scripts/lint-plans.sh:164` requires only `## Acceptance bars` and `## Deviations`,
+names `## Challenge` solely in comments, and `agents/merge-reviewer.md` never mentions it — verified. The
+marker is therefore one line in an existing structural check, not new machinery.
+
+#### The no-`Bash` claim is correct and load-bearing; one dismissal inside it is over-broad
+
+Verified from the files and from direct observation of my own grant: `agents/tech-lead.md:9` is
+`Read, Write, Edit, Grep, Glob`; `agents/devils-advocate.md:12` adds only `WebFetch`. Neither holds
+`Bash`, so neither can call `date` or `git hash-object`. Section 2's hinge holds.
+
+The over-broad part: *"an agent inventing a plausible timestamp is strictly worse than no timestamp"* is
+true of a **self-generated** token and false of a **session-issued** one. A token minted by the session,
+handed down in the dispatch prompt, and echoed back into the file cannot be forged into a *different*
+dispatch's token — it proves the write came from this dispatch rather than a stale one, which is real
+though weak. Section 2 folds both under "injected" and dismisses them together. The conclusion survives
+anyway, because flaw 2 kills the echoed token exactly as it kills the fingerprint; the reasoning that
+gets there is wrong in one step, and a later reader may reuse the step rather than the conclusion.
+
+Two smaller overclaims in the same section: a before/after hash **does not** upgrade *"never dispatch a
+second writer while a first holds the file"* into something verifiable — it shows the file changed, not
+that two writers were live, and a session dispatching sequentially already knows the ordering by
+construction. And *"the three lost clauses would have been visible in a diff and restorable"* is true of
+*visible* and unestablished for *noticed*; see miss 2.
+
+#### Q4 — no, and the question contains a category error
+
+Section 2 scopes its comparison correctly, against the **fingerprint**. Extending it to change 2 does not
+follow. The manifest and checker exist for **cited-authority integrity** — dangling citations, moved
+files, a declared literal diverging at one of its sites across the pack's prose pointers. The
+session-diff addresses **lost update on one file**. Different problems. What the session-diff removes is
+the fingerprint's dependency on the manifest (its limit 3), and nothing else. Abandoning change 2 on this
+basis would be substituting a fix for one problem as the reason to drop the fix for another.
+
+**The honest argument for narrowing change 2 is a different one, and it is stronger than before these
+appends:** section 1 *added* a dimension. Change 2 has not shrunk; it has grown. The scoped-down version
+worth costing is **the `prose` class alone** — dangling citation, uncited authority, manifest row naming
+an absent file. Those three rules are fully specified today, need no must-match/quotes-it decision, and
+carry BAR-002 and BAR-014 as written. The `literal` class is what cannot be specified, and it can be
+deferred or dropped without touching the rest. That is the smaller version that proves the approach.
+
+#### Authoritative but unverified, and one thing that is simply wrong
+
+- **"referenced in six files" is short by one.** `memory/architecture/repo-map.md:34` references
+  `## Challenge` and is not in the list; three memory files do as well, if those count. The substantive
+  half of that sentence — that no file *checks* it — is verified. The count was not.
+- **This plan would fail `merge-reviewer` Tier 1 today, and `## Deviations` says otherwise.** Tier 1 step
+  2 (`agents/merge-reviewer.md:419`) greps the **whole plan file** for the needle. The needle is still
+  present in BAR-003, BAR-004 and in concern 1 above. The `## Deviations` bullet records that "the
+  quotation was removed" — it was removed from `## Deviations` only, which is what satisfied
+  `lint-plans.sh`, whose search is bounded (`scripts/lint-plans.sh:53-57`, `f && /^## / { exit }` —
+  section 1's correction is verified exactly). So the file holds two accounts of its own gate state and
+  only section 1's is right. Inert today because nothing hands this `plan_id` to a gate; it bites the
+  moment anyone does. I have not touched `## Deviations` and am not proposing an edit to it — recording
+  the contradiction is the finding.
+- **`repo-map.md:33` is still wrong, and this is concern 6 recurring inside its own remediation.** The
+  line still enumerates merge-reviewer's gates as **2a and 2b**, omitting 2c. `## Deviations` records
+  that the missing `lint-identifiers.sh` entry was added — the narrower half — while the categorical half
+  BAR-013's addendum required went undone. Adding an entry satisfied the bar while the enumeration stayed
+  wrong, which is precisely the pass-through BAR-013 was edited to prevent. Verified 2026-08-06.
+- **Section 1's premise about the 2026-08-05 incident is stated as established and is not independently
+  verifiable from the tree.** That the revising agent "explicitly preserved `## Challenge` while rewriting
+  `BAR-008`" is consistent with the artifact — `docs/plans/devops-azure-area-iteration-placement.md` holds
+  `## Challenge` at :724, after BAR-008 at :636 — but the history itself is not observable here, and no
+  memory file records the clause loss (concern 9 above, still open). The whole withdrawal of the marker
+  rests on this premise. It is probably right; it is not evidence in the tree.
+
+#### One bar edited, and what would change my mind
+
+**BAR-004 edited.** Section 1 establishes a fact the bar's must-match/quotes-it framing cannot express:
+the two consumers apply the *same string* over *different extents* — `lint-plans.sh` section-bounded,
+`merge-reviewer` whole-file. A per-file classification is therefore insufficient; the class is a property
+of the (literal, consumer) pair. The manifest schema in `## What ships` (id, class, defining file,
+permitted files) cannot hold that. No other bar changes: sections 1 and 2 describe deferred work, and
+BAR-011 already fails through BAR-004.
+
+**What would change my mind.** On section 2: evidence that the coordinating session's snapshot step
+survives a writer that never reports — a worked case, not an intention — would remove miss 1 and most of
+miss 3, and "dominates" would be defensible against the fingerprint though still not against the marker.
+On the layering claim: if a rule requiring `## Challenge` turns out to be unimplementable in
+`lint-plans.sh` for a reason I have not seen, the fingerprint stands alone and section 2's undercut is
+decisive rather than partial. On Q4: if anyone can show the manifest's *only* consumer was ever the
+fingerprint, abandoning change 2 follows and I am wrong about the category error.
+
+#### Addendum — the marker's trigger cannot live in the file, so it is not one line
+
+Asked whether the cheap version is *"a plan whose `## Challenge` heading is absent while an audit is
+recorded elsewhere fails"*, implementable as one line in the existing section check. **No, not as
+phrased, and the reason is flaw 2 arriving a third time.**
+
+The condition has two halves and only one of them is in the file. `scripts/lint-plans.sh` receives a
+plan path and nothing else, so it cannot know whether an audit occurred. Three ways to supply that half,
+and two of them fail:
+
+- **Unconditionally require the section.** Dead: `tech-lead` writes the plan at `/plan` step 2 and the
+  script runs there, before any audit exists. Every plan would fail at birth.
+- **Record the audit inside the plan.** Circular. That record is destroyed by the whole-file overwrite the
+  rule exists to detect, so the check disarms itself in exactly the case it is for — flaw 2, third
+  instance, and the reason no in-file trigger can work.
+- **The caller asserts the phase.** The only remaining option. This is still an attestation, but of a
+  *categorically weaker kind*: the session asserts **its own dispatch ordering**, which it knows by
+  construction and cannot be stalled out of, rather than asking a possibly-idle agent to vouch for
+  content it may not remember. The two call sites that would carry it are the two already required to
+  re-run the script after a `devils-advocate` edit.
+
+**Two properties worth settling before anyone builds it**, neither of which is implementation detail:
+
+1. **Presence or non-emptiness?** A reviser that keeps the heading and empties the body defeats a
+   presence check. The pack has already met this exact problem and answered it for `## Deviations` —
+   "an empty section is indistinguishable from one nobody looked at" (`scripts/lint-plans.sh:251-252`),
+   solved by the bounded-body read at `:53-57`. Whether that answer should generalise here is a decision,
+   but it should be a *made* decision rather than an omission.
+2. **Does it retro-condemn existing plans?** It must not. A caller-supplied trigger preserves the property
+   that made the `Cost:` rule safe: plans written before the rule existed are never handed the flag, and
+   the script takes explicit paths and never globs. An unconditional rule would fail every plan in
+   `docs/plans/` that predates `devils-advocate` review.
+
+**The load-bearing caution: do not ship this half alone.** The marker catches **total** loss. The
+2026-08-05 incident was **partial** — the revision preserved `## Challenge` and rewrote bar text — so a
+plan that ships only the marker ships the half that **would not have caught the motivating incident**,
+which is precisely what section 1 correctly identified when it withdrew the plain marker. The marker's
+value is almost entirely that it removes the fingerprint's vacuous pass; it is a precondition of the
+fingerprint, not a peer. **If only one is ever built, build the fingerprint** — it is the one aimed at the
+observed loss. If both, the marker is cheap because it rides the same trigger.
+
 ## Appended 2026-08-05 after commit — pricing the survival marker, which would have passed on the incident
 
 **Appended, not rewritten, and `## Challenge` above is untouched** — per the rule this cut shipped. This
@@ -598,3 +832,53 @@ and no grep produces it. **Question 4 is therefore answered "neither alone", and
 withdrawn from consideration.** Credit where due: `devils-advocate` raised the marker explicitly as
 *"raising, not prescribing"* and did not price it; this section prices it and reaches a sharper
 conclusion than the challenge did.
+
+### Second append — the token belongs to the session, not to the file
+
+**Prompted by an operator question: what if the fingerprint were per agent, with a timestamp?** The
+instinct is right and it has a name — **optimistic concurrency control**. Record a version token when
+you read, check it still holds when you write, refuse if anything wrote in between. Lost-update
+detection is a solved problem, and everything above is a weaker re-invention of it in prose.
+
+**What per-agent-plus-timestamp buys over the content fingerprint.** It detects the **defect** rather
+than inferring it from the damage: a fingerprint says *a clause is missing*, a version token says *you
+are writing from a snapshot that predates an intervening write* — catchable **before** the write lands.
+It also gives attribution (who to re-ask) and makes change 1's ordering rule checkable rather than
+asserted.
+
+**Two problems, and the second kills every in-file version of it.**
+
+1. **Neither writing agent can obtain a clock or a hash.** `tech-lead` holds Read/Write/Edit/Grep/Glob;
+   `devils-advocate` adds WebFetch. **Neither holds `Bash`** — both stated so directly on 2026-08-05.
+   They cannot call `date` and cannot run `git hash-object`, so any timestamp must be **injected by the
+   coordinating session in the dispatch prompt** — which makes it an attestation again, the exact thing
+   a mechanical check was meant to replace. An agent inventing a plausible timestamp is strictly worse
+   than no timestamp.
+2. **In-file provenance is destroyed by the event it exists to detect.** A whole-file `Write` clobbers
+   the log along with everything else; the evidence lives inside the thing being overwritten. The
+   2026-08-05 write happened to be **partial** — it preserved `## Challenge` and rewrote bars — which is
+   the only reason a fingerprint resident in `## Challenge` works at all. **Against a true whole-file
+   overwrite, every in-file scheme in this plan fails silently, including the fingerprint above.**
+
+**So invert it: the token belongs to the coordinating session.** The session holds `Bash`, performs the
+dispatches, and knows the ordering. It can hash the plan before each writer dispatch and re-hash after
+that writer reports — **no agent cooperation, no new format, no additional shared literal to register,
+and it survives a total overwrite because the token lives outside the file.** It also upgrades change
+1's *"never dispatch a second writer while a first holds the file"* from a rule the session obeys into
+one it can **verify**.
+
+**The cheapest version dominates all of the above and should be costed first.** Before each writer
+dispatch the session copies the plan to a scratch path; after the writer reports, it diffs. That yields
+**detection and recovery** rather than detection alone — on 2026-08-05 the three lost clauses would have
+been visible in a diff and restorable, instead of being discovered gone with only the question of
+whether the properties happened to hold. Two commands, no agent changes, nothing to keep in sync.
+
+**What survives of the per-agent idea:** attribution, as documentation rather than as the mechanism. A
+short "who touched this, in what order" note is genuinely useful for knowing whom to re-ask; it should
+not be load-bearing, because it shares flaw 2 with everything else written into the file.
+
+**Consequence for the deferred cut.** This is a **different and smaller change** than the fingerprint: it
+touches the coordinating session's procedure in `skills/plan/SKILL.md` and nothing else — no manifest, no
+markers, no new script, no agent edits. It should be costed **before** the fingerprint, and if it is
+adopted the fingerprint may not be worth building at all, since a recoverable diff beats a detectable
+absence.
