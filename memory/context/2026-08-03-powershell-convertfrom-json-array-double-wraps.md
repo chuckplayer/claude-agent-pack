@@ -1,8 +1,12 @@
 ---
+date: 2026-08-03
 type: context
 status: active
-discovered: 2026-08-03
+superseded-by: n/a
 scope: any PowerShell 5.1 script parsing JSON from a CLI
+overrides-convention: no
+related-to: n/a
+discovered: 2026-08-03
 ---
 
 # `@($json | ConvertFrom-Json)` double-wraps an array on PowerShell 5.1

@@ -326,7 +326,7 @@ Memory is committed to version control so the full team shares accumulated conte
 
 **Agents skip** files with `status: superseded` or `status: archived` automatically.
 
-**Repo map:** `memory/architecture/repo-map.md` is a singleton living document — a directory-level map of the codebase (what each directory does plus its entry-point files) maintained by the `/repo-map` skill and stamped with the git commit it was last verified against (`Verified-at-commit`). Unlike other memory files it uses a fixed, undated name because it is refreshed in place rather than written once. It rides the memory-snapshot hook to Obsidian for free. `/onboard`, tech-lead, `/plan`, `/refactor`, and `/scaffold` read it; merge-reviewer, git-engineer, and `/memory-audit` flag it for refresh when the tree drifts.
+**Repo map:** `memory/architecture/repo-map.md` is a singleton living document — a directory-level map of the codebase (what each directory does plus its entry-point files) maintained by the `/repo-map` skill and stamped with the git commit it was last verified against (`verified-at-commit`). Unlike other memory files it uses a fixed, undated name because it is refreshed in place rather than written once. It rides the memory-snapshot hook to Obsidian for free. `/onboard`, tech-lead, `/plan`, `/refactor`, and `/scaffold` read it; merge-reviewer, git-engineer, and `/memory-audit` flag it for refresh when the tree drifts.
 
 See `docs/AGENT-GUIDE.md` for the full memory format, hygiene guidance, and scaling notes.
 

@@ -125,6 +125,20 @@ for subdir in decisions architecture context known-issues; do
         || check "memory/$subdir/" "fail" "run scripts/setup-project.sh"
 done
 
+# Gate scripts. A missing checker is a stated gap, not a silent pass: any
+# instruction to run one of these must degrade to "not applicable" when the file
+# is absent, rather than being reported as clean.
+echo ""
+echo "-- Checks"
+for script in lint-agents.sh lint-identifiers.sh lint-plans.sh lint-memory.sh; do
+    if [ -f "$PACK_DIR/scripts/$script" ]; then
+        check "scripts/$script" "ok"
+    else
+        check "scripts/$script" "fail" \
+            "absent -- any step instructing it must report 'not applicable', never a pass. Re-run ./install.sh or update the pack."
+    fi
+done
+
 echo ""
 echo "----"
 echo "  $PASS passed, $FAIL failed"

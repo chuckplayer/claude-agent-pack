@@ -99,22 +99,24 @@ Before acting on any non-trivial task, agents:
 1. Run `Glob("memory/**/*.md")` to discover all memory files.
 2. Skip files with `status: superseded` or `status: archived`.
 3. Apply global-scoped files universally. Apply scoped files only when working within that scope.
-4. For files with `Overrides-convention: yes`, apply the documented exception instead of the corresponding CONVENTIONS.md rule within the stated scope.
+4. For files with `overrides-convention: yes`, apply the documented exception instead of the corresponding CONVENTIONS.md rule within the stated scope.
 
 ### Memory file format example
 
 A tech-lead decision file:
 
 ```markdown
-# Use Hangfire for background job processing
+---
+date: 2025-03-01
+type: decision
+status: active
+superseded-by: n/a
+scope: global
+overrides-convention: no
+related-to: 2025-03-01-challenge-hangfire-license-cost-accepted-risk.md
+---
 
-**Date:** 2025-03-01
-**Type:** decision
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global
-**Overrides-convention:** no
-**Related-to:** 2025-03-01-challenge-hangfire-license-cost-accepted-risk.md
+# Use Hangfire for background job processing
 
 ## Summary
 Hangfire is the chosen background job framework for all async processing.
@@ -141,15 +143,17 @@ Thread, Task.Run, or IHostedService patterns for job scheduling.
 A devils-advocate challenge file (referencing the same decision):
 
 ```markdown
-# Hangfire license cost for commercial use
+---
+date: 2025-03-01
+type: finding
+status: active
+superseded-by: n/a
+scope: global
+overrides-convention: no
+related-to: 2025-03-01-decision-use-hangfire-for-background-jobs.md
+---
 
-**Date:** 2025-03-01
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global
-**Overrides-convention:** no
-**Related-to:** 2025-03-01-decision-use-hangfire-for-background-jobs.md
+# Hangfire license cost for commercial use
 
 ## Summary
 Hangfire Pro is required for multi-server or advanced features; free tier
@@ -276,28 +280,32 @@ Memory files accumulate over time. Stale files consume tokens on every agent inv
 
 ### How to update status
 
-To archive a file, open it and change the Status field:
+To archive a file, open it and change the `status` key inside the `---` fence:
 
-```markdown
-**Status:** archived
+```yaml
+status: archived
 ```
 
 To supersede a file, update the old file and create a new one:
 
 Old file:
-```markdown
-**Status:** superseded
-**Superseded-by:** 2025-06-15-decision-migrate-to-minimal-api.md
+```yaml
+status: superseded
+superseded-by: 2025-06-15-decision-migrate-to-minimal-api.md
 ```
 
 New file:
-```markdown
-**Status:** active
-**Superseded-by:** n/a
-**Related-to:** 2025-03-01-decision-use-mvc-controllers.md
+```yaml
+status: active
+superseded-by: n/a
+related-to: 2025-03-01-decision-use-mvc-controllers.md
 ```
 
-Both files should reference each other via `Related-to` and `Superseded-by` so the history is navigable.
+Both files should reference each other via `related-to` and `superseded-by` so the history is navigable.
+
+Change only the keys named above. Leave the rest of the frontmatter and the whole body
+alone — `docs/MEMORY-WRITING.md` is the authority on the dialect, and immutability there
+protects facts, not syntax.
 
 ### Recommended practice
 
@@ -348,8 +356,8 @@ The tech-lead routes by reading agent `description` fields. If routing is wrong,
 
 If output is too broad: the description may be matching tasks it should not handle. Narrow the description.
 
-If output is too narrow: the agent may be over-filtering based on scope. Check whether the `Scope` field in a memory file is limiting the agent inappropriately. Also check whether CONVENTIONS.md contains a rule that is unintentionally restricting output.
+If output is too narrow: the agent may be over-filtering based on scope. Check whether the `scope` field in a memory file is limiting the agent inappropriately. Also check whether CONVENTIONS.md contains a rule that is unintentionally restricting output.
 
 **A memory file contains stale or incorrect information**
 
-Do not delete the file -- the history is valuable. Update the `Status` field to `archived` (if the context no longer applies) or `superseded` (if a newer decision replaces it). If superseding, populate the `Superseded-by` field and create the replacement file with `Status: active`. Both files should reference each other via `Related-to`.
+Do not delete the file -- the history is valuable. Update the `status` field to `archived` (if the context no longer applies) or `superseded` (if a newer decision replaces it). If superseding, populate the `superseded-by` field and create the replacement file with `status: active`. Both files should reference each other via `related-to`.

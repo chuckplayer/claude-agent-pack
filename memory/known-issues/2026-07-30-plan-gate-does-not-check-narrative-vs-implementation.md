@@ -1,10 +1,12 @@
-**Date:** 2026-07-30
-**Type:** finding
-**Status:** superseded
-**Superseded-by:** 2026-07-30-decision-plan-deviations-gate-tiers.md
-**Scope:** agents/merge-reviewer.md, docs/plans/
-**Overrides-convention:** no
-**Related-to:** docs/obsidian-cli-and-plan-spine-brief.md, 2026-07-30-challenge-durable-plan-spine-first-cut.md
+---
+date: 2026-07-30
+type: finding
+status: superseded
+superseded-by: 2026-07-30-decision-plan-deviations-gate-tiers.md
+scope: agents/merge-reviewer.md, docs/plans/
+overrides-convention: no
+related-to: docs/obsidian-cli-and-plan-spine-brief.md, 2026-07-30-challenge-durable-plan-spine-first-cut.md
+---
 
 ## Summary
 

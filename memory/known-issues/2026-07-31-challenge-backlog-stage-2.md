@@ -1,10 +1,12 @@
-**Date:** 2026-07-31
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** skills/backlog/, agents/backlog-auditor.md, docs/ado-delivery-pipeline-brief.md
-**Overrides-convention:** no
-**Related-to:** docs/plans/backlog.md
+---
+date: 2026-07-31
+type: finding
+status: active
+superseded-by: n/a
+scope: skills/backlog/, agents/backlog-auditor.md, docs/ado-delivery-pipeline-brief.md
+overrides-convention: no
+related-to: docs/plans/backlog.md
+---
 
 ## Summary
 

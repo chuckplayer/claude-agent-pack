@@ -1,10 +1,12 @@
-**Date:** 2026-08-04
-**Type:** constraint
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** every `az` invocation from PowerShell on this machine — skills/devops-azure, skills/review-pr, and any script shelling out to the Azure CLI
-**Overrides-convention:** no
-**Related-to:** 2026-07-30-powershell-mangles-native-exe-arguments.md, 2026-08-03-powershell-convertfrom-json-array-double-wraps.md, 2026-07-10-bash-tool-silent-failure-windows.md, 2026-08-04-ado-backlog-level-is-not-work-item-type-category.md
+---
+date: 2026-08-04
+type: constraint
+status: active
+superseded-by: n/a
+scope: every `az` invocation from PowerShell on this machine — skills/devops-azure, skills/review-pr, and any script shelling out to the Azure CLI
+overrides-convention: no
+related-to: 2026-07-30-powershell-mangles-native-exe-arguments.md, 2026-08-03-powershell-convertfrom-json-array-double-wraps.md, 2026-07-10-bash-tool-silent-failure-windows.md, 2026-08-04-ado-backlog-level-is-not-work-item-type-category.md
+---
 
 ## Summary
 

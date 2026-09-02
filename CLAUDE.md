@@ -123,6 +123,23 @@ implementation.
   `docs/azure-devops-github-skills-brief.md` forbade hardcoded org names four lines above a list of
   them, and a scrub of 115 references then required rewriting all 172 commits — which **still does not
   remove them from a public host.** Prevention is the only control that works.
+- **`scripts/lint-memory.sh`** whenever the changeset touches `memory/`, after the files are written
+  and before code-reviewer. **Blocking on non-zero exit** for the coordinating session, on the
+  `lint-plans.sh` model — and unlike the three script checks above, **no merge-reviewer gate enforces
+  it.** There is no gate 2d. The session that touched `memory/` is the only thing that runs it, so an
+  unrun check here is simply unrun; say so rather than implying it passed.
+
+  It checks **dialect conformance only** against `docs/MEMORY-WRITING.md`: the `---` fence on line 1,
+  lowercase hyphenated keys, and the presence of the seven required keys (`date`, `type`, `status`,
+  `superseded-by`, `scope`, `overrides-convention`, `related-to`). It does **not** close the `type:`
+  value vocabulary, does **not** require `description:`, does **not** reject an unrecognised key — the
+  key set is a minimum, and extra keys such as `discovered:` are sanctioned — and does **not** check
+  that `superseded-by:` resolves to a real file, because two files legitimately carry prose there.
+
+  Like `lint-identifiers.sh` it **self-tests before scanning** and exits **2** (distinct from a
+  finding's exit 1) if any rule fails to fire on a violating fixture or fires on a compliant one. It
+  **passes on an empty corpus**, so a freshly scaffolded project is not born failing, and it is
+  `not applicable` when the script is absent rather than a failure.
 - **code-reviewer** after any output from csharp-engineer, frontend-engineer, or mcp-engineer
 - **security-reviewer** when changes touch authentication, authorization,
   data access, PII handling, API endpoints, or configuration with secrets
@@ -195,6 +212,12 @@ Before handing off to code-reviewer, every engineer agent must:
   run out of this suite while nothing in the changeset was exercised, and that reads in a merge record
   as coverage. Same reason as `lint-agents.sh` above: a PASS on an unrelated changeset is worse than
   an acknowledged skip
+- **`scripts/lint-memory.sh`** when the changeset does not touch `memory/`. It reads only
+  `memory/**/*.md` frontmatter and has nothing to say about any other file, so a run on an unrelated
+  changeset reports a clean corpus while checking nothing the changeset touched — the same
+  false-coverage shape as the two entries above. Also skip it, as `not applicable`, when the script is
+  absent from the project: it is newer than some checkouts, and a missing checker is a stated gap, not
+  a failure and not a pass
 
 ## A stage is complete when it reports, not when its agent stops
 
@@ -427,13 +450,35 @@ that silently ignores a parameter, a framework version quirk that requires a wor
 **What does not qualify:** routine implementation choices, variable naming, anything
 trivially reversible, or anything that disappears when the dependency is upgraded.
 
-Use standard memory frontmatter: `type: known-issue`, `status: active`,
-`discovered: YYYY-MM-DD`. Include a `Workaround:` line describing the fix applied.
+Use the standard memory frontmatter dialect — **fenced lowercase YAML**, seven required keys, exactly
+as `docs/MEMORY-WRITING.md` specifies. For an engineer-written known issue that is:
+
+```yaml
+---
+date: YYYY-MM-DD
+type: known-issue
+status: active
+superseded-by: n/a
+scope: the module, path, or tool the constraint applies to
+overrides-convention: no
+related-to: n/a
+discovered: YYYY-MM-DD
+---
+```
+
+**`discovered:` is still mandatory here.** It is not one of the seven required keys, but it is a
+*sanctioned extra* under `MEMORY-WRITING.md` — that document names it and permits it rather than
+contradicting this requirement. Extra keys in general are permitted, so adding one does not break the
+dialect. Include a `Workaround:` line in the body describing the fix applied.
+
+This block previously instructed three bare keys with no fence, which was a third dialect competing
+with the two in the corpus. All 52 files were normalized on 2026-09-02; write the dialect above and
+nothing else.
 
 ### Precedence rules
 
-- Active files without `Overrides-convention: yes` rank below CONVENTIONS.md and above agent defaults.
-- Active files with `Overrides-convention: yes` rank above CONVENTIONS.md, but only within their declared Scope.
+- Active files without `overrides-convention: yes` rank below CONVENTIONS.md and above agent defaults.
+- Active files with `overrides-convention: yes` rank above CONVENTIONS.md, but only within their declared Scope.
 - Narrower scope wins over broader scope when two files conflict.
 - When two active files conflict at the same scope, flag the conflict -- do not pick one silently.
 

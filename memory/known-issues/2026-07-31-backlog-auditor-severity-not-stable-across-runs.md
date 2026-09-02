@@ -1,8 +1,12 @@
 ---
+date: 2026-07-31
 type: known-issue
 status: active
-discovered: 2026-07-31
+superseded-by: n/a
 scope: agents/backlog-auditor.md
+overrides-convention: no
+related-to: n/a
+discovered: 2026-07-31
 ---
 
 # backlog-auditor assigns different severities to identical input across runs

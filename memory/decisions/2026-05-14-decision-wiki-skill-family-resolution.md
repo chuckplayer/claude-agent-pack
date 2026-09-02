@@ -1,10 +1,12 @@
-**Date:** 2026-05-14
-**Type:** decision
-**Status:** archived
-**Superseded-by:** wiki family removed 2026-05-16; replaced by /obsidian-brief
-**Scope:** skills/wiki-*, agents/wiki-*
-**Overrides-convention:** no
-**Related-to:** 2026-04-26-challenge-llm-wiki-skill-family.md
+---
+date: 2026-05-14
+type: decision
+status: archived
+superseded-by: wiki family removed 2026-05-16; replaced by /obsidian-brief
+scope: skills/wiki-*, agents/wiki-*
+overrides-convention: no
+related-to: 2026-04-26-challenge-llm-wiki-skill-family.md
+---
 
 ## Summary
 

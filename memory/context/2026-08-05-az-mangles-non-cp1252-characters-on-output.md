@@ -1,11 +1,13 @@
-**Date:** 2026-08-05
-**Type:** platform quirk
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** any code path that compares, matches, or parses a string printed by `az` on this machine — **and,
-per the section at the end, any checker whose own source text contains a non-cp1252 literal**
-**Overrides-convention:** no
-**Related-to:** memory/known-issues/2026-08-04-ado-backlog-level-is-not-work-item-type-category.md, memory/context/2026-08-04-az-query-and-json-parse-hazards-on-windows.md
+---
+date: 2026-08-05
+type: platform quirk
+status: active
+superseded-by: n/a
+scope: any code path that compares, matches, or parses a string printed by `az` on this machine — **and,
+  per the section at the end, any checker whose own source text contains a non-cp1252 literal**
+overrides-convention: no
+related-to: memory/known-issues/2026-08-04-ado-backlog-level-is-not-work-item-type-category.md, memory/context/2026-08-04-az-query-and-json-parse-hazards-on-windows.md
+---
 
 ## Summary
 

@@ -1,10 +1,12 @@
-**Date:** 2026-08-04
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** skills/devops-azure/SKILL.md 8c (line ~224) and any pair-report design; corrects a shipped claim
-**Overrides-convention:** no
-**Related-to:** 2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md, 2026-08-04-decision-pair-report-v4-keys-on-backlog-category.md, 2026-08-04-challenge-ado-pair-report-v4.md, docs/plans/ado-pair-report-v4.md
+---
+date: 2026-08-04
+type: finding
+status: active
+superseded-by: n/a
+scope: skills/devops-azure/SKILL.md 8c (line ~224) and any pair-report design; corrects a shipped claim
+overrides-convention: no
+related-to: 2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md, 2026-08-04-decision-pair-report-v4-keys-on-backlog-category.md, 2026-08-04-challenge-ado-pair-report-v4.md, docs/plans/ado-pair-report-v4.md
+---
 
 ## Summary
 

@@ -1,10 +1,12 @@
-**Date:** 2026-07-30
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** skills/spec-intake/, skills/interview-me/, docs/ado-delivery-pipeline-brief.md
-**Overrides-convention:** no
-**Related-to:** docs/plans/spec-intake.md
+---
+date: 2026-07-30
+type: finding
+status: active
+superseded-by: n/a
+scope: skills/spec-intake/, skills/interview-me/, docs/ado-delivery-pipeline-brief.md
+overrides-convention: no
+related-to: docs/plans/spec-intake.md
+---
 
 ## Summary
 

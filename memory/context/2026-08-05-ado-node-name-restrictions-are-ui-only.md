@@ -1,11 +1,13 @@
-**Date:** 2026-08-05
-**Type:** constraint
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** any guard, allowlist or trust decision applied to an Azure DevOps **area path** or
-**iteration path** value read from the service and passed to a command
-**Overrides-convention:** no
-**Related-to:** 2026-07-30-powershell-mangles-native-exe-arguments.md, 2026-08-05-ado-team-backlog-filters-by-iteration-too.md, 2026-08-05-challenge-devops-azure-area-iteration-placement.md
+---
+date: 2026-08-05
+type: constraint
+status: active
+superseded-by: n/a
+scope: any guard, allowlist or trust decision applied to an Azure DevOps **area path** or
+  **iteration path** value read from the service and passed to a command
+overrides-convention: no
+related-to: 2026-07-30-powershell-mangles-native-exe-arguments.md, 2026-08-05-ado-team-backlog-filters-by-iteration-too.md, 2026-08-05-challenge-devops-azure-area-iteration-placement.md
+---
 
 ## Summary
 

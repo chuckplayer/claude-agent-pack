@@ -1,10 +1,12 @@
-**Date:** 2026-09-02
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** memory/, docs/MEMORY-WRITING.md, scripts/lint-memory.sh, agents/merge-reviewer.md gate 2d
-**Overrides-convention:** no
-**Related-to:** docs/plans/memory-index-and-dialect-normalization.md (its ## Challenge section holds the full narrative)
+---
+date: 2026-09-02
+type: finding
+status: active
+superseded-by: n/a
+scope: memory/, docs/MEMORY-WRITING.md, scripts/lint-memory.sh, agents/merge-reviewer.md gate 2d
+overrides-convention: no
+related-to: 'docs/plans/memory-index-and-dialect-normalization.md (its ## Challenge section holds the full narrative)'
+---
 
 ## Summary
 

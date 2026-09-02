@@ -1,10 +1,12 @@
-**Date:** 2026-08-04
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** skills/devops-azure/SKILL.md batch write mode (8c, 8f), and any future pair-report design
-**Overrides-convention:** no
-**Related-to:** 2026-08-04-challenge-ado-pair-report.md, 2026-08-03-ado-workitemtypes-lists-blocked-types.md, docs/plans/bar-cost-and-first-run.md
+---
+date: 2026-08-04
+type: finding
+status: active
+superseded-by: n/a
+scope: skills/devops-azure/SKILL.md batch write mode (8c, 8f), and any future pair-report design
+overrides-convention: no
+related-to: 2026-08-04-challenge-ado-pair-report.md, 2026-08-03-ado-workitemtypes-lists-blocked-types.md, docs/plans/bar-cost-and-first-run.md
+---
 
 ## AMENDED 2026-08-04 (same day) — the UI was then tested, and two "NOT REPRODUCED" rows below were wrong
 

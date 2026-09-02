@@ -1,10 +1,13 @@
 ---
-name: custom-agent-powershell-tool-grant-nonfunctional
+date: 2026-07-15
+type: known-issue
+status: active
+superseded-by: n/a
+scope: n/a
+overrides-convention: no
+related-to: n/a
+discovered: 2026-07-15
 description: Listing "PowerShell" in a custom agent's tools frontmatter does not actually grant that agent the PowerShell tool -- the subagent only gets Bash
-metadata:
-  type: known-issue
-  status: active
-  discovered: 2026-07-15
 ---
 
 `agents/codex-reviewer.md` originally declared `tools: Bash, PowerShell` and documented a Windows fallback: if Bash returns suspiciously empty output (see [[2026-07-10-bash-tool-silent-failure-windows]]), retry via "the PowerShell tool" instead. In a live test, the spawned codex-reviewer subagent reported having only Bash available -- no PowerShell tool at all -- despite the frontmatter declaration. Every other agent in the pack that needs a shell only ever lists `Bash` in `tools:`; `codex-reviewer` was the only file attempting to grant `PowerShell` this way, and it does not work.

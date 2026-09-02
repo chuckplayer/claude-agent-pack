@@ -286,7 +286,7 @@ Check whether performance-reviewer ran. This is advisory only -- findings do not
 
 Check whether `memory/architecture/repo-map.md` exists. This is advisory only -- it does not block the gate.
 
-- If it exists and this task added, removed, or moved directories (or added significant new entry-point files), check the map's `Verified-at-commit` against HEAD. If the mapped structure has drifted, note in the output: "repo-map.md is stale -- recommend running `/repo-map refresh`."
+- If it exists and this task added, removed, or moved directories (or added significant new entry-point files), check the map's `verified-at-commit` against HEAD. If the mapped structure has drifted, note in the output: "repo-map.md is stale -- recommend running `/repo-map refresh`."
 - If the structure did not change, or the map does not exist, skip silently.
 
 ### 3c. Mergeability advisory

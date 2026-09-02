@@ -1,10 +1,12 @@
-**Date:** 2026-08-05
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** skills/backlog/SKILL.md, skills/devops-azure/SKILL.md sections 8a/8b/8d/8f
-**Overrides-convention:** no
-**Related-to:** memory/context/2026-08-05-az-mangles-non-cp1252-characters-on-output.md, memory/context/2026-08-04-az-query-and-json-parse-hazards-on-windows.md, memory/context/2026-07-30-powershell-mangles-native-exe-arguments.md, memory/known-issues/2026-08-03-challenge-devops-azure-batch-write.md
+---
+date: 2026-08-05
+type: finding
+status: active
+superseded-by: n/a
+scope: skills/backlog/SKILL.md, skills/devops-azure/SKILL.md sections 8a/8b/8d/8f
+overrides-convention: no
+related-to: memory/context/2026-08-05-az-mangles-non-cp1252-characters-on-output.md, memory/context/2026-08-04-az-query-and-json-parse-hazards-on-windows.md, memory/context/2026-07-30-powershell-mangles-native-exe-arguments.md, memory/known-issues/2026-08-03-challenge-devops-azure-batch-write.md
+---
 
 ## Summary
 

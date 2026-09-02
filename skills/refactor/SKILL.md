@@ -14,7 +14,7 @@ Confirm with the user:
 - **Why** (readability, performance, removing duplication, preparing for a future change)
 - **What must not change** (public API surface, database behavior, external contracts)
 
-Read `docs/CONVENTIONS.md` if it exists. Check `memory/**/*.md` for any decisions about the code being changed. If `memory/architecture/repo-map.md` exists, use it to scope the blast radius quickly — it maps which directories own what. Verify its `Verified-at-commit` against HEAD; if the structure has drifted, recommend `/repo-map refresh` before the impact analysis in step 3.
+Read `docs/CONVENTIONS.md` if it exists. Check `memory/**/*.md` for any decisions about the code being changed. If `memory/architecture/repo-map.md` exists, use it to scope the blast radius quickly — it maps which directories own what. Verify its `verified-at-commit` against HEAD; if the structure has drifted, recommend `/repo-map refresh` before the impact analysis in step 3.
 
 ## 2. git-engineer — branch setup
 

@@ -1,10 +1,12 @@
-**Date:** 2026-07-01
-**Type:** decision
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global
-**Overrides-convention:** no
-**Related-to:** repo-map.md
+---
+date: 2026-07-01
+type: decision
+status: active
+superseded-by: n/a
+scope: global
+overrides-convention: no
+related-to: repo-map.md
+---
 
 ## Summary
 

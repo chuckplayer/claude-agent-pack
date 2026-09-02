@@ -1,8 +1,12 @@
 ---
+date: 2026-08-03
 type: known-issue
 status: active
-discovered: 2026-08-03
+superseded-by: n/a
 scope: agents/codex-reviewer.md
+overrides-convention: no
+related-to: n/a
+discovered: 2026-08-03
 ---
 
 # codex-reviewer can run, work visibly, and never produce a synthesis — the step looks done

@@ -1,10 +1,12 @@
-**Date:** 2026-07-30
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global
-**Overrides-convention:** no
-**Related-to:** docs/obsidian-cli-and-plan-spine-brief.md
+---
+date: 2026-07-30
+type: finding
+status: active
+superseded-by: n/a
+scope: global
+overrides-convention: no
+related-to: docs/obsidian-cli-and-plan-spine-brief.md
+---
 
 ## Summary
 

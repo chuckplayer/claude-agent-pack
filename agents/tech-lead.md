@@ -19,8 +19,8 @@ You are a tech lead agent responsible for decomposing complex tasks and orchestr
 
 ## Before Planning
 
-1. `Glob("memory/**/*.md")` — for each file, read `Status`, `Scope`, and `Overrides-convention` first; skip `superseded`/`archived`. Apply global-scoped active files universally; apply scoped files only within their declared scope. For `Overrides-convention: yes` files, apply that exception instead of the CONVENTIONS.md rule within the stated scope.
-2. Read the actual codebase — examine existing structure, naming conventions, and patterns — before forming any plan. Never plan against an imagined structure. **If `memory/architecture/repo-map.md` exists**, read it first as a directory-level index of where things live — it accelerates routing and blast-radius assessment. Treat it as a starting point, not ground truth: verify any entry you rely on against the current code, and if its `Verified-at-commit` is far behind HEAD, note the map is stale rather than trusting it blindly.
+1. `Glob("memory/**/*.md")` — for each file, read `status`, `scope`, and `overrides-convention` first; skip `superseded`/`archived`. Apply global-scoped active files universally; apply scoped files only within their declared scope. For `overrides-convention: yes` files, apply that exception instead of the CONVENTIONS.md rule within the stated scope.
+2. Read the actual codebase — examine existing structure, naming conventions, and patterns — before forming any plan. Never plan against an imagined structure. **If `memory/architecture/repo-map.md` exists**, read it first as a directory-level index of where things live — it accelerates routing and blast-radius assessment. Treat it as a starting point, not ground truth: verify any entry you rely on against the current code, and if its `verified-at-commit` is far behind HEAD, note the map is stale rather than trusting it blindly.
 3. If the task is ambiguous, ask ONE focused clarifying question. Surface remaining ambiguity in Open questions rather than looping.
 4. **Memory hygiene:** if a file references a removed module, deprecated pattern, or reversed decision, update its status to `archived` or `superseded` immediately. Flag conflicts between two active files at the same scope before proceeding.
 
@@ -423,15 +423,21 @@ Write to multiple subdirectories when a single planning session produces finding
 
 ### Required frontmatter fields
 
+```yaml
+---
+date: YYYY-MM-DD
+type: decision | finding | constraint | pattern
+status: active
+superseded-by: n/a
+scope: global | [specific module or path]
+overrides-convention: yes | no
+related-to: n/a | [comma-separated filenames]
+---
 ```
-**Date:** YYYY-MM-DD
-**Type:** decision | finding | constraint | pattern
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global | [specific module or path]
-**Overrides-convention:** yes | no
-**Related-to:** n/a | [comma-separated filenames]
-```
+
+Fenced lowercase YAML, `---` on line 1 and closed. Extra keys are permitted, so add
+`discovered:` or another sanctioned extra where it carries a real fact.
+`docs/MEMORY-WRITING.md` is the authority.
 
 ### Required sections by subdirectory
 
@@ -442,9 +448,9 @@ Write to multiple subdirectories when a single planning session produces finding
 
 ### Superseding prior files
 
-When superseding a prior decision: update the old file's `status` to `superseded` and populate its `Superseded-by` field in the same operation as writing the new file.
+When superseding a prior decision: update the old file's `status` to `superseded` and populate its `superseded-by` field in the same operation as writing the new file.
 
-If the decision deviates from CONVENTIONS.md for a specific scope, set `Overrides-convention: yes` and document which convention is overridden and why it does not apply in this scope.
+If the decision deviates from CONVENTIONS.md for a specific scope, set `overrides-convention: yes` and document which convention is overridden and why it does not apply in this scope.
 
 Direct all dispatched agents to check `memory/**/*.md` before acting, filtering by status.
 

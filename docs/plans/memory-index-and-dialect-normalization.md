@@ -304,9 +304,64 @@ the operator rather than decided.
 
 ## Deviations
 
-_Deviations not yet reviewed. The coordinating session replaces this line before
-merge-reviewer runs — with `None.` if nothing diverged, or one bullet per departure.
-Leave this line exactly as it is._
+- **Frontmatter records `branch: main`** -> the work landed on `chore/normalize-memory-dialect`.
+  `CLAUDE.md` requires git-engineer to branch before any engineer runs, so `main` was never a
+  candidate. The key records the branch at plan time, which BAR-013's `Cost:` line already says.
+  Decided by: coordinating session, with the operator choosing this reading over rewriting the key.
+
+- **Plan and audit artifacts were committed separately at `0fabbbc`, ahead of the implementation**
+  -> departs from `CLAUDE.md`'s "the plan lands in the same commit as the implementation".
+  Done because BAR-012 requires `git diff --name-status -- memory/` to show zero `A` entries, and
+  `memory/known-issues/2026-09-02-challenge-memory-index-and-dialect-normalization.md` was still
+  untracked — it would have appeared as an `A` and failed the bar for a reason unrelated to the
+  migration. Committing it first also put it in the engineer's worktree, which BAR-001 needs since
+  it quantifies over every file under `memory/`. Both artifacts are on the same branch and in order.
+  Decided by: coordinating session, in preference to amending BAR-012.
+
+- **`.gitignore` gained `.claude/worktrees/`** -> not in any stated call; a scope addition.
+  `.claude/` was surfacing as untracked because the harness puts engineer worktrees there, and
+  merge-reviewer holds `git add -A`. Verified effective with `git check-ignore -v`.
+  Decided by: the operator, directed mid-run.
+
+- **Call 9 said `MEMORY-WRITING.md`'s singleton clause "stays as it is"** -> two edits were made to
+  it. The key name inside it was lowercased (`**Verified-at-commit:**` -> `verified-at-commit:`),
+  because leaving a bold-dialect key inside the document that abolishes the bold dialect is
+  self-contradictory; and "an extra `verified-at-commit:` field" became "two extra frontmatter
+  fields, `last-updated:` and `verified-at-commit:`", because the clause named one and `repo-map.md`
+  carries two. No second singleton member was added, which was the call's actual intent.
+  Decided by: infrastructure-engineer (first edit), coordinating session (second).
+
+- **Build step 2's scope was exceeded** -> beyond the Engineer write permission section and the two
+  invocation-list entries, `Overrides-convention:` was lowercased in `CLAUDE.md`'s two Precedence
+  rules lines. Those lines instruct a key spelling, so leaving them capitalised would have left
+  `CLAUDE.md` teaching a retired key form. Decided by: infrastructure-engineer.
+
+- **`agents/tech-lead.md`, `agents/devils-advocate.md` and `docs/AGENT-GUIDE.md` were converted by
+  the coordinating session rather than by an engineer**, as was `scripts/lint-memory.sh`'s missing
+  `status:` rule (R9) and its three code-reviewer cleanups. The plan left "who edits the pack's own
+  prompt files" as an open question and named `infrastructure-engineer` the least-bad fit. Two
+  patch transplants from engineer worktrees had already proven lossy — each worktree bases off
+  `0fabbbc`, which predates the migration, so neither could see the file it was patching, and the
+  first transplant failed atomically while the second needed a hand-merge. code-reviewer,
+  smell-reviewer and test-engineer all reviewed the result, so the work was not unreviewed.
+  Decided by: coordinating session.
+
+- **BAR-010's `Evidence:` enumerated three write sites; there were eight.** The bar's *subject* was
+  correct and its enumeration was short — `skills/repo-map/SKILL.md` (a full bold-key template for
+  the one file call 10 puts in the migration set), `agents/tech-lead.md`, `agents/devils-advocate.md`
+  and two `docs/AGENT-GUIDE.md` blocks. Found by code-reviewer and by infrastructure-engineer's own
+  audit, not by the bar. The bar text was **not** amended; the missing sites were fixed instead, so
+  the enumeration in the bar now under-describes what was checked. A later reader should know the
+  bar shipped against a corrected list rather than the one devils-advocate audited. Recorded rather
+  than absorbed because it is a bar-soundness miss — a closed allowlist that is short is
+  indistinguishable from one that is complete.
+
+- **BAR-002 was reported `NONE` by test-engineer and then satisfied.** `scripts/lint-memory.sh`
+  shipped with no rule validating the `status:` value at all; a `status: pending` fixture passed
+  with exit 0. Found by test-engineer, confirmed independently, and fixed by adding rule R9 plus a
+  `bad/bad-status.md` self-test fixture and its `_fires` assertion. Recorded because for most of
+  this run a bar claimed a check was proven while the check did not exist.
+  Decided by: coordinating session, after test-engineer's finding.
 
 ## Risks
 

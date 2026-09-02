@@ -48,3 +48,23 @@ npm-debug.log*
 # machine's permission allowlist, including an AD username, to a public repo.
 # Machine-level settings belong in ~/.claude/settings.json.
 .claude/settings.local.json
+
+# Agent worktrees -- never commit.
+# The /implement pipeline creates one worktree per engineer agent under this
+# path, each a full checkout of the repo, and merge-reviewer holds `git add -A`.
+#
+# Stated precisely, because the worst case is NOT the default: a live worktree
+# registered by `git worktree add` still carries a valid `.git` pointer, and
+# `git add -A` normally SKIPS such a directory with a warning rather than
+# staging its contents. The case that actually bites is narrower -- a worktree
+# left behind by a partially-failed cleanup, whose `.git` file is gone or
+# corrupted, so what remains is an ordinary directory tree that `git add -A`
+# will stage in full. This repo is public, so that is worth one line to prevent
+# rather than reason about per run.
+#
+# Same class as the entry above: a path the harness writes into, which nothing
+# in the pipeline is guaranteed to have removed at the moment something stages
+# everything. Note that `git worktree list` reads `.git/worktrees/` metadata and
+# is unaffected by this rule, so a registered stray worktree stays visible to
+# the cleanup step in /implement 10a.
+.claude/worktrees/

@@ -1,10 +1,12 @@
-**Date:** 2026-08-06
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** docs/plans/implement-work-item-mode.md, skills/implement/SKILL.md, agents/merge-reviewer.md
-**Overrides-convention:** no
-**Related-to:** docs/plans/implement-work-item-mode.md
+---
+date: 2026-08-06
+type: finding
+status: active
+superseded-by: n/a
+scope: docs/plans/implement-work-item-mode.md, skills/implement/SKILL.md, agents/merge-reviewer.md
+overrides-convention: no
+related-to: docs/plans/implement-work-item-mode.md
+---
 
 ## Summary
 

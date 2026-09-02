@@ -1,8 +1,12 @@
 ---
+date: 2026-08-03
 type: known-issue
 status: active
-discovered: 2026-08-03
+superseded-by: n/a
 scope: any pipeline that verifies stages from agent reports
+overrides-convention: no
+related-to: n/a
+discovered: 2026-08-03
 ---
 
 # A subagent can finish its work and go idle **before** sending its report

@@ -1,12 +1,14 @@
-**Date:** 2026-07-01
-**Type:** pattern
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global
-**Overrides-convention:** no
-**Related-to:** n/a
-**Last-updated:** 2026-08-04
-**Verified-at-commit:** b7f59f2
+---
+date: 2026-07-01
+type: pattern
+status: active
+superseded-by: n/a
+scope: global
+overrides-convention: no
+related-to: n/a
+last-updated: 2026-08-04
+verified-at-commit: b7f59f2
+---
 
 # Repo Map
 

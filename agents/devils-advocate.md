@@ -170,15 +170,20 @@ Write to multiple subdirectories when a single session produces findings of diff
 
 ### Required frontmatter fields
 
+```yaml
+---
+date: YYYY-MM-DD
+type: finding
+status: active
+superseded-by: n/a
+scope: global | [specific module or path]
+overrides-convention: no
+related-to: [filename of the corresponding decision file, if one exists] | n/a
+---
 ```
-**Date:** YYYY-MM-DD
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global | [specific module or path]
-**Overrides-convention:** no
-**Related-to:** [filename of the corresponding decision file, if one exists] | n/a
-```
+
+Fenced lowercase YAML, `---` on line 1 and closed. Extra keys are permitted.
+`docs/MEMORY-WRITING.md` is the authority.
 
 ### Required sections
 

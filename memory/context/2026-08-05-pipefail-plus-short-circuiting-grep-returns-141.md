@@ -1,11 +1,13 @@
-**Date:** 2026-08-05
-**Type:** constraint
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** every shell script in this repository that runs under `set -o pipefail` — all three blocking
-gate scripts do
-**Overrides-convention:** no
-**Related-to:** 2026-08-04-grep-iF-aborts-on-this-machine.md, 2026-07-10-bash-tool-silent-failure-windows.md, 2026-07-30-agent-output-must-be-attributable-to-be-evidence.md
+---
+date: 2026-08-05
+type: constraint
+status: active
+superseded-by: n/a
+scope: every shell script in this repository that runs under `set -o pipefail` — all three blocking
+  gate scripts do
+overrides-convention: no
+related-to: 2026-08-04-grep-iF-aborts-on-this-machine.md, 2026-07-10-bash-tool-silent-failure-windows.md, 2026-07-30-agent-output-must-be-attributable-to-be-evidence.md
+---
 
 ## Summary
 

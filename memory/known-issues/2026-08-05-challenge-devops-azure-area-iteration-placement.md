@@ -1,10 +1,12 @@
-**Date:** 2026-08-05
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** `skills/devops-azure/SKILL.md` batch write mode — 8a area/team resolution and 8f create
-**Overrides-convention:** no
-**Related-to:** docs/plans/devops-azure-area-iteration-placement.md (its `## Challenge` section holds the full narrative), 2026-08-05-ado-node-name-restrictions-are-ui-only.md, 2026-08-05-ado-team-backlog-filters-by-iteration-too.md
+---
+date: 2026-08-05
+type: finding
+status: active
+superseded-by: n/a
+scope: '`skills/devops-azure/SKILL.md` batch write mode — 8a area/team resolution and 8f create'
+overrides-convention: no
+related-to: docs/plans/devops-azure-area-iteration-placement.md (its `## Challenge` section holds the full narrative), 2026-08-05-ado-node-name-restrictions-are-ui-only.md, 2026-08-05-ado-team-backlog-filters-by-iteration-too.md
+---
 
 ## Summary
 

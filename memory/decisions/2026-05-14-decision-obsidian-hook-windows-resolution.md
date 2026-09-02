@@ -1,10 +1,12 @@
-**Date:** 2026-05-14
-**Type:** decision
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** scripts/obsidian-stop-hook.js, install.sh hook registration
-**Overrides-convention:** no
-**Related-to:** 2026-05-14-challenge-obsidian-stop-hook-windows.md
+---
+date: 2026-05-14
+type: decision
+status: active
+superseded-by: n/a
+scope: scripts/obsidian-stop-hook.js, install.sh hook registration
+overrides-convention: no
+related-to: 2026-05-14-challenge-obsidian-stop-hook-windows.md
+---
 
 ## Summary
 

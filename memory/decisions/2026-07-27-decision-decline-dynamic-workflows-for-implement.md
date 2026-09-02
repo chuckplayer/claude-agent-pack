@@ -1,10 +1,12 @@
-**Date:** 2026-07-27
-**Type:** decision
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** skills/implement, skills/refactor, skills/scaffold, skills/review-pr, CLAUDE.md Sub-Agent Routing
-**Overrides-convention:** no
-**Related-to:** implement, refactor, scaffold, review-pr, merge-reviewer, git-engineer
+---
+date: 2026-07-27
+type: decision
+status: active
+superseded-by: n/a
+scope: skills/implement, skills/refactor, skills/scaffold, skills/review-pr, CLAUDE.md Sub-Agent Routing
+overrides-convention: no
+related-to: implement, refactor, scaffold, review-pr, merge-reviewer, git-engineer
+---
 
 ## Summary
 
