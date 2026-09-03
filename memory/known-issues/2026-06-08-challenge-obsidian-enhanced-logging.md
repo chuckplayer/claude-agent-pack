@@ -1,10 +1,12 @@
-**Date:** 2026-06-08
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** scripts/obsidian-stop-hook.js, scripts/obsidian-prompt-hook.js, scripts/tag-inferrer.js, install.sh, scripts/check-updates.sh
-**Overrides-convention:** no
-**Related-to:** 2026-05-14-decision-obsidian-hook-windows-resolution.md
+---
+date: 2026-06-08
+type: finding
+status: active
+superseded-by: n/a
+scope: scripts/obsidian-stop-hook.js, scripts/obsidian-prompt-hook.js, scripts/tag-inferrer.js, install.sh, scripts/check-updates.sh
+overrides-convention: no
+related-to: 2026-05-14-decision-obsidian-hook-windows-resolution.md
+---
 
 ## Summary
 

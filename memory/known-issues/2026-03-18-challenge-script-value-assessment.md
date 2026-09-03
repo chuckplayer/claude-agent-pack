@@ -1,11 +1,13 @@
-**Date:** 2026-03-18
-**Last-updated:** 2026-05-14
-**Type:** finding
-**Status:** archived
-**Superseded-by:** n/a
-**Scope:** scripts/
-**Overrides-convention:** no
-**Related-to:** n/a
+---
+date: 2026-03-18
+type: finding
+status: archived
+superseded-by: n/a
+scope: scripts/
+overrides-convention: no
+related-to: n/a
+last-updated: 2026-05-14
+---
 
 > All unresolved items from this session were closed by 2026-05-14. See
 > individual concerns below. Archived — agents may skip this file.

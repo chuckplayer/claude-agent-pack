@@ -1,10 +1,12 @@
-**Date:** 2026-08-04
-**Type:** constraint
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** any use of az devops invoke / az rest against Azure DevOps
-**Overrides-convention:** no
-**Related-to:** 2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md, 2026-08-03-wiql-tags-contains-is-whole-tag-not-substring.md, 2026-07-30-powershell-mangles-native-exe-arguments.md
+---
+date: 2026-08-04
+type: constraint
+status: active
+superseded-by: n/a
+scope: any use of az devops invoke / az rest against Azure DevOps
+overrides-convention: no
+related-to: 2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md, 2026-08-03-wiql-tags-contains-is-whole-tag-not-substring.md, 2026-07-30-powershell-mangles-native-exe-arguments.md
+---
 
 ## Summary
 

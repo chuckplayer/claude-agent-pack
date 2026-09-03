@@ -1,10 +1,12 @@
-**Date:** 2026-07-30
-**Type:** constraint
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global
-**Overrides-convention:** no
-**Related-to:** 2026-07-10-bash-tool-silent-failure-windows.md, 2026-07-27-obsidian-cli-silent-failure-modes.md
+---
+date: 2026-07-30
+type: constraint
+status: active
+superseded-by: n/a
+scope: global
+overrides-convention: no
+related-to: 2026-07-10-bash-tool-silent-failure-windows.md, 2026-07-27-obsidian-cli-silent-failure-modes.md
+---
 
 ## Summary
 

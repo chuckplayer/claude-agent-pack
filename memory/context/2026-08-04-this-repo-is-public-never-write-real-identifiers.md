@@ -1,10 +1,12 @@
-**Date:** 2026-08-04
-**Type:** constraint
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global — every agent, skill, memory file, doc, plan, and commit message in this repository
-**Overrides-convention:** yes
-**Related-to:** n/a
+---
+date: 2026-08-04
+type: constraint
+status: active
+superseded-by: n/a
+scope: global — every agent, skill, memory file, doc, plan, and commit message in this repository
+overrides-convention: yes
+related-to: n/a
+---
 
 ## Summary
 

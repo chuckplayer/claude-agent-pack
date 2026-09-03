@@ -1,10 +1,12 @@
-**Date:** 2026-08-05
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global
-**Overrides-convention:** no
-**Related-to:** docs/plans/cited-authority-integrity.md
+---
+date: 2026-08-05
+type: finding
+status: active
+superseded-by: n/a
+scope: global
+overrides-convention: no
+related-to: docs/plans/cited-authority-integrity.md
+---
 
 ## Summary
 

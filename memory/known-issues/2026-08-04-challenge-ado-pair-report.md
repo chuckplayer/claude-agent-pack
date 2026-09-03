@@ -1,10 +1,12 @@
-**Date:** 2026-08-04
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** skills/devops-azure/SKILL.md batch write mode (8c pair report, 8e informational lines)
-**Overrides-convention:** no
-**Related-to:** 2026-08-04-decision-ado-pair-report-states-facts-only.md, docs/plans/bar-cost-and-first-run.md
+---
+date: 2026-08-04
+type: finding
+status: active
+superseded-by: n/a
+scope: skills/devops-azure/SKILL.md batch write mode (8c pair report, 8e informational lines)
+overrides-convention: no
+related-to: 2026-08-04-decision-ado-pair-report-states-facts-only.md, docs/plans/bar-cost-and-first-run.md
+---
 
 ## Outcome — the design was reverted 2026-08-04, and this file stays active
 

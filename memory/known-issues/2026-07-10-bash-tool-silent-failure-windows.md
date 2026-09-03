@@ -1,10 +1,13 @@
 ---
-name: bash-tool-silent-failure-windows
+date: 2026-07-10
+type: known-issue
+status: active
+superseded-by: n/a
+scope: n/a
+overrides-convention: no
+related-to: n/a
+discovered: 2026-07-10
 description: Bash tool returns blank output on this Windows machine even on success/failure, causing agents to misreport results (e.g. git-engineer claiming a commit succeeded when it never ran)
-metadata:
-  type: known-issue
-  status: active
-  discovered: 2026-07-10
 ---
 
 On this Windows machine (win32, PowerShell primary shell), the Bash tool has intermittently returned completely empty output for every command in a session — including trivial ones like `echo test` or `ls` — regardless of whether the underlying command actually succeeded, failed, or never ran. This is not specific to git commands; it reproduced on plain `echo`.

@@ -1,10 +1,13 @@
 ---
-name: background-agent-auto-publish-bypasses-merge-gate
+date: 2026-07-27
+type: known-issue
+status: active
+superseded-by: n/a
+scope: n/a
+overrides-convention: no
+related-to: n/a
+discovered: 2026-07-27
 description: Background agents can auto-commit, auto-push, and open draft PRs with no opt-out setting, bypassing the pack's merge-reviewer/git-engineer publish gate
-metadata:
-  type: known-issue
-  status: active
-  discovered: 2026-07-27
 ---
 
 Since Claude Code v2.1.198, background agents may automatically commit their work,

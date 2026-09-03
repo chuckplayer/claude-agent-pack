@@ -1,10 +1,12 @@
-**Date:** 2026-07-30
-**Type:** decision
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** agents/tech-lead.md, agents/merge-reviewer.md, skills/implement/SKILL.md, docs/plans/
-**Overrides-convention:** no
-**Related-to:** 2026-07-30-plan-gate-does-not-check-narrative-vs-implementation.md, 2026-07-30-challenge-durable-plan-spine-first-cut.md, 2026-07-30-agent-output-must-be-attributable-to-be-evidence.md
+---
+date: 2026-07-30
+type: decision
+status: active
+superseded-by: n/a
+scope: agents/tech-lead.md, agents/merge-reviewer.md, skills/implement/SKILL.md, docs/plans/
+overrides-convention: no
+related-to: 2026-07-30-plan-gate-does-not-check-narrative-vs-implementation.md, 2026-07-30-challenge-durable-plan-spine-first-cut.md, 2026-07-30-agent-output-must-be-attributable-to-be-evidence.md
+---
 
 ## Summary
 

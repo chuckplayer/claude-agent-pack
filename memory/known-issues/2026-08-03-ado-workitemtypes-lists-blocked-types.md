@@ -1,8 +1,12 @@
 ---
+date: 2026-08-03
 type: known-issue
 status: active
-discovered: 2026-08-03
+superseded-by: n/a
 scope: skills/devops-azure/SKILL.md
+overrides-convention: no
+related-to: n/a
+discovered: 2026-08-03
 ---
 
 # `workitemtypes` lists work item types that are BLOCKED for creation, and the process template's name predicts nothing

@@ -1,11 +1,14 @@
 ---
-name: install-sh-silently-skips-obsidian-block-noninteractive
+date: 2026-07-29
+type: known-issue
+status: resolved
+superseded-by: n/a
+scope: n/a
+overrides-convention: no
+related-to: n/a
+discovered: 2026-07-29
+resolved: 2026-07-29
 description: install.sh aborted at its first interactive read when stdin had no TTY, stopping mid-run before the hook-script copy -- fixed same day by routing every prompt through a prompt() helper plus a --yes flag
-metadata:
-  type: known-issue
-  status: resolved
-  discovered: 2026-07-29
-  resolved: 2026-07-29
 ---
 
 **Corrected mechanism.** The first draft of this file attributed the skip to the

@@ -1,11 +1,13 @@
-**Date:** 2026-08-05
-**Type:** constraint
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** any read of an Azure DevOps **team backlog** — `_apis/work/backlogs/{levelId}/workItems`, and the
-Boards UI view it backs
-**Overrides-convention:** no
-**Related-to:** 2026-08-04-ado-backlog-level-is-not-work-item-type-category.md, 2026-08-04-az-devops-invoke-serves-sibling-routes.md, 2026-08-04-this-repo-is-public-never-write-real-identifiers.md
+---
+date: 2026-08-05
+type: constraint
+status: active
+superseded-by: n/a
+scope: any read of an Azure DevOps **team backlog** — `_apis/work/backlogs/{levelId}/workItems`, and the
+  Boards UI view it backs
+overrides-convention: no
+related-to: 2026-08-04-ado-backlog-level-is-not-work-item-type-category.md, 2026-08-04-az-devops-invoke-serves-sibling-routes.md, 2026-08-04-this-repo-is-public-never-write-real-identifiers.md
+---
 
 ## Summary
 

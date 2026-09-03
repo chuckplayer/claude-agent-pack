@@ -1,10 +1,12 @@
-**Date:** 2026-07-07
-**Type:** decision
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** agents/merge-reviewer.md
-**Overrides-convention:** no
-**Related-to:** merge-reviewer.md, review-pr, smell
+---
+date: 2026-07-07
+type: decision
+status: active
+superseded-by: n/a
+scope: agents/merge-reviewer.md
+overrides-convention: no
+related-to: merge-reviewer.md, review-pr, smell
+---
 
 ## Summary
 

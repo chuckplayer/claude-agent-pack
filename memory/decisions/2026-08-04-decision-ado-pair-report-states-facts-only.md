@@ -1,10 +1,12 @@
-**Date:** 2026-08-04
-**Type:** decision
-**Status:** archived
-**Superseded-by:** n/a
-**Scope:** skills/devops-azure/SKILL.md batch write mode (8c, 8e)
-**Overrides-convention:** no
-**Related-to:** 2026-08-04-challenge-ado-pair-report.md, 2026-08-03-challenge-devops-azure-batch-write.md, docs/plans/bar-cost-and-first-run.md
+---
+date: 2026-08-04
+type: decision
+status: archived
+superseded-by: n/a
+scope: skills/devops-azure/SKILL.md batch write mode (8c, 8e)
+overrides-convention: no
+related-to: 2026-08-04-challenge-ado-pair-report.md, 2026-08-03-challenge-devops-azure-batch-write.md, docs/plans/bar-cost-and-first-run.md
+---
 
 ## REVERTED 2026-08-04 — the design below never shipped
 

@@ -1,11 +1,14 @@
-**Date:** 2026-08-05
-**Type:** known-issue
-**Status:** active
-**Discovered:** 2026-08-05
-**Scope:** every `az` invocation from this pack on Windows — and any other native target that resolves to a
-`.cmd` or `.bat` file
-**Overrides-convention:** no
-**Related-to:** 2026-07-30-powershell-mangles-native-exe-arguments.md, 2026-08-05-ado-node-name-restrictions-are-ui-only.md, 2026-08-04-az-query-and-json-parse-hazards-on-windows.md
+---
+date: 2026-08-05
+type: known-issue
+status: active
+superseded-by: n/a
+scope: every `az` invocation from this pack on Windows — and any other native target that resolves to a
+  `.cmd` or `.bat` file
+overrides-convention: no
+related-to: 2026-07-30-powershell-mangles-native-exe-arguments.md, 2026-08-05-ado-node-name-restrictions-are-ui-only.md, 2026-08-04-az-query-and-json-parse-hazards-on-windows.md
+discovered: 2026-08-05
+---
 
 ## Summary
 

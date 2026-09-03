@@ -1,10 +1,12 @@
-**Date:** 2026-08-03
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** skills/devops-azure/SKILL.md, skills/backlog/SKILL.md, agents/backlog-auditor.md, docs/ado-delivery-pipeline-brief.md
-**Overrides-convention:** no
-**Related-to:** docs/plans/devops-azure-batch-write.md
+---
+date: 2026-08-03
+type: finding
+status: active
+superseded-by: n/a
+scope: skills/devops-azure/SKILL.md, skills/backlog/SKILL.md, agents/backlog-auditor.md, docs/ado-delivery-pipeline-brief.md
+overrides-convention: no
+related-to: docs/plans/devops-azure-batch-write.md
+---
 
 ## Summary
 

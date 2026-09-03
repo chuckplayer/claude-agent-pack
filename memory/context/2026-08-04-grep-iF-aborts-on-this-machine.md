@@ -1,10 +1,12 @@
-**Date:** 2026-08-04
-**Type:** constraint
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global — any shell script or one-off command in this repo on this machine
-**Overrides-convention:** no
-**Related-to:** 2026-07-30-powershell-mangles-native-exe-arguments.md, 2026-07-10-bash-tool-silent-failure-windows.md, 2026-08-04-this-repo-is-public-never-write-real-identifiers.md
+---
+date: 2026-08-04
+type: constraint
+status: active
+superseded-by: n/a
+scope: global — any shell script or one-off command in this repo on this machine
+overrides-convention: no
+related-to: 2026-07-30-powershell-mangles-native-exe-arguments.md, 2026-07-10-bash-tool-silent-failure-windows.md, 2026-08-04-this-repo-is-public-never-write-real-identifiers.md
+---
 
 ## Summary
 

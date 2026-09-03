@@ -1,10 +1,12 @@
-**Date:** 2026-07-30
-**Type:** finding
-**Status:** superseded
-**Superseded-by:** fixed in place 2026-07-30; see Revisit trigger
-**Scope:** global
-**Overrides-convention:** no
-**Related-to:** 2026-07-15-worktree-isolation-bases-off-main.md, skills/implement/SKILL.md, agents/merge-reviewer.md
+---
+date: 2026-07-30
+type: finding
+status: superseded
+superseded-by: fixed in place 2026-07-30; see Revisit trigger
+scope: global
+overrides-convention: no
+related-to: 2026-07-15-worktree-isolation-bases-off-main.md, skills/implement/SKILL.md, agents/merge-reviewer.md
+---
 
 ## Summary
 

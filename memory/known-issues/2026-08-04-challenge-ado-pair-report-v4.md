@@ -1,10 +1,12 @@
-**Date:** 2026-08-04
-**Type:** finding
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** skills/devops-azure/SKILL.md batch write mode (8c/8e/8i preview and report) — the fourth pair-report design, not implemented
-**Overrides-convention:** no
-**Related-to:** 2026-08-04-decision-pair-report-v4-keys-on-backlog-category.md, 2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md, 2026-08-04-challenge-ado-pair-report.md, docs/plans/bar-cost-and-first-run.md
+---
+date: 2026-08-04
+type: finding
+status: active
+superseded-by: n/a
+scope: skills/devops-azure/SKILL.md batch write mode (8c/8e/8i preview and report) — the fourth pair-report design, not implemented
+overrides-convention: no
+related-to: 2026-08-04-decision-pair-report-v4-keys-on-backlog-category.md, 2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md, 2026-08-04-challenge-ado-pair-report.md, docs/plans/bar-cost-and-first-run.md
+---
 
 ## Summary
 

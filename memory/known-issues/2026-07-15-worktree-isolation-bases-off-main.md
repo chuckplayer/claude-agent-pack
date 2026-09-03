@@ -1,10 +1,13 @@
 ---
-name: worktree-isolation-bases-off-main
+date: 2026-07-15
+type: known-issue
+status: active
+superseded-by: n/a
+scope: n/a
+overrides-convention: no
+related-to: n/a
+discovered: 2026-07-15
 description: isolation:"worktree" (used by every engineer agent dispatch in implement/refactor/scaffold) provisions from local/origin main by default, not the current branch, unless worktree.baseRef is set to "head"
-metadata:
-  type: known-issue
-  status: active
-  discovered: 2026-07-15
 ---
 
 The Agent tool's `isolation: "worktree"` parameter — used for every csharp-engineer / frontend-engineer / mcp-engineer / database-engineer dispatch in the implement, refactor, and scaffold pipelines — does not base the new worktree on the current checked-out branch by default. It is governed by the harness's `worktree.baseRef` setting: `"fresh"` (the default when unset) branches from `origin/<default-branch>` (equivalently local `main`); `"head"` branches from the current local HEAD. Nothing in the pack sets this, so out of the box every worktree-isolated engineer silently starts from `main`, regardless of what feature branch the developer is actually on.

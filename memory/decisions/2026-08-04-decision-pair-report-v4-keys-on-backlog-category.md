@@ -1,10 +1,12 @@
-**Date:** 2026-08-04
-**Type:** decision
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** skills/devops-azure/SKILL.md batch write mode (8c/8e preview) — design not yet implemented
-**Overrides-convention:** no
-**Related-to:** 2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md, 2026-08-04-challenge-ado-pair-report.md, 2026-08-04-decision-ado-pair-report-states-facts-only.md, docs/plans/bar-cost-and-first-run.md
+---
+date: 2026-08-04
+type: decision
+status: active
+superseded-by: n/a
+scope: skills/devops-azure/SKILL.md batch write mode (8c/8e preview) — design not yet implemented
+overrides-convention: no
+related-to: 2026-08-04-ado-same-category-nesting-blocks-child-reorder-only.md, 2026-08-04-challenge-ado-pair-report.md, 2026-08-04-decision-ado-pair-report-states-facts-only.md, docs/plans/bar-cost-and-first-run.md
+---
 
 ## AMENDED 2026-08-04 (third time, same day) — THIS FILE'S TITLE IS WRONG. Read this before anything else.
 

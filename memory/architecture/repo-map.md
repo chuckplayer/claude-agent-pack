@@ -1,19 +1,21 @@
-**Date:** 2026-07-01
-**Type:** pattern
-**Status:** active
-**Superseded-by:** n/a
-**Scope:** global
-**Overrides-convention:** no
-**Related-to:** n/a
-**Last-updated:** 2026-08-04
-**Verified-at-commit:** b7f59f2
+---
+date: 2026-07-01
+type: pattern
+status: active
+superseded-by: n/a
+scope: global
+overrides-convention: no
+related-to: n/a
+last-updated: 2026-09-02
+verified-at-commit: e7b52f1
+---
 
 # Repo Map
 
 Directory-level map of the Claude Agent Pack. One entry per meaningful directory
 with its key files. Maintained by `/repo-map`; read by `/onboard`, tech-lead,
 `/plan`, `/refactor`, and `/scaffold`. Refresh when `git diff` shows drift from
-`Verified-at-commit`.
+`verified-at-commit`.
 
 > **Re-stamped 2026-08-04 after a history rewrite, not after a normal refresh.** The previous stamp
 > pointed at a commit that **no longer exists** — an identifier scrub rewrote all 172 commits, so every
@@ -37,7 +39,7 @@ mid-session (see `memory/known-issues/`).
 - `backlog-auditor.md` — audits a `/backlog` decomposition tree across seven dimensions; dispatched by `/backlog` and nothing else. Read-only, and holds no `Bash`, so it cannot compute a hash — `/backlog` passes current hashes at dispatch and the agent does a string comparison. Mirrors `tech-lead → devils-advocate`: the skill that built the artifact is not the check on it.
 
 ## skills/
-One directory per slash command, 29 in total; each holds a `SKILL.md`. Entry points for
+One directory per slash command, 30 in total; each holds a `SKILL.md`. Entry points for
 user-invoked workflows. Only the build and review flows orchestrate agents; the rest are
 single-purpose. `hotfix/`, `debug/`, `refactor/`, and `scaffold/` each state their plan-spine
 exemption in-file — they pass no `plan_id`, so they are exempt by construction rather than by rule.
@@ -54,20 +56,30 @@ so there is no gate in its path to exempt.
 ## scripts/
 Hook implementations (pure Node.js, Windows + POSIX safe) and shell tooling. The five
 `obsidian-*-hook.js` files are the only ones `install.sh` copies to `~/.claude/scripts/`.
-**Three checks in this directory are now blocking pipeline gates rather than manual tools** — the two
-linters below and the hook test suite. The shift happened 2026-08-03/04, after an audit found each one
-already existed while nothing invoked it.
-- `obsidian-stop-hook.js` — folds session journal/decisions/state into the vault on Stop/SessionEnd; writes `_current.md`, session logs, and `memory-snapshot.md`. Its suite `obsidian-stop-hook.test.js` (131 tests) is the pack's only automated tests, and is **gated at merge-reviewer 2b** — triggered by those two hook filenames only, **not** by `scripts/`, since it covers neither the three other `obsidian-*.js` hooks nor any `.sh` script.
-- `lint-agents.sh` — validates agent/skill frontmatter and body across `agents/` and `skills/`. **Blocking gate** (`/implement` 5c, merge-reviewer 2a); 49 checks. A malformed `description` *is* the routing contract, so a file failing this may be undispatchable however sound its body.
+**Four checks in this directory are now blocking rather than manual tools** — the three linters
+below plus the hook test suite. The first three shifted 2026-08-03/04, after an audit found each
+already existed while nothing invoked it; `lint-memory.sh` shipped 2026-09-02 already blocking.
+**`lint-memory.sh` is the one with no merge-reviewer gate** — there is no gate 2d, so the
+coordinating session and `/memory-audit` step 4 are its only invokers and its enforcement is
+instruction-strength. That asymmetry is deliberate and recorded, not an oversight.
+- `obsidian-stop-hook.js` — folds session journal/decisions/state into the vault on Stop/SessionEnd; writes `_current.md`, session logs, and `memory-snapshot.md`. Its suite `obsidian-stop-hook.test.js` (133 tests) is the pack's only automated tests, and is **gated at merge-reviewer 2b** — triggered by those two hook filenames only, **not** by `scripts/`, since it covers neither the three other `obsidian-*.js` hooks nor any `.sh` script.
+- `lint-agents.sh` — validates agent/skill frontmatter and body across `agents/` and `skills/`. **Blocking gate** (`/implement` 5c, merge-reviewer 2a); 50 checks. A malformed `description` *is* the routing contract, so a file failing this may be undispatchable however sound its body.
+- `lint-memory.sh` — validates the **frontmatter dialect** of every file under `memory/`: `---` fence on line 1, lowercase hyphenated keys, the seven required keys present, and `status:` holding one of four documented values. Blocking for the coordinating session on any changeset touching `memory/`, but **enforced by no agent gate** (see above). Deliberately does **not** close the `type:` value vocabulary, require `description:`, reject an unrecognised key, or check that `superseded-by:` resolves — two files legitimately carry prose there. Self-tests before scanning and exits **2** if a rule fails to fire on a violating fixture or fires on a compliant one; passes on an empty corpus so a fresh project is not born failing. It shipped without any `status:` value rule at all, which a bar claimed was proven — caught by test-engineer building a fixture and running it, after two code reviews had read the source.
 - `lint-plans.sh` — validates a plan's **structure** (frontmatter keys, `## Acceptance bars`, `## Deviations`, unique bar ids, typed `Evidence:`, and `Gated:` implying `Cost:`). Blocking at three call sites, all in the **coordinating session** — merge-reviewer deliberately does not run it. Takes **explicit paths only and never globs** the plan directory, and the path must be a discrete argument, never interpolated into a shell string. Its substantive rules trigger on **structured fields, never prose words** — both the `Gated:` check and the sentinel check were written or corrected for exactly that.
 - `lint-identifiers.sh` — scans the tree for real organisation, project, host, user-path and email identifiers where the placeholder convention requires a placeholder. **This repository is public.** **Blocking gate on _every_ changeset** (`/implement` 5e, merge-reviewer 2c) — the only one of the three with no path trigger, because an identifier can be introduced by any file. Ships **no in-repo denylist** (a list of forbidden strings would have to contain them); exact tokens come from a gitignored `.identifier-denylist`, **word-boundary matched**, so a denylisted token embedded in a larger string is invisible to it. **Self-tests before scanning and exits 2** — distinct from a finding's exit 1 — if any rule fails to fire on a violating fixture.
 - `setup-project.sh` — copies CLAUDE.md/docs/ and creates the `memory/` and `docs/plans/` subdirs.
 - `check-readiness.sh`, `check-updates.sh` — install verification used by `/system-check`; `check-updates` also detects installed-vs-repo drift and retired files.
 
 ## memory/
-Project memory, taxonomy under `decisions/`, `architecture/`, `context/`, `known-issues/`.
-Agents read active files before acting; `superseded`/`archived` are history only — 7 files carry those
-statuses. Density is in `known-issues/` — 24 files of platform quirks, pipeline defects found by
+Project memory, 52 files, taxonomy under `decisions/`, `architecture/`, `context/`, `known-issues/`.
+**All frontmatter is one dialect as of 2026-09-02** — fenced lowercase YAML, seven required keys,
+extra keys permitted; three incompatible dialects were normalized in `e7b52f1` and
+`docs/MEMORY-WRITING.md` is the authority. Agents read active files before acting. **8 files carry a
+non-active status: 5 `archived`, 2 `superseded`, 1 `resolved`** — and `resolved` is deliberately
+**absent from every skip filter**, because that file carries a live shell constraint alongside its
+fixed-bug narrative. Before the normalization, **0 of those 8 matched** the `status:` literal 19 pack
+files instruct agents to skip on, so every one was being read as live guidance.
+Density is in `known-issues/` — 32 files of platform quirks, pipeline defects found by
 running the pack, and per-plan challenge records written by devils-advocate during `/plan`.
 **The highest-value entries all record behaviour found by *executing* something rather than reviewing
 it**: agent files not being re-read within a session, `backlog-auditor` severities varying run-to-run
@@ -87,7 +99,8 @@ directory currently holds none — but the scheduled task still drops a new untr
 matters because merge-reviewer commits with `git add -A`.
 - `ado-delivery-pipeline-brief.md` — the delivery-pipeline design record spanning Stage 0 (`/spec-intake`), Stage 2 (`/backlog`), and the **now-shipped** tracker-write stage. Documents the item-id join key, the reciprocal key written back into a tracker (`System.Tags`, with the four rejected alternatives), and why `external_refs` alone fixes the steady state but not the crash state. Stage 2 is now `Covered`; the traceability matrix is still unbuilt but **no longer blocked**.
 - `CONVENTIONS.md` — team standards; precedence rules in CLAUDE.md govern overrides. **It does not define any of the three artifact-path keys** — only `CONVENTIONS.template.md` ships them, unfilled — so every reader falls back to the documented defaults (`docs/plans`, `docs/specs`). Two plans record that resolution explicitly.
-- `MEMORY-WRITING.md` — frontmatter spec every memory writer follows.
+- `MEMORY-WRITING.md` — frontmatter spec every memory writer follows, and the **sole authority on the dialect**. Rewritten 2026-09-02: seven required keys, extras explicitly permitted with four sanctioned ones enumerated, `status:` at four values, `type:` at seven observed values with the vocabulary **open**, `description:` optional, and the explicit rule that **immutability protects facts, not syntax** — which is what licensed a corpus-wide reformat of files the same document calls immutable point-in-time records. Its `status:` table carries the note that `resolved` is intentionally excluded from the skip filter, so a later reader does not "fix" the apparent inconsistency. **Distributed by `setup-project.sh` and never updated afterwards**, so the dialect change does not reach already-scaffolded projects and `check-readiness.sh` only checks presence.
+- `AGENT-GUIDE.md` — practical usage reference: first-time project setup, the recommended workflow, and two worked memory-file examples. Those examples put the `---` fence first and the `# Title` **below** it, matching what the corpus actually looks like; an earlier form had the title above the frontmatter, which the current dialect forbids.
 - `CONVENTIONS.template.md` — seed copied by setup-project when no conventions exist. Ships all three artifact-path keys as `[e.g., ...]` placeholders, which every reader treats as unset.
 
 ## docs/plans/
@@ -97,7 +110,7 @@ Committed alongside the implementation and never deleted, so this directory accu
 Created eagerly by `setup-project.sh`; agents create it lazily on first write.
 Each plan's `## Deviations` section is written by the coordinating session at `/implement` step 10,
 never by tech-lead (which leaves a sentinel) and never by an engineer.
-Holds 5 plans. `backlog.md` is the largest by a wide margin and doubles as the worked example of a
+Holds 10 plans. `backlog.md` is the largest by a wide margin and doubles as the worked example of a
 plan whose bars caught real defects — its `## Deviations` records bars that failed and were fixed
 rather than amended.
 `devops-azure-batch-write.md` is the counter-example worth reading beside it: 17 bars, and its
@@ -117,4 +130,5 @@ Pack installation and metadata.
 - `CLAUDE.md` — agent orchestration rules, plan-spine rules, engineer responsibilities, and Obsidian capture instructions. Its `backlog-auditor` routing section deliberately explains why `/backlog` is *not* one of the four plan-spine-exempt skills, since the two exemptions have different causes and get conflated. The same section records that `/devops-azure` batch write mode is the only writer of `external_refs:` and enters no gate — stated there rather than in a routing list, because the routing sections govern agents and batch mode is not one. Also holds **"A stage is complete when it reports, not when its agent stops"**: seven agents in one session finished correctly and went idle without reporting, so the file now forbids inferring a verdict from process state and prefers a re-runnable check over a trusted report — which is why the three script gates exist and why merge-reviewer holds `Bash`.
 - `README.md` — flow selection, gate authority, the pack's design patterns, and the "Plan Spine" section documenting the three artifact-path keys and their defaults. Its spelled-out agent and skill counts are always recounted, never incremented.
 - `VERSION` — pack version stamp checked by `check-updates.sh`.
-- `.claude/` — **holds no tracked files.** `settings.local.json` was untracked 2026-08-04: it published one machine's permission allowlist, including an AD username, to a public repo. `.gitignore` had listed it from the start but the entry was inert, because gitignore does not apply to an already-tracked file. Machine-level settings live in `~/.claude/settings.json`.
+- `.claude/` — **holds no tracked files.** `settings.local.json` was untracked 2026-08-04: it published one machine's permission allowlist, including an AD username, to a public repo. `.gitignore` had listed it from the start but the entry was inert, because gitignore does not apply to an already-tracked file. Machine-level settings live in `~/.claude/settings.json`. **`.claude/worktrees/` was added to `.gitignore` 2026-09-02** — the `/implement` pipeline creates one engineer worktree per dispatch there, and merge-reviewer holds `git add -A`. A registered worktree is normally skipped by `git add -A`; the case that bites is one left by a partially-failed cleanup, whose `.git` pointer is gone, leaving an ordinary directory tree. `git worktree list` is unaffected by the rule, so cleanup can still see strays.
+- `.gitignore` — three entries carry incident history rather than convention: `settings.local.json` and `.claude/worktrees/` above, and `.identifier-denylist`, which is gitignored *because* committing it would publish exactly the strings it exists to catch.

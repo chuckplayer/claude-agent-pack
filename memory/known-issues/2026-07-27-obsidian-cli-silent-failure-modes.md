@@ -1,10 +1,13 @@
 ---
-name: obsidian-cli-silent-failure-modes
+date: 2026-07-27
+type: known-issue
+status: active
+superseded-by: n/a
+scope: n/a
+overrides-convention: no
+related-to: n/a
+discovered: 2026-07-27
 description: The official Obsidian CLI returns exit 0 on every error, silently ignores an unrecognized vault= argument and writes to the active vault instead, and creates a 0-byte file when content= is large while still reporting Created -- so neither exit codes, vault targeting, nor success messages can be trusted
-metadata:
-  type: known-issue
-  status: active
-  discovered: 2026-07-27
 ---
 
 The official Obsidian CLI (https://obsidian.md/cli, bundled with the desktop app and enabled

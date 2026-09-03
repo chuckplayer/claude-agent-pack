@@ -1,11 +1,13 @@
-**Date:** 2026-04-26
-**Last-updated:** 2026-05-14
-**Type:** finding
-**Status:** archived
-**Superseded-by:** 2026-05-14-decision-wiki-skill-family-resolution.md
-**Scope:** skills/wiki-*, agents/wiki-*, scripts/wiki-*
-**Overrides-convention:** no
-**Related-to:** n/a
+---
+date: 2026-04-26
+type: finding
+status: archived
+superseded-by: 2026-05-14-decision-wiki-skill-family-resolution.md
+scope: skills/wiki-*, agents/wiki-*, scripts/wiki-*
+overrides-convention: no
+related-to: n/a
+last-updated: 2026-05-14
+---
 
 > Most items resolved by implementation choices. L15 and L16 remain open —
 > see superseded-by file. Archived — agents may skip this file.
