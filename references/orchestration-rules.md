@@ -202,7 +202,7 @@ assumption:
   preview-and-confirm needs a human interlocutor a subagent cannot obtain.
 - **Hours are never set.** Elapsed wall-clock goes in a discussion comment that explicitly names
   `Microsoft.VSTS.Scheduling.CompletedWork` as not set, because that field feeds velocity reporting
-  and an automated run's elapsed time is not effort. `skills/devops-azure/SKILL.md`'s
+  and an automated run's elapsed time is not effort. `skills/devops-azure/batch.md`'s
   `Where it lives` table is the authority on where each ADO fact belongs.
 
 **A work item id is not a pull request id.** They are separate numbering spaces; only `/implement`
