@@ -1,11 +1,11 @@
 # Plan gate (merge-reviewer gate 4a and the Deviations tiers)
 
-Read by `merge-reviewer` **only when the invoking skill passed it a `plan_id` and path**, and by
-`tech-lead` when it writes `## Calls made for you` (for the checkable-call definition). It is the single
+Read by `merge-reviewer` **only when the invoking skill passed it a `plan_id` and path**. It is the single
 authority on how a bound plan is enforced: the four plan states, the checks on a plan's bars, and the three
-tiers that enforce `## Deviations`. It also carries the checkable-call definition that `tech-lead` follows
-when it writes `## Calls made for you`, and the Tier 1 grep needle that `scripts/lint-plans.sh` shares. Do not restate any of it elsewhere: a second description is a second thing
-to keep in sync, and it will lose.
+tiers that enforce `## Deviations`, including the Tier 1 grep needle that `scripts/lint-plans.sh` shares. The
+definition of a checkable call, which Tier 3 applies and `tech-lead` follows when it writes the calls, is in
+`checkable-calls.md`. Do not restate any of it elsewhere: a second description is a second thing to keep in
+sync, and it will lose.
 
 Gates 1-3c, 4 and 4b, and 5 stay in `merge-reviewer.md`, as does the rule that a plan path is never put into
 a shell command.
@@ -129,37 +129,11 @@ Work **from the calls, never from the diff.** Read each entry in `## Calls made 
 the concrete artifact it names, and look only for that. **Do not scan the diff hunting for
 surprises** — that is unbounded, and it is how this check would start crying wolf.
 
-**This is the single authority on what counts as a checkable call.** Do not restate the lists below
-in another file; point at this section instead.
-
-A call is **checkable** when it names one thing you can look up:
-
-- a named dependency, library, tool, or runner
-- a named file or directory path
-- a named type, function, or endpoint
-- a specific numeric or enumerated value
-- an explicit will/won't about one of the above
-
-**Permanently out of scope**, because none of these yields a lookup target: adjectives and quality
-claims ("keep it maintainable", "prefer clarity"), effort estimates, motivations, risk narration,
-sequencing intent — and **pattern names**.
-
-Pattern names are the exception worth explaining, because they look checkable and are not. "Use the
-repository pattern for data access" names a *pattern*, not an artifact: there is no single thing to
-look up, and whether a given `DbContext` reference violates it is an architecture judgment with
-legitimate readings on both sides — a read-only projection, a bulk operation, a half-finished
-refactor. **That judgment already has an owner, and it is not you.** `code-reviewer` reads
-`docs/CONVENTIONS.md` and reviews pattern compliance, `smell-reviewer` catches the structural form,
-both run earlier, and a code-reviewer Critical already blocks. Adjudicating it again here would be a
-second and worse ruling on a question answered upstream — made by the only agent holding `Bash` and
-the commit.
-
-The same intent written falsifiably *is* in scope, and the difference is entirely in the writing:
-
-> "All order data access goes through `IOrderRepository`. No `DbContext` reference outside
-> `Infrastructure/Repositories/`."
-
-That names a type and a directory boundary, so it can be looked up and contradicted.
+**The definition of a checkable call is in `{{AGENT_PACK_REFS}}/checkable-calls.md`** (if that path is
+relative, prefix it with the project root); read it before you apply this tier. It is the single authority,
+and `tech-lead` reads it too when it writes the calls. **If it cannot be read, Tier 3 cannot be applied: FAIL
+gate 4a** — `reason: checkable-calls reference unreadable at <path>` — rather than judging calls against a
+definition from memory.
 
 Your question is narrower than "was the architecture right." It is **"did the plan's record stay
 honest?"** Conflating the two is how this check learns to wave everything through, which is worse

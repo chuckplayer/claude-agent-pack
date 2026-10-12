@@ -130,7 +130,7 @@ The rule of thumb: name an artifact, not a quality. `"Use Vitest"` and
 and `"keep it maintainable"` do not — the first names a *pattern* rather than an artifact, and
 pattern compliance belongs to code-reviewer, which reads `docs/CONVENTIONS.md` for exactly that.
 
-**The checkable-call definition lives in `{{AGENT_PACK_REFS}}/plan-gate.md` — read it there rather
+**The checkable-call definition lives in `{{AGENT_PACK_REFS}}/checkable-calls.md` — read it there rather
 than working from a list here** (if that path is relative, prefix it with the project root). It is the
 single authority, and a copy in this file would go stale the first time it changes. **If it cannot be
 read, do not write the plan file at all:** stop and report the path that failed, because

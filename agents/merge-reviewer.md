@@ -184,7 +184,7 @@ Check whether the changeset touches `agents/`, `skills/`, `references/`, `CLAUDE
 - If it does: verify `scripts/lint-agents.sh` was run and exited **0** (exit **2** means the linter's own self-test failed, which is a FAIL, not a pass). **FAIL if it reported a failure or was not run.** You hold `Bash` — if the report does not say, run it yourself rather than assuming; that is cheaper than a wrong verdict.
 - If it does not: PASS (skip), and say so.
 
-> Why this is a gate: a malformed `description` **is** the routing contract, so an agent or skill that fails the linter may be undispatchable or mis-routed regardless of how good its body is. This gate exists because a skill description shipped at 1346 characters against a 1024 limit through four review stages and this gate, into two pushed commits — the check took one command and nothing ran it. Verify mechanically; do not accept "it looks fine".
+> Why this is a gate: a malformed `description` **is** the routing contract, so an agent or skill that fails the linter may be undispatchable or mis-routed regardless of how good its body is. The check takes one command, so verify it mechanically; do not accept "it looks fine".
 
 ### 2b. Obsidian hook test gate
 
@@ -193,7 +193,7 @@ Check whether the changeset touches `scripts/obsidian-stop-hook.js` or `scripts/
 - If it does: verify `node scripts/obsidian-stop-hook.test.js` was run and exited **0**. **FAIL if it reported a failure or was not run.** You hold `Bash` — run it yourself rather than assuming; it needs no npm install and finishes in seconds.
 - If it does not: PASS (skip), and say so.
 
-> Why this is a gate, and why the trigger is two filenames rather than `scripts/`: the suite covers those two hooks only, so running it after a change to any other file in `scripts/` yields a PASS that verified nothing in the changeset. It became a gate because 131 passing tests sat un-invoked by any pipeline until 2026-08-03 — several of them named as regressions for bugs already fixed once, which is precisely what an unrun suite fails to protect. Same class as gate 2a, found by auditing for it.
+> Why this is a gate, and why the trigger is two filenames rather than `scripts/`: the suite covers those two hooks only, so running it after a change to any other file in `scripts/` yields a PASS that verified nothing in the changeset. An unrun suite protects nothing, which is why this is a gate and not a suggestion.
 
 ### 2c. Identifier lint gate
 
@@ -207,7 +207,7 @@ bash scripts/lint-identifiers.sh
 - Exit **1** → **FAIL**, `reason: real identifier present in a public repo`. Report the `file:line` hits verbatim and route to whoever wrote them.
 - Exit **2** → **FAIL**, `reason: identifier checker self-test failed`. This is *not* a finding about the changeset: the script could not prove its own rules fire, so its verdict is meaningless. **Never convert an exit 2 into a PASS.** Route it as a defect in the checker.
 
-> Why this gate has no path trigger, unlike 2a and 2b. Those two check specific trees and specific files, so a changeset outside their scope legitimately skips them. An identifier can be introduced by **any** file in **any** commit, so a path trigger would be a hole rather than a scope, and a skip branch would be the thing that lets one through. This repository is **public**, and the reason this gate exists is that the rule pre-existed and nothing enforced it — `docs/azure-devops-github-skills-brief.md` forbade hardcoded org names four lines above a list of them. Enforcing it late required scrubbing 115 references and rewriting all 172 commits, and **the pre-rewrite commits remained publicly fetchable afterwards.** A leak here is not undoable, which is why this is the one gate whose justification is prevention rather than a missed check.
+> Why this gate has no path trigger, unlike 2a and 2b. Those two check specific trees and specific files, so a changeset outside their scope legitimately skips them. An identifier can be introduced by **any** file in **any** commit, so a path trigger would be a hole rather than a scope, and a skip branch would be the thing that lets one through. This repository is **public**, and a leak there is not undoable — pushed commits stay publicly fetchable even after a history rewrite — which is why this is the one gate whose justification is prevention rather than a missed check.
 
 ### 3. Security review gate
 
@@ -280,7 +280,8 @@ would produce a confident verdict about the wrong thing.
   and `/refactor` never pass one.
 - **A `plan_id` was passed → read `{{AGENT_PACK_REFS}}/plan-gate.md` and apply it.** If that path is
   relative, prefix it with the project root. It is the single authority on the four plan states, the checks
-  on a plan's bars, the three `## Deviations` tiers, and the checkable-call definition.
+  on a plan's bars, and the three `## Deviations` tiers. Tier 3 points at a second, small reference for the
+  checkable-call definition; its own fail-closed rule is in `plan-gate.md`.
 - **If that file cannot be read, FAIL gate 4a** — `reason: plan-gate reference unreadable at <path>`. Do not
   downgrade it to `not applicable`, and do not pass the plan from memory: a `plan_id` means the caller
   asserted a plan governs this run, so an unenforceable plan is a failure rather than a quiet pass.
