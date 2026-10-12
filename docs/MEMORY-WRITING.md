@@ -12,7 +12,7 @@ value is *true*, and it deliberately does not close the `type:` vocabulary (see 
 YYYY-MM-DD-{prefix}-brief-slug.md
 ```
 
-The prefix is determined by the agent's subdirectory routing table (see each agent's own instructions for which prefix applies to which situation).
+The prefix is determined by the agent's subdirectory routing table (see each agent's own instructions for which prefix applies to which situation; tech-lead's are in `tech-lead-memory-writes.md` among the pack's installed references).
 
 **Exception — singleton living documents:** A file that is continuously refreshed in place rather than written once uses a fixed, undated name. The only current instance is `memory/architecture/repo-map.md` (maintained by `/repo-map`), which carries two extra frontmatter fields, `last-updated:` and `verified-at-commit:`. Do not date these files — the date convention is for immutable point-in-time records.
 

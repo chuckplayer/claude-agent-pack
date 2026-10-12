@@ -35,9 +35,19 @@ grep -m1 '^- \*\*Plan directory:\*\*' docs/CONVENTIONS.md 2>/dev/null | sed 's/^
 ```
 
 Fall back to `docs/plans` when that returns nothing, or when the value fails **any condition in the
-guard table in `agents/tech-lead.md`** — read that table rather than working from a list here. It is
-the single authority on what is rejected, and a copy in this file would go stale the first time it
-grows a row. Pass the resolved directory and the current branch name in the dispatch prompt.
+table in `{{AGENT_PACK_REFS}}/plan-directory-guard.md`** (if that path is relative, prefix it with the
+project root) — read that table rather than working from a list here. It is the single authority on what
+is rejected, and a copy in this file would go stale the first time it grows a row. If that file cannot be
+read, use `docs/plans` and ignore the configured value. Pass the resolved directory and the current
+branch name in the dispatch prompt.
+
+**If tech-lead declines a plan-file dispatch — creating a plan or revising one — because a reference it
+needs is unreadable, stop.** That covers any reference it names: the directory guard, the plan-file
+authoring rules, the bar-soundness table, or the plan gate. Report which path failed and that the pack's
+installed references are missing or out of date (re-run the pack's `install.sh`). Do not re-dispatch — a
+second dispatch cannot fix a missing file — and do not write or edit the plan yourself in its place: that
+would skip the directory guard and the rules the plan is checked against. A refusal leaves no plan to lint
+and no revision to confirm, so the lint step below and the post-audit revision rules do not apply to it.
 
 tech-lead re-applies that guard to whatever it receives, so the two checks are genuinely
 redundant — but do not rely on that as a reason to skip this one. Resolving here is what lets you
@@ -69,7 +79,8 @@ bash scripts/lint-plans.sh docs/plans/<plan-id>.md
 **A non-zero exit blocks.** Missing frontmatter keys, a missing `## Acceptance bars` or
 `## Deviations`, duplicate bar ids, an untyped `Evidence:` line, or a `Gated:` field with no `Cost:`
 line all mean the plan cannot be enforced by merge-reviewer's gate 4a. Route the named failure back to
-tech-lead and re-run until it exits 0. Every one of these is something the plan's author can fix
+tech-lead and re-run until it exits 0 — unless tech-lead refused the dispatch because a reference was
+unreadable (see above), in which case stop, and likewise stop if a route-back is itself refused. Every one of these is something the plan's author can fix
 before any pipeline starts, which is exactly why the check belongs here and not at the end.
 
 One output line is **not** a failure: `[--] ## Deviations still holds its sentinel` is correct at this
@@ -141,7 +152,9 @@ honest *"I cannot."* That was luck, not a step.
   Sequential is not a preference here; it is the entire control.
 - **A revision dispatch happens only after devils-advocate has reported**, and the dispatch tells
   tech-lead to `Read` the file and use `Edit` — never a whole-file `Write`. Both agents carry that rule
-  in their own files; stating it in the dispatch is what makes it available at the moment it applies.
+  (tech-lead in `{{AGENT_PACK_REFS}}/plan-file-authoring.md`, which it reads for any plan-file dispatch,
+  devils-advocate in its own file); stating it in the dispatch is what makes it available at the moment it
+  applies.
 - **After any post-audit revision, re-ask devils-advocate to confirm its edits survived.** Pass the plan
   path and ask it to check the file as it now stands, by substance rather than wording.
   **The re-ask only works because the auditor wrote a memory file** — a later dispatch of it does not carry

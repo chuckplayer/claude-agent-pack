@@ -263,7 +263,7 @@ for plan in "$@"; do
     #
     # This literal is the single authority shared with references/plan-gate.md
     # Tier 1, which greps the same string. Keep them identical: if tech-lead's
-    # sentinel line in agents/tech-lead.md ever changes, all three move together.
+    # sentinel line in references/plan-file-authoring.md ever changes, all three move together.
     if grep -qF "## Deviations" "$plan"; then
         case "$(deviations_state "$plan")" in
             empty)

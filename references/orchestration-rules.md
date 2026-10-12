@@ -89,7 +89,7 @@ a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `t
 - **tech-lead** writes the plan and its bars — but **only when the invoking skill instructs it**,
   never unconditionally. It applies a guard rejecting unsafe and placeholder plan-directory values,
   because its `Write` tool creates parent directories, so an unguarded config value could write
-  outside the repo. **The guard table in `agents/tech-lead.md` is the single authority on what is
+  outside the repo. **The guard table in `plan-directory-guard.md` is the single authority on what is
   rejected — do not restate the conditions here or anywhere else.** An enumeration copied into a
   second file goes stale the first time the table grows a row, and a stale list that reads as
   authoritative is worse than a pointer.
