@@ -98,7 +98,7 @@ a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `t
   cannot take the judgement with it. That section is the only part of the plan file it writes rather
   than edits, and it leaves the `## Deviations` sentinel alone. It is the only
   check on bar quality; tech-lead both writes the bars and is measured by them. It applies the
-  **`### Bar soundness` table in `agents/tech-lead.md`**. That table is the single authority and
+  **bar-soundness reference (`bar-soundness.md`)**. That table is the single authority and
   **defines its own scope** — do not restate its rows, its row count, or its scope here or in any other
   file, for the same reason the plan-directory guard table is cited rather than copied. This pointer is
   deliberately bare: an earlier version of it described the table as covering "the ways an `Evidence:`
@@ -117,8 +117,8 @@ a list item with a stable `BAR-nnn` id and a required `Evidence:` line naming `t
   nothing diverged.
 - **merge-reviewer** enforces the bars in gate 4a — an extension of the existing test-coverage
   gate, not a new gate. It does **not** flip a status field and does **not** delete the plan. It
-  also enforces `## Deviations` in three tiers; `agents/merge-reviewer.md` is the single authority
-  on what each tier checks, so do not restate them here.
+  also enforces `## Deviations` in three tiers; the plan-gate reference (`plan-gate.md`) is the single
+  authority on what each tier checks, so do not restate them here.
 
 **`scripts/lint-plans.sh` checks a plan's structure, and it is the coordinating session's job, not
 merge-reviewer's.** Three triggers, each blocking, each passing the plan path: after **tech-lead
@@ -139,8 +139,8 @@ Three constraints on it, each for a reason already established elsewhere:
 - **It takes explicit paths and never globs a plan directory**, for exactly the reason consumption is
   opt-in below: a glob would let one run validate and report on a plan belonging to unrelated work.
 - **Pass the path as a discrete argument; never interpolate it into a shell string.** The path derives
-  from a `docs/CONVENTIONS.md` value controlled by the host repository, and `agents/merge-reviewer.md`
-  documents in full why that is a command-substitution risk rather than a style question. The same
+  from a `docs/CONVENTIONS.md` value controlled by the host repository, and the plan-gate reference
+  (`plan-gate.md`) documents in full why that is a command-substitution risk rather than a style question. The same
   reasoning applies to any caller, not only to that agent.
 - **merge-reviewer deliberately does not run it.** It is forbidden from putting the plan path into a
   shell command at all, and it holds `git commit`, `git add -A`, and branch deletion — so it keeps

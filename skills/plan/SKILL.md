@@ -56,7 +56,8 @@ bash scripts/lint-plans.sh docs/plans/<plan-id>.md
 - **Pass the plan path as a discrete argument.** Never interpolate it into a longer shell string and
   never build a command around it. The directory half comes from a `docs/CONVENTIONS.md` value the
   host repository controls, which makes an interpolated path a command-substitution risk rather than a
-  style question; `agents/merge-reviewer.md` documents that reasoning in full.
+  style question; `{{AGENT_PACK_REFS}}/plan-gate.md` documents that reasoning in full (if that path is
+  relative, prefix it with the project root).
 - **Pass only the plan this run produced.** The script never globs the plan directory, for the same
   reason consumption is opt-in: a glob would validate and report on a plan belonging to unrelated work.
   The long-form plan-spine rules are in `{{AGENT_PACK_REFS}}/orchestration-rules.md` ("Plan spine");

@@ -87,7 +87,7 @@ Run the full agent pipeline for the task the user described:
    bash scripts/lint-plans.sh <the path you were handed>
    ```
 
-   Pass the path as a **discrete argument** — never interpolated into a longer shell string, for the command-substitution reason `agents/merge-reviewer.md` sets out in full. Pass only the plan handed to this run; the script never globs the directory. If `bash` is not on the shell's PATH, use the Bash tool rather than skipping.
+   Pass the path as a **discrete argument** — never interpolated into a longer shell string, for the command-substitution reason `{{AGENT_PACK_REFS}}/plan-gate.md` sets out in full (if that path is relative, prefix it with the project root). Pass only the plan handed to this run; the script never globs the directory. If `bash` is not on the shell's PATH, use the Bash tool rather than skipping.
 
    **A non-zero exit stops the run** — report the failure and ask the user to fix the plan. This is worth one command at the start: `/implement` adopts plans it did not write, and a plan handed in by a caller other than `/plan` may have been through neither tech-lead's writer nor devils-advocate's audit. Without this, a plan missing `## Deviations` or carrying an untyped `Evidence:` line fails at merge-reviewer's gate 4a instead — after every engineer, reviewer, and test stage has already run. `[--] ## Deviations still holds its sentinel` is **not** a failure here; step 10 is where that section gets filled in.
 
