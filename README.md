@@ -42,6 +42,38 @@ git clone https://github.com/chuckplayer/claude-agent-pack.git
 bash ./claude-agent-pack/install.sh
 ```
 
+### Install scope: user or project
+
+The installer has two scopes. Pick one per machine-and-project; the pack refuses to put a second copy in the other scope.
+
+| | `--scope user` (default) | `--scope project` |
+|---|---|---|
+| Installs to | `~/.claude` | `<project>/.claude` |
+| Who gets it | You, in every project | Everyone who clones the project |
+| Also does | `settings.json` (`worktree.baseRef`), Obsidian hooks, Codex setup | Nothing outside `.claude/` -- those steps are skipped entirely |
+| Typical use | Your own machine | A team that wants the pack versioned with the code |
+
+```bash
+# user scope: same as running with no flags
+bash ./claude-agent-pack/install.sh
+
+# project scope, into the current directory's git toplevel
+cd <project> && bash <pack-dir>/install.sh --scope project
+
+# project scope, a project elsewhere
+bash <pack-dir>/install.sh --scope project --project-dir <project>
+```
+
+Notes that matter when you choose:
+
+- **Commit `.claude/`** after a project install. The pack's own `agent-pack/.gitignore` keeps installer scratch directories out of the commit; the marker and the references stay committable.
+- **A second scope is refused.** Claude Code resolves a same-named agent from the project first but a same-named skill from the user scope first, so with both installed an agent and a skill of the same name can come from different copies. Pass `--force` only if you want both live and accept that.
+- **Detection has limits.** The other scope counts as holding the pack when its `agent-pack/.installed` marker exists, or at least half of the pack's agent names are present (older installs). From user scope the installer can inspect only one project -- `--project-dir`, or else the current directory's git toplevel -- so a project elsewhere on disk is not detected.
+- **Skills are replaced whole.** Each `skills/<name>/` directory the pack ships is replaced as a directory, so a file you added inside a pack-named skill directory is removed. Interactively you are asked first (default No). With `--yes` or without a TTY, those files are first copied to `<scope>/agent-pack/removed-<timestamp>/` and the location is printed.
+- **References.** Longer, rarely needed reference text is installed under `<scope>/agent-pack/references/` and read on demand, which keeps the always-loaded prompts smaller. The installer renders the `{{AGENT_PACK_REFS}}` token in agent and skill text to that path, and refuses to finish if a token survives rendering.
+- **A symlinked `~/.claude`, `agents/` or `skills/` is refused**, because the installer swaps directories and will not write through a link.
+- **Run time.** The installer stages everything, checks it, then swaps with rollback, so an interrupted run leaves your previous install in place. On Windows with Git Bash a full install takes tens of seconds. `scripts/lint-agents.sh` takes about a minute.
+
 After the installer runs, scaffold each project using the setup script. Replace `<pack-dir>` with the path to your clone and `<project>` with your project root:
 
 ```bash
@@ -373,15 +405,18 @@ Place an agent file in `.claude/agents/` in the project root to override the glo
 To check whether your installed agents and skills are current before pulling:
 
 ```bash
-bash scripts/check-updates.sh
+bash scripts/check-updates.sh                        # user scope
+bash scripts/check-updates.sh --scope project        # <project>/.claude, from inside the project
 ```
+
+`check-updates.sh` exits 0 when everything is current, 1 when something needs action, and 2 when a file could not be rendered or compared, so its counts cannot be trusted.
 
 To pull and reinstall:
 
 ```bash
 # from your clone directory
 git pull
-bash install.sh
+bash install.sh                  # or: bash install.sh --scope project --project-dir <project>
 ```
 
 Agents are updated in-place. Re-running the installer is safe -- it is idempotent.
@@ -389,10 +424,13 @@ Agents are updated in-place. Re-running the installer is safe -- it is idempoten
 ## Uninstalling
 
 ```bash
-bash <pack-dir>/uninstall.sh
+bash <pack-dir>/uninstall.sh                                  # user scope (default)
+bash <pack-dir>/uninstall.sh --scope project --project-dir <project>
 ```
 
-The uninstaller removes agents from `~/.claude/agents/`, skills from `~/.claude/skills/`, all five installed Obsidian hook scripts (`obsidian-stop-hook.js`, `obsidian-prompt-hook.js`, `obsidian-agent-hook.js`, `obsidian-context-hook.js`, `obsidian-memory-hook.js`) plus their `settings.json` hook entries, and all Obsidian env vars (`OBSIDIAN_VAULT_PATH`, `OBSIDIAN_PROJECTS_FOLDER`, `OBSIDIAN_CLI_MODE`, `OBSIDIAN_REST_API_KEY`, `OBSIDIAN_REST_API_PORT`, `OBSIDIAN_REST_API_HTTPS`) from `~/.claude/settings.json` — all after confirmation. Project-level `memory/` directories and anything already written to your vault are not touched.
+A project-scope uninstall removes only the pack's files under `<project>/.claude` and never touches `settings.json`. It removes a pack-named file only when that scope holds a pack install, and, for installs without the marker, only when the file's content matches what this pack version installs. Anything else is listed as foreign and kept unless you pass `--force`. If a failed install left a staging directory holding set-aside copies, the uninstaller refuses and tells you where it is rather than deleting the only copy of your previous install.
+
+The user-scope uninstaller removes agents from `~/.claude/agents/`, skills from `~/.claude/skills/`, all five installed Obsidian hook scripts (`obsidian-stop-hook.js`, `obsidian-prompt-hook.js`, `obsidian-agent-hook.js`, `obsidian-context-hook.js`, `obsidian-memory-hook.js`) plus their `settings.json` hook entries, and all Obsidian env vars (`OBSIDIAN_VAULT_PATH`, `OBSIDIAN_PROJECTS_FOLDER`, `OBSIDIAN_CLI_MODE`, `OBSIDIAN_REST_API_KEY`, `OBSIDIAN_REST_API_PORT`, `OBSIDIAN_REST_API_HTTPS`) from `~/.claude/settings.json` — all after confirmation. Project-level `memory/` directories and anything already written to your vault are not touched.
 
 ## Agent Dashboard
 

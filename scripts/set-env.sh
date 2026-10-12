@@ -5,33 +5,36 @@
 # settings.json lives at the same relative path on macOS, Linux, and Windows.
 #
 # Usage: scripts/set-env.sh KEY=VALUE [KEY=VALUE ...]
+#
+# Uses scripts/lib/pack-common.sh, which always sits beside this script: nothing
+# in the pack copies set-env.sh out of the checkout (the skills invoke it in place
+# as `bash scripts/set-env.sh`). The JSON-tool probe and the secure settings
+# writer (exclusive 0600 temp file, mode preserved, UTF-8, symlink-safe, atomic
+# rename, python always -I) are the library's -- not a private copy.
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "$#" -eq 0 ]; then
     echo "Usage: $0 KEY=VALUE [KEY=VALUE ...]" >&2
     exit 1
 fi
 
-# Detect JSON tool: prefer python3/python, fall back to node.
-# Liveness-test each candidate -- Windows ships a python3 Store stub in PATH
-# that exits non-zero when called non-interactively, so we cannot trust
-# command -v alone. (Mirrors the detection in install.sh.)
-json_tool=""
-_try_json_tool() {
-    command -v "$1" &>/dev/null || return 1
-    case "$1" in
-        python*) "$1" -c 'import sys; sys.exit(0)' &>/dev/null 2>&1 || return 1 ;;
-        node)    "$1" -e  'process.exit(0)'         &>/dev/null 2>&1 || return 1 ;;
-    esac
-    json_tool="$1"
-}
-_try_json_tool python3 || _try_json_tool python || _try_json_tool node || true
+PACK_LIB="$SCRIPT_DIR/lib/pack-common.sh"
+if [ ! -f "$PACK_LIB" ]; then
+    echo "ERROR: $PACK_LIB is missing -- incomplete pack checkout." >&2
+    exit 1
+fi
+# shellcheck source-path=SCRIPTDIR source=lib/pack-common.sh
+. "$PACK_LIB"
 
-if [ -z "$json_tool" ]; then
+if ! pack_find_json_tool; then
     echo "ERROR: python3 or node is required to update settings.json -- neither found." >&2
     exit 1
 fi
 
+# Validate every pair before writing any of them.
+pairs=()
 for pair in "$@"; do
     key="${pair%%=*}"
     value="${pair#*=}"
@@ -39,31 +42,17 @@ for pair in "$@"; do
         echo "ERROR: '$pair' is not in KEY=VALUE form" >&2
         exit 1
     fi
+    pairs+=("$key" "$value")
+done
 
-    if [ "$json_tool" = "node" ]; then
-        node - "$key" "$value" <<'JSEOF'
-const fs=require('fs'),os=require('os'),path=require('path');
-const [key,value]=process.argv.slice(2);
-const p=path.join(os.homedir(),'.claude','settings.json');
-const s=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
-if(!s.env)s.env={};
-s.env[key]=value;
-fs.mkdirSync(path.dirname(p),{recursive:true});
-fs.writeFileSync(p,JSON.stringify(s,null,2)+'\n');
-JSEOF
-    else
-        "$json_tool" - "$key" "$value" <<'PYEOF'
-import json, os, sys
-key, value = sys.argv[1], sys.argv[2]
-p = os.path.expanduser("~/.claude/settings.json")
-s = json.load(open(p)) if os.path.exists(p) else {}
-s.setdefault("env", {})[key] = value
-os.makedirs(os.path.dirname(p), exist_ok=True)
-with open(p, "w") as f:
-    json.dump(s, f, indent=2)
-    f.write("\n")
-PYEOF
-    fi
+# "~/..." is expanded by the interpreter (python expanduser / node os.homedir()),
+# exactly as this script always resolved it.
+# shellcheck disable=SC2088  # the tilde is for the interpreter, not the shell
+if ! pack_settings_set_env "~/.claude/settings.json" "${pairs[@]}"; then
+    echo "ERROR: failed to update ~/.claude/settings.json -- the existing file is unchanged." >&2
+    exit 1
+fi
 
-    echo "[ok] env: $key=$value"
+for (( i=0; i<${#pairs[@]}; i+=2 )); do
+    echo "[ok] env: ${pairs[$i]}=${pairs[$((i + 1))]}"
 done

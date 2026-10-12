@@ -234,9 +234,9 @@ Check whether TypeScript or Vue files were changed in this task.
 
 ### 2a. Agent and skill lint gate
 
-Check whether the changeset touches `agents/` or `skills/`.
+Check whether the changeset touches `agents/`, `skills/`, `references/`, `CLAUDE.md`, or `docs/CLAUDE.template.md`. `references/` is on the list because an agent or skill reaches a reference only through a pointer, and a rename or deletion that touches nothing else would otherwise skip the check that finds the now-dangling pointer.
 
-- If it does: verify `scripts/lint-agents.sh` was run and exited **0**. **FAIL if it reported a failure or was not run.** You hold `Bash` — if the report does not say, run it yourself rather than assuming; that is cheaper than a wrong verdict.
+- If it does: verify `scripts/lint-agents.sh` was run and exited **0** (exit **2** means the linter's own self-test failed, which is a FAIL, not a pass). **FAIL if it reported a failure or was not run.** You hold `Bash` — if the report does not say, run it yourself rather than assuming; that is cheaper than a wrong verdict.
 - If it does not: PASS (skip), and say so.
 
 > Why this is a gate: a malformed `description` **is** the routing contract, so an agent or skill that fails the linter may be undispatchable or mis-routed regardless of how good its body is. This gate exists because a skill description shipped at 1346 characters against a 1024 limit through four review stages and this gate, into two pushed commits — the check took one command and nothing ran it. Verify mechanically; do not accept "it looks fine".

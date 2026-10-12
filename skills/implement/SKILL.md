@@ -170,7 +170,7 @@ Run the full agent pipeline for the task the user described:
 
    If both frontend-engineer and mcp-engineer ran in parallel, invoke ts-linter **once** after both complete, passing all modified `.ts` and `.vue` files from both engineers combined.
 
-5c. **lint-agents** — run whenever the changeset touches **`agents/`** or **`skills/`**, after the files are written and **before code-reviewer**. This is a **blocking gate**, on the same footing as ts-linter:
+5c. **lint-agents** — run whenever the changeset touches **`agents/`**, **`skills/`**, **`references/`**, **`CLAUDE.md`**, or **`docs/CLAUDE.template.md`**, after the files are written and **before code-reviewer**. The last three are on the list because the linter also checks every on-demand reference pointer, and a changeset that only renames or deletes a reference would otherwise skip the one check that finds the dangling pointer. This is a **blocking gate**, on the same footing as ts-linter:
 
    ```bash
    bash scripts/lint-agents.sh
@@ -178,9 +178,9 @@ Run the full agent pipeline for the task the user described:
 
    Run the script directly rather than invoking the `/lint-agents` skill — that skill exists for manual, user-invoked runs, and this is orchestration. On a machine where `bash` is not on the shell's PATH, use the Bash tool rather than skipping the step.
 
-   A **non-zero exit fails the pipeline.** Route the specific failure back to whoever wrote the file, fix it, and re-run until it exits 0. Do not proceed to code-reviewer on a FAIL: a malformed `description` is the routing contract itself, so an agent or skill that fails this check may be undispatchable or mis-routed no matter how good its body is, and a code-reviewer PASS on it means nothing.
+   A **non-zero exit fails the pipeline** — exit 1 is a finding, exit 2 means the linter's own self-test failed and its result cannot be trusted. Route the specific failure back to whoever wrote the file, fix it, and re-run until it exits 0. Do not proceed to code-reviewer on a FAIL: a malformed `description` is the routing contract itself, so an agent or skill that fails this check may be undispatchable or mis-routed no matter how good its body is, and a code-reviewer PASS on it means nothing.
 
-   **Skip only when neither `agents/` nor `skills/` appears in the changeset**, and say so explicitly rather than silently.
+   **Skip only when none of `agents/`, `skills/`, `references/`, `CLAUDE.md` or `docs/CLAUDE.template.md` appears in the changeset**, and say so explicitly rather than silently.
 
    > **Why this is a step rather than a suggestion.** The batch-write cut shipped `skills/devops-azure/SKILL.md` with a description of 1346 characters against a 1024 limit, through code-reviewer, security-reviewer, test-engineer, and merge-reviewer's gate, into two pushed commits. The check that catches it existed the whole time and took one command; nothing in the pipeline ran it. A mechanical check catches a class of defect that careful prose review demonstrably does not.
 

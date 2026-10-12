@@ -234,6 +234,8 @@ Vague description to avoid:
 
 Project-level agents take precedence over user-level agents with the same name. This lets you tune an agent's behavior for a specific codebase without affecting other projects.
 
+The pack's own installer can target either place: `bash install.sh` installs to `~/.claude` (user scope), and `bash install.sh --scope project` installs to `<project>/.claude`, to be committed with the project. It refuses to install into a second scope, because skills resolve user-over-project -- the opposite of agents -- so two copies would answer to different names depending on the lookup. The README's "Install scope" section has the flags, the detection rules, and the whole-directory skill replacement behaviour.
+
 ### Minimum frontmatter
 
 ```yaml
