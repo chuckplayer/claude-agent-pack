@@ -116,7 +116,7 @@ constraint that caused it and the pattern that prevents its return, and both out
 worked example: its bug is fixed, but it also documents that `set -euo pipefail` plus a bare `read`
 at EOF aborts a script — a permanent constraint over every script in `scripts/` — and the
 `prompt`/`ASSUME_DEFAULTS` pattern any new prompt must follow or the bug returns. Skipping it would
-bury live guidance in a repo whose own `CLAUDE.md` records regressions of bugs already fixed once.
+bury live guidance in a repo whose own contributor rules (this pack's `docs/pack-development.md`) record regressions of bugs already fixed once.
 
 If a `resolved` file genuinely holds nothing but history, set it to `archived` instead. Reach for
 `resolved` when the fix is worth recording *and* the surrounding constraint still binds.

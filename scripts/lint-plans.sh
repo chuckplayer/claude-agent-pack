@@ -7,8 +7,8 @@ set -euo pipefail
 #
 # Takes explicit paths ONLY. It never globs a plan directory, because plan
 # consumption in this pack is opt-in per invocation: a glob would let one run
-# validate — and report on — a plan belonging to unrelated work. See CLAUDE.md
-# "Consumption is opt-in per invocation".
+# validate — and report on — a plan belonging to unrelated work. See
+# references/orchestration-rules.md, "Plan spine", "Consumption is opt-in per invocation".
 #
 # Checks structure, never truth. It cannot know whether a bar's evidence proves
 # anything or whether a stated cost is accurate; those are a reader's job, and

@@ -14,15 +14,15 @@ After running the installer, do these three steps in each project where you want
 
 ```powershell
 # Windows
-Copy-Item "$env:USERPROFILE\.claude\skills\claude-agent-pack\CLAUDE.md" ".\CLAUDE.md"
+Copy-Item "$env:USERPROFILE\.claude\skills\claude-agent-pack\docs\CLAUDE.template.md" ".\CLAUDE.md"
 ```
 
 ```bash
 # macOS
-cp ~/.claude/skills/claude-agent-pack/CLAUDE.md ./CLAUDE.md
+cp ~/.claude/skills/claude-agent-pack/docs/CLAUDE.template.md ./CLAUDE.md
 ```
 
-Without this file, the orchestration rules do not exist. Agents will run, but without routing, memory, or convention rules.
+Copy `docs/CLAUDE.template.md`, not the pack repository's own `CLAUDE.md` -- that one adds pack-development gates a consuming project does not have. `/setup-project` does this copy for you. Without this file, the orchestration rules do not exist. Agents will run, but without routing, memory, or convention rules. The template keeps the rules every dispatch needs and points to longer rules the pack installs under `agent-pack/references/`, which are read only when a task reaches them.
 
 **Step 2: Copy the memory scaffold and commit it**
 

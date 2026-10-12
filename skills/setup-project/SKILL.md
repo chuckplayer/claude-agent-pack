@@ -1,6 +1,6 @@
 ---
 name: setup-project
-description: "Scaffolds a project with the Claude Agent Pack structure: copies CLAUDE.md, docs/CONVENTIONS.md (from template), docs/MEMORY-WRITING.md, and creates the memory/ subdirectories. Runs scripts/setup-project.sh and guides the user through next steps. Trigger this when someone says: set up this project, initialize the agent pack, scaffold the project structure, add Claude Agent Pack to this repo, new project setup, onboard this repo. Do NOT use to verify an existing installation — use /system-check instead."
+description: "Scaffolds a project with the Claude Agent Pack structure: copies CLAUDE.md (the consumer block, from docs/CLAUDE.template.md), docs/CONVENTIONS.md (from template), docs/MEMORY-WRITING.md, and creates the memory/ subdirectories. Runs scripts/setup-project.sh and guides the user through next steps. Trigger this when someone says: set up this project, initialize the agent pack, scaffold the project structure, add Claude Agent Pack to this repo, new project setup, onboard this repo. Do NOT use to verify an existing installation — use /system-check instead."
 ---
 
 # Setup Project
@@ -27,7 +27,7 @@ Capture the full output.
 
 | Line | Meaning |
 |------|---------|
-| `[ok] CLAUDE.md` | Copied successfully (overwrites any existing file) |
+| `[ok] CLAUDE.md  (from docs/CLAUDE.template.md)` | Consumer block copied (overwrites any existing file). Its long-form rules are read on demand from the pack's installed `agent-pack/references/` -- if that directory is missing, run the pack's `install.sh` |
 | `[ok] docs/CONVENTIONS.md  (from template)` | Template copied — needs to be filled in |
 | `[--] docs/CONVENTIONS.md already exists, skipped` | Existing file preserved — no action needed |
 | `[ok] docs/MEMORY-WRITING.md` | Copied successfully |
@@ -56,6 +56,6 @@ All follow-up skills are optional. None blocks the others.
 ## Gotchas
 
 - **Script not found:** If `scripts/setup-project.sh` cannot be located, ask the user where they cloned the agent pack. Do not attempt to recreate the script manually — the script has specific file content and permissions that are not reproducible from memory.
-- **Running setup on a non-empty project:** The script preserves existing files (e.g., `docs/CONVENTIONS.md already exists, skipped`). This is intentional — existing content is not overwritten. Confirm with the user if they expected a file to be replaced.
+- **Running setup on a non-empty project:** The script preserves an existing `docs/CONVENTIONS.md` (`already exists, skipped`) but **overwrites `CLAUDE.md` and `docs/MEMORY-WRITING.md`** every run, so a customised `CLAUDE.md` is replaced by the template. Confirm with the user before running it on a project whose `CLAUDE.md` they have edited.
 - **Forgetting to commit the scaffolding:** The scaffolded files (CLAUDE.md, docs/, memory/) are meaningless until committed. Always suggest the commit command in step 5.1 before moving to follow-up skills.
 - **Target directory confusion:** If the user's working directory and the target project directory differ (e.g., they want to set up a sibling repo), confirm the target path explicitly before running the script.

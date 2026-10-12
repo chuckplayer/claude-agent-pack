@@ -59,6 +59,9 @@ bash scripts/lint-plans.sh docs/plans/<plan-id>.md
   style question; `agents/merge-reviewer.md` documents that reasoning in full.
 - **Pass only the plan this run produced.** The script never globs the plan directory, for the same
   reason consumption is opt-in: a glob would validate and report on a plan belonging to unrelated work.
+  The long-form plan-spine rules are in `{{AGENT_PACK_REFS}}/orchestration-rules.md` ("Plan spine");
+  if that path is relative, prefix it with the project root. Read it only if a rule here is unclear --
+  nothing in this step depends on it, so an unreadable file is not a reason to stop.
 - On a machine where `bash` is not on the shell's PATH, use the Bash tool rather than skipping the
   step — the same rule `/implement` step 5c applies to `scripts/lint-agents.sh`.
 

@@ -8,6 +8,9 @@ description: "Orchestrates the full agent-pack pipeline for a task: git-engineer
 Run the full agent pipeline for the task the user described:
 
 0. **Work-item mode — resolve and read an Azure DevOps item. Opt-in, and it performs no writes.**
+   The long-form rules for when this mode runs and who performs each write are in
+   `{{AGENT_PACK_REFS}}/orchestration-rules.md` ("Work-item mode"); if that path is relative, prefix it
+   with the project root. Read it only when the mode is running and a rule below is unclear.
 
    **This step runs only when a work item id is available**, from one of two channels:
    - a **work item id** passed with the invocation, or

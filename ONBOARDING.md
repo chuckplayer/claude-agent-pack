@@ -38,7 +38,7 @@ Top MCP Servers:
 
 ## Team Tips
 
-- `CLAUDE.md` is the source of truth for how Claude routes work to agents — skim it before your first real task.
+- `CLAUDE.md` (it imports `docs/CLAUDE.template.md`, the rules every project gets) is the source of truth for how Claude routes work to agents — skim both before your first real task.
 - Reach for `/implement` when a change spans multiple files or layers; edit directly for one-liners.
 - Run `/system-check` after cloning to confirm the pack installed cleanly, and `/repo-map` early so the codebase map is fresh.
 
