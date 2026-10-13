@@ -26,10 +26,12 @@ can.
 
 Resolve `spec_dir` from the `- **Spec directory:**` key in `docs/CONVENTIONS.md`, defaulting to
 `docs/specs`, treating an unfilled `[e.g., ...]` value as unset. Then guard the value as an action
-rather than a principle: **open `agents/tech-lead.md` now and apply its plan-directory rejection table
-to the resolved value.** Apply **only** that table — **not** its Naming/collision-suffix section.
+rather than a principle: **open `{{AGENT_PACK_REFS}}/plan-directory-guard.md` now and apply its
+rejection table to the resolved value** (if that path is relative, prefix it with the project root). That
+file holds the rejection conditions only; it has no naming rules, so there is nothing to exclude.
 **Do not reproduce its rows here**: a second copy goes stale the first time the table grows a row.
-**Fail closed** to `docs/specs` if that file cannot be read.
+**Fail closed** to `docs/specs` if that file cannot be read — ignore the configured value, use the
+default, and say so out loud, so a configured directory that was bypassed is not discovered later.
 
 The tree is `<spec_dir>/<feature>.backlog.md`, where `<feature>` comes from **the spec's own
 `feature:` frontmatter** — never re-proposed. A second slug for one feature is the failure the spec's

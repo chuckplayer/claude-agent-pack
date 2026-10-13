@@ -15,9 +15,11 @@ echo "Claude Agent Pack -- Project Setup"
 echo "Target: $TARGET"
 echo ""
 
-# CLAUDE.md
-cp "$PACK_DIR/CLAUDE.md" "$TARGET/CLAUDE.md"
-echo "  [ok] CLAUDE.md"
+# CLAUDE.md -- the consumer block, not this repository's own CLAUDE.md (which adds pack-development
+# gates a consuming project does not have). Its long-form rules are read on demand from the pack's
+# installed references (run install.sh if they are missing).
+cp "$PACK_DIR/docs/CLAUDE.template.md" "$TARGET/CLAUDE.md"
+echo "  [ok] CLAUDE.md  (from docs/CLAUDE.template.md)"
 
 # docs/
 mkdir -p "$TARGET/docs"
@@ -41,6 +43,17 @@ for subdir in decisions architecture context known-issues; do
     touch "$TARGET/memory/$subdir/.gitkeep"
     echo "  [ok] memory/$subdir/"
 done
+
+# The CLAUDE.md block points at long-form rules the pack installs. A missing install leaves that
+# pointer dangling without any other symptom, so say so. A warning, not a failure: the scaffolding
+# itself is complete, and the pack may be installed after.
+if [ ! -f "$TARGET/.claude/agent-pack/references/orchestration-rules.md" ] \
+   && [ ! -f "$HOME/.claude/agent-pack/references/orchestration-rules.md" ]; then
+    echo ""
+    echo "  [!!] The pack's long-form rules (agent-pack/references/) are not installed, so the"
+    echo "       pointer in CLAUDE.md will not resolve. Run: bash \"$PACK_DIR/install.sh\""
+    echo "       (add --scope project --project-dir <this project> to install into the project)"
+fi
 
 echo ""
 echo "Done. Suggested next steps:"

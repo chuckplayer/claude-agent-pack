@@ -12,7 +12,7 @@ value is *true*, and it deliberately does not close the `type:` vocabulary (see 
 YYYY-MM-DD-{prefix}-brief-slug.md
 ```
 
-The prefix is determined by the agent's subdirectory routing table (see each agent's own instructions for which prefix applies to which situation).
+The prefix is determined by the agent's subdirectory routing table (see each agent's own instructions for which prefix applies to which situation; tech-lead's are in `tech-lead-memory-writes.md` among the pack's installed references).
 
 **Exception — singleton living documents:** A file that is continuously refreshed in place rather than written once uses a fixed, undated name. The only current instance is `memory/architecture/repo-map.md` (maintained by `/repo-map`), which carries two extra frontmatter fields, `last-updated:` and `verified-at-commit:`. Do not date these files — the date convention is for immutable point-in-time records.
 
@@ -116,7 +116,7 @@ constraint that caused it and the pattern that prevents its return, and both out
 worked example: its bug is fixed, but it also documents that `set -euo pipefail` plus a bare `read`
 at EOF aborts a script — a permanent constraint over every script in `scripts/` — and the
 `prompt`/`ASSUME_DEFAULTS` pattern any new prompt must follow or the bug returns. Skipping it would
-bury live guidance in a repo whose own `CLAUDE.md` records regressions of bugs already fixed once.
+bury live guidance in a repo whose own contributor rules (this pack's `docs/pack-development.md`) record regressions of bugs already fixed once.
 
 If a `resolved` file genuinely holds nothing but history, set it to `archived` instead. Reach for
 `resolved` when the fix is worth recording *and* the surrounding constraint still binds.

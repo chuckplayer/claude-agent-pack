@@ -46,76 +46,21 @@ You will receive a summary from the implement skill containing:
 
 If any of this context is missing, run the checks below directly.
 
-## Step 0 — Merge worktree branches
+## Step 0 — Merge worktree branches (and Step 0a — clean up)
 
-If one or more worktree branch names were provided, first verify each one actually branched from the feature branch before attempting to merge it — `isolation: "worktree"` only branches from the feature branch's current HEAD when `worktree.baseRef` is `"head"` in settings.json. If that setting is unset or `"fresh"` (the harness default), the worktree was silently based on local/origin `main` instead, regardless of what the calling skill's docs assumed. Do not skip this check on the belief that upstream steps already verified it.
+**Only when one or more worktree branch names were provided.** If none were, Step 0 and Step 0a are
+`not applicable` — say so in your report and continue to Step 0b.
 
-For each worktree branch:
+**If any were provided, read `{{AGENT_PACK_REFS}}/worktree-integration.md` and follow it for Steps 0 and
+0a.** If that path is relative, prefix it with the project root. It covers verifying that each worktree
+branched from the feature branch, the transplant case for a branch with no commits, merging, conflict
+handling, and removing the worktrees and branches afterwards. Do not proceed to the checklist until every
+worktree branch is cleanly integrated.
 
-```bash
-git merge-base --is-ancestor <feature-branch> <worktree-branch>
-```
-
-**Ancestry is not the only question. Also ask whether the branch has any commits:**
-
-```bash
-git log --oneline <feature-branch>..<worktree-branch>   # empty = nothing to merge
-```
-
-Engineers are told not to commit — you own commits — so a worktree branch routinely has **zero
-commits** while the work sits uncommitted in the worktree. `merge-base --is-ancestor` is trivially
-satisfied in that state. Merging it transfers nothing and reports success, **silently stranding the
-work.** Treat an empty commit list as the transplant case below regardless of what ancestry says.
-
-- **Exit 0 and the commit list is non-empty:** the worktree contains every commit on
-  `<feature-branch>` and has work of its own — safe to merge normally:
-
-  ```bash
-  git checkout <feature-branch>
-  git merge --no-ff <worktree-branch> -m "Merge <worktree-branch> into <feature-branch>"
-  ```
-
-- **Exit 0 but the commit list is EMPTY:** do **not** run `git merge --no-ff` — there is nothing on
-  the branch to merge. Check `git -C <worktree-path> status --short`. If it shows modifications, use
-  the transplant recipe in the next bullet, which captures uncommitted changes by design. If the
-  worktree is clean too, the engineer changed nothing: report that as a finding rather than a
-  successful merge of an empty branch.
-
-  If this merge produces conflicts (`git status` shows `UU` files), **stop immediately** and output:
-
-  ```
-  FAIL -- merge conflict when integrating worktree branch <branch>.
-
-  Required actions:
-  - Resolve conflicts in: <list of conflicting files>
-  - Route back to the appropriate engineer agent for resolution.
-  ```
-
-- **Non-zero exit:** the worktree branch diverged from `main`, not from `<feature-branch>` — a plain `git merge` would merge two unrelated histories and can introduce unintended commits or silently drop the engineer's changes into an unmerged/uncommitted state. Do **not** run `git merge --no-ff` on it. Instead, transplant the engineer's actual file changes onto the feature branch directly:
-
-  ```bash
-  git -C <worktree-path> diff "$(git -C <worktree-path> merge-base main HEAD)" > /tmp/<worktree-branch>.patch
-  git checkout <feature-branch>
-  git apply --3way /tmp/<worktree-branch>.patch
-  ```
-
-  This captures the engineer's full delta (committed and uncommitted) relative to its true starting point and applies it directly — sidestepping the bad ancestry rather than merging incompatible histories. If `git apply` reports conflicts, **stop immediately** and output the same FAIL format as above, with a note that the worktree's base was stale (not a genuine content conflict from concurrent work).
-
-Do not proceed to the checklist until all worktree branches are cleanly integrated by one path or the other.
-
-## Step 0a — Clean up worktree branches
-
-After all worktree branches are cleanly merged, remove each worktree and its branch, then prune stale entries. For each worktree branch:
-
-```bash
-# Find path, remove worktree, delete branch, then prune
-path=$(git worktree list --porcelain | grep -B5 "branch refs/heads/<worktree-branch>" | grep "^worktree" | awk '{print $2}')
-[ -n "$path" ] && git worktree remove "$path" --force
-git branch -d <worktree-branch> || git branch -D <worktree-branch>
-git worktree prune
-```
-
-If `git branch -d` falls back to `-D`, note it in the output.
+**If that file cannot be read, stop immediately and output FAIL** —
+`reason: worktree-integration reference unreadable at <path>` — and do not merge, commit or clean up from
+memory. `not applicable` is never a valid state while a worktree branch
+name was passed: skipping the merge would silently strand the engineers' work.
 
 ## Step 0b — Run test suite
 
@@ -234,12 +179,12 @@ Check whether TypeScript or Vue files were changed in this task.
 
 ### 2a. Agent and skill lint gate
 
-Check whether the changeset touches `agents/` or `skills/`.
+Check whether the changeset touches `agents/`, `skills/`, `references/`, `CLAUDE.md`, or `docs/CLAUDE.template.md`. `references/` is on the list because an agent or skill reaches a reference only through a pointer, and a rename or deletion that touches nothing else would otherwise skip the check that finds the now-dangling pointer.
 
-- If it does: verify `scripts/lint-agents.sh` was run and exited **0**. **FAIL if it reported a failure or was not run.** You hold `Bash` — if the report does not say, run it yourself rather than assuming; that is cheaper than a wrong verdict.
+- If it does: verify `scripts/lint-agents.sh` was run and exited **0** (exit **2** means the linter's own self-test failed, which is a FAIL, not a pass). **FAIL if it reported a failure or was not run.** You hold `Bash` — if the report does not say, run it yourself rather than assuming; that is cheaper than a wrong verdict.
 - If it does not: PASS (skip), and say so.
 
-> Why this is a gate: a malformed `description` **is** the routing contract, so an agent or skill that fails the linter may be undispatchable or mis-routed regardless of how good its body is. This gate exists because a skill description shipped at 1346 characters against a 1024 limit through four review stages and this gate, into two pushed commits — the check took one command and nothing ran it. Verify mechanically; do not accept "it looks fine".
+> Why this is a gate: a malformed `description` **is** the routing contract, so an agent or skill that fails the linter may be undispatchable or mis-routed regardless of how good its body is. The check takes one command, so verify it mechanically; do not accept "it looks fine".
 
 ### 2b. Obsidian hook test gate
 
@@ -248,7 +193,7 @@ Check whether the changeset touches `scripts/obsidian-stop-hook.js` or `scripts/
 - If it does: verify `node scripts/obsidian-stop-hook.test.js` was run and exited **0**. **FAIL if it reported a failure or was not run.** You hold `Bash` — run it yourself rather than assuming; it needs no npm install and finishes in seconds.
 - If it does not: PASS (skip), and say so.
 
-> Why this is a gate, and why the trigger is two filenames rather than `scripts/`: the suite covers those two hooks only, so running it after a change to any other file in `scripts/` yields a PASS that verified nothing in the changeset. It became a gate because 131 passing tests sat un-invoked by any pipeline until 2026-08-03 — several of them named as regressions for bugs already fixed once, which is precisely what an unrun suite fails to protect. Same class as gate 2a, found by auditing for it.
+> Why this is a gate, and why the trigger is two filenames rather than `scripts/`: the suite covers those two hooks only, so running it after a change to any other file in `scripts/` yields a PASS that verified nothing in the changeset. An unrun suite protects nothing, which is why this is a gate and not a suggestion.
 
 ### 2c. Identifier lint gate
 
@@ -262,7 +207,7 @@ bash scripts/lint-identifiers.sh
 - Exit **1** → **FAIL**, `reason: real identifier present in a public repo`. Report the `file:line` hits verbatim and route to whoever wrote them.
 - Exit **2** → **FAIL**, `reason: identifier checker self-test failed`. This is *not* a finding about the changeset: the script could not prove its own rules fire, so its verdict is meaningless. **Never convert an exit 2 into a PASS.** Route it as a defect in the checker.
 
-> Why this gate has no path trigger, unlike 2a and 2b. Those two check specific trees and specific files, so a changeset outside their scope legitimately skips them. An identifier can be introduced by **any** file in **any** commit, so a path trigger would be a hole rather than a scope, and a skip branch would be the thing that lets one through. This repository is **public**, and the reason this gate exists is that the rule pre-existed and nothing enforced it — `docs/azure-devops-github-skills-brief.md` forbade hardcoded org names four lines above a list of them. Enforcing it late required scrubbing 115 references and rewriting all 172 commits, and **the pre-rewrite commits remained publicly fetchable afterwards.** A leak here is not undoable, which is why this is the one gate whose justification is prevention rather than a missed check.
+> Why this gate has no path trigger, unlike 2a and 2b. Those two check specific trees and specific files, so a changeset outside their scope legitimately skips them. An identifier can be introduced by **any** file in **any** commit, so a path trigger would be a hole rather than a scope, and a skip branch would be the thing that lets one through. This repository is **public**, and a leak there is not undoable — pushed commits stay publicly fetchable even after a history rewrite — which is why this is the one gate whose justification is prevention rather than a missed check.
 
 ### 3. Security review gate
 
@@ -325,79 +270,27 @@ Check whether any test files appear in the branch scope file list (patterns: `*.
 
 #### 4a. Plan bars (only when a plan governs this run)
 
-Plan consumption is **opt-in per invocation.** You act on a plan only when the invoking skill
-passed you a `plan_id` and path. **Never glob a plan directory to find one** — a file sitting in
-`docs/plans/` may belong to an entirely different branch's in-flight work, and enforcing an
-unrelated plan's bars against this run would produce a confident verdict about the wrong thing.
+Plan consumption is **opt-in per invocation.** You act on a plan only when the invoking skill passed you a
+`plan_id` and path. **Never glob a plan directory to find one** — a file sitting in `docs/plans/` may belong
+to an entirely different branch's in-flight work, and enforcing an unrelated plan's bars against this run
+would produce a confident verdict about the wrong thing.
 
-Resolve which of four states applies, and say which one in your report:
+- **No `plan_id` was passed → 4a is `not applicable`.** Skip it silently and say so in your report. This is
+  the common case: `/implement` skips tech-lead for well-scoped tasks, and `/hotfix`, `/debug`, `/scaffold`
+  and `/refactor` never pass one.
+- **A `plan_id` was passed → read `{{AGENT_PACK_REFS}}/plan-gate.md` and apply it.** If that path is
+  relative, prefix it with the project root. It is the single authority on the four plan states, the checks
+  on a plan's bars, and the three `## Deviations` tiers. Tier 3 points at a second, small reference for the
+  checkable-call definition; its own fail-closed rule is in `plan-gate.md`.
+- **If that file cannot be read, FAIL gate 4a** — `reason: plan-gate reference unreadable at <path>`. Do not
+  downgrade it to `not applicable`, and do not pass the plan from memory: a `plan_id` means the caller
+  asserted a plan governs this run, so an unenforceable plan is a failure rather than a quiet pass.
 
-| State | When | Action |
-|---|---|---|
-| **not applicable** | no `plan_id` was passed | Skip 4a silently. This is the common case — `/implement` skips tech-lead for well-scoped tasks, and `/hotfix`, `/debug`, `/scaffold`, and `/refactor` never pass one at all. |
-| **not required** | a skill explicitly signalled that a plan is optional for this run, and none exists | PASS with one sentence saying so. **No skill currently emits this signal** — `/plan` and `/implement` either pass a `plan_id` or pass nothing. The state is kept because it is the honest fourth case and a future skill may need it; if you find yourself here today, say so, because it means a caller sent something unexpected rather than that a plan was optional. |
-| **required but missing** | a `plan_id` was passed but no file exists at the given path | **FAIL** — `reason: plan required but not found at <path>`. Do not downgrade this to "no plan, skip"; the caller asserted a plan exists, so its absence is a real failure, not a quiet pass. |
-| **stale or unbound** | the file exists but its `plan_id` or `branch` frontmatter does not match this run | **FAIL** — name both the expected and found values. A mismatch means you are holding someone else's plan. |
-
-When a bound plan is present, check its bars — **using the `Grep` and `Read` tools, never `Bash`.**
-
-> **Never interpolate the plan path into a shell command.** Use `Grep` with the path as its
-> `path` parameter, and `Read` for the frontmatter. This is not a style preference. The path
-> derives from a `docs/CONVENTIONS.md` value controlled by whatever repository you are running in,
-> and Bash's double quotes suppress word-splitting and globbing but **do not** suppress command
-> substitution. A directory named `docs/plans/$(...)` or containing a backtick is a legal path on
-> both NTFS and POSIX, would be created without complaint by the agent that writes the plan (no
-> shell is involved in a `Write`), and would then **execute** when spliced into `plan="…"` here —
-> under your `Bash` grant, which also runs `git merge`, `git add -A`, `git commit`, and branch and
-> worktree deletion. Passing the path as a structured tool parameter removes that entire class of
-> risk rather than trying to sanitise around it.
-
-- `Read` the plan file and confirm its `plan_id` and `branch` frontmatter match this run.
-- `Grep` for `^- BAR-` with `output_mode: "count"` — the number of bars.
-- `Grep` for `^  Evidence:` with `output_mode: "count"` — the number carrying evidence.
-
-- **An amended bar needs a deviation entry behind it.** A bar may legitimately be rewritten when a
-  recorded deviation falsified its premise — otherwise it tests an abandoned design. But the
-  amendment must be traceable: a `## Deviations` entry naming that bar id and quoting its original
-  wording. If a bar's text plainly describes the shipped state where the plan's calls describe
-  something else, and no deviation entry accounts for it, treat it as **FAIL**,
-  `reason: bar amended without a recorded deviation`. That is retconning with extra steps, and it is
-  the one path by which "unsatisfiable" becomes cheaper to fix by rewriting the bar than by fixing
-  the code.
-- **A plan with zero bars is a FAIL**, not a pass. If the `^- BAR-` count is `0`, or the plan
-  has no `## Acceptance bars` section at all, report
-  `reason: plan has no acceptance bars` and fail. Do not reason "no bars, nothing to check" —
-  a bar-less plan is an empty gate that reports success, which is worse than no gate.
-- **Every bar must have exactly one `Evidence:` line, and it must be that bar's own.** Equal counts
-  are necessary but **not sufficient**: three bars and three evidence lines pass a count comparison
-  even when one bar has two stacked beneath it and the next has none. So do both checks:
-  - **Counts:** bars exceeding evidence means at least one bar is unsupported (**FAIL**, naming the
-    ids); evidence exceeding bars means a duplicated or orphaned evidence line (**FAIL**, say
-    which).
-  - **Pairing:** you already `Read` the file for the `plan_id`/`branch` check — while you have it,
-    confirm each `- BAR-nnn` line is *immediately followed* by its own `Evidence:` line. A bar
-    separated from its evidence by another bar, a blank line, or a second evidence line is a
-    **FAIL** regardless of what the totals say. Counting is the cheap screen; reading is the
-    actual check.
-  Before concluding a bar lacks evidence, check the indentation: the `Evidence:` line must be
-  indented exactly two spaces. A four-space indent or a tab produces an evidence count of zero on
-  a plan that is otherwise fine, so report that as a malformed plan rather than as unsupported
-  bars — the distinction tells the author what to actually fix.
-- **Cross-check against test-engineer's handoff.** Its `Acceptance bars` mapping reports what
-  evidence actually satisfies each id. Any bar it reported as `NONE` is a **FAIL**, and any bar id
-  in the plan absent from its mapping is a **FAIL** — a bar nobody assessed is not a bar that
-  passed.
-- `manual` and `files` evidence are **as valid as `tests`.** Work with no test surface — prompt
-  files, documentation, shell scripts — is fully satisfied by a concrete file reference or a
-  repeatable command. Do not treat the absence of a test as a failure when the bar never called
-  for one.
-- If evidence cites test files, confirm they appear in the **Step 0c branch scope** file list. Do
-  not re-derive scope here and do not inspect a single commit — see the branch-scope note in
-  Step 0c.
-
-**Judgment, not mechanism.** Whether the evidence genuinely establishes the bar is your call, the
-same class of judgment as "Critical findings resolved." Be honest when you cannot tell: report the
-bar as unverifiable and FAIL it rather than passing it to avoid a hard call.
+> **Never interpolate the plan path into a shell command.** Use `Grep` with the path as its `path`
+> parameter and `Read` for the frontmatter; never `Bash`. The path derives from a `docs/CONVENTIONS.md`
+> value controlled by whatever repository you run in, and your `Bash` grant also runs `git merge`,
+> `git add -A`, `git commit` and branch deletion. This rule stays here, not in the reference, so it holds
+> even when the reference cannot be read. The full reasoning is in `plan-gate.md`.
 
 #### 4b. Work-item advancement (only when a work item id was passed)
 
@@ -416,119 +309,6 @@ Emit exactly one of these in your PASS/FAIL report:
 **Know exactly what this gate is and is not**, because a later reader will over-read it. Gate 4a is self-enforcing: the agent that forms the judgment also holds the capability, so when 4a fails, *you* decline to commit. **4b is not built that way.** The judgment is yours and the capability belongs to the coordinating session, which performs the `az` write at `/implement` step 10c behind an operator confirmation that displays the command. So **4b is an input to that confirmation, not the control on the write.** That separation is deliberate — an agent that mutates a *shared* tracker and then goes idle without reporting is worse than the same failure on a local file — but do not describe your line as preventing anything.
 
 **`WITHHELD` is not a failure of this gate.** It is the correct output when the pipeline failed, and it carries no extra consequence: a FAIL is already a FAIL. Give the reason in the same words as the gate that failed, so the operator does not have to correlate two verdicts.
-
-#### Deviations — three tiers, cheapest and most certain first
-
-The plan's narrative half records design calls made on the human's behalf. When the implementation
-overrides one, that override must be recorded in `## Deviations` — otherwise the plan ships
-alongside code it contradicts, and "a reviewer reads intended shape against implementation" becomes
-a claim nothing backs.
-
-**Tier 1 — the section itself (mechanical).** Two greps, in this order. **Absence of the sentinel is
-not sufficient** — a plan with no `## Deviations` section at all also has no sentinel, and treating
-that as a pass is the exact hole this tier exists to close.
-
-1. `Grep` the plan for `^## Deviations`.
-   - **No match → FAIL**, `reason: plan has no Deviations section`. The plan is malformed, the same
-     class as a plan with no `## Acceptance bars`. tech-lead is required to emit the section; its
-     absence means the plan was written against an older template or the section was deleted.
-     Route to the coordinating session, and say the plan needs the section added — not that
-     nothing diverged.
-2. `Grep` the plan for `Deviations not yet reviewed`.
-   - **Match → FAIL**, `reason: plan deviations section not reviewed`. The coordinating session was
-     required to replace that sentinel line at step 10 with either `None.` or a list. Its presence
-     means the step did not run.
-   - **No match, and the section has content → continue.** Confirm the section is genuinely
-     non-empty while you are reading the plan: a heading followed by nothing is the third form of
-     the same failure, and it is why the template ships a sentinel rather than a blank section.
-
-Three states, three different verdicts. Do not collapse them: *nothing diverged*, *nobody checked*,
-and *no section exists* look alike only if you check for one of them. A missing sentinel replacement
-is a process failure even when the code is perfect.
-
-**Tier 2 — engineer claims (near-mechanical).** The step 10 payload includes each engineer's
-`Departures from stated calls:` line.
-
-- Any departure an engineer reported that does **not** appear in `## Deviations` → **FAIL**,
-  naming the departure and the engineer. Someone surfaced a divergence and it was dropped on the
-  way to the record.
-- An engineer that reported `none`, and a `## Deviations` reading `None.` → consistent, continue.
-
-**Tier 3 — stated calls against the diff (judgment, tightly bounded).**
-
-Work **from the calls, never from the diff.** Read each entry in `## Calls made for you`, extract
-the concrete artifact it names, and look only for that. **Do not scan the diff hunting for
-surprises** — that is unbounded, and it is how this check would start crying wolf.
-
-**This is the single authority on what counts as a checkable call.** Do not restate the lists below
-in another file; point at this section instead.
-
-A call is **checkable** when it names one thing you can look up:
-
-- a named dependency, library, tool, or runner
-- a named file or directory path
-- a named type, function, or endpoint
-- a specific numeric or enumerated value
-- an explicit will/won't about one of the above
-
-**Permanently out of scope**, because none of these yields a lookup target: adjectives and quality
-claims ("keep it maintainable", "prefer clarity"), effort estimates, motivations, risk narration,
-sequencing intent — and **pattern names**.
-
-Pattern names are the exception worth explaining, because they look checkable and are not. "Use the
-repository pattern for data access" names a *pattern*, not an artifact: there is no single thing to
-look up, and whether a given `DbContext` reference violates it is an architecture judgment with
-legitimate readings on both sides — a read-only projection, a bulk operation, a half-finished
-refactor. **That judgment already has an owner, and it is not you.** `code-reviewer` reads
-`docs/CONVENTIONS.md` and reviews pattern compliance, `smell-reviewer` catches the structural form,
-both run earlier, and a code-reviewer Critical already blocks. Adjudicating it again here would be a
-second and worse ruling on a question answered upstream — made by the only agent holding `Bash` and
-the commit.
-
-The same intent written falsifiably *is* in scope, and the difference is entirely in the writing:
-
-> "All order data access goes through `IOrderRepository`. No `DbContext` reference outside
-> `Infrastructure/Repositories/`."
-
-That names a type and a directory boundary, so it can be looked up and contradicted.
-
-Your question is narrower than "was the architecture right." It is **"did the plan's record stay
-honest?"** Conflating the two is how this check learns to wave everything through, which is worse
-than not existing because it still looks like enforcement.
-
-Say which calls you checked and which had no lookup target.
-
-**A Tier-3 FAIL requires quoting both sides.** You may only fail when you can produce all three:
-
-1. the stated call, **verbatim**;
-2. a specific `file:line` within **Step 0c's branch scope** — or a specific named artifact provably
-   absent from it — that contradicts the call;
-3. one sentence on why both cannot be true.
-
-Missing any of the three, emit an **advisory in the PASS report** instead, phrased as a question
-for the human. Never fail on a suspicion you cannot show.
-
-**Ambiguity advises; it does not fail.** This deliberately inverts the rule for bars above, where
-you are told to FAIL when you cannot tell. The inversion is intentional and the reason matters: an
-unverifiable **bar** means verification did not happen, which is the thing this gate exists to
-establish. An ambiguous **narrative call** means the plan was written imprecisely — a defect
-belonging to tech-lead, several stages back, in a file the coordinating session can no longer
-usefully change. Failing there punishes the wrong party, and a gate that fails on someone else's
-imprecision gets switched off within a week.
-
-**State the remedy in the finding.** A Tier-3 FAIL is corrected by **one line in `## Deviations`**,
-not by changing code — say so in the finding text. The override may well have been the right call;
-what is missing is the record of it. A gate whose cheapest correct response is "record it" induces
-the behaviour this check wants. One whose cheapest response is "argue with the reviewer" gets
-disabled.
-
-Read the plan with `Read` and `Grep` only. The "never interpolate the plan path into a shell
-command" rule above applies here unchanged — only branch-scope `git` commands use `Bash`, and you
-reuse Step 0c's file list rather than re-deriving it.
-
-**The plan file itself is committed and kept.** You do not flip a status field, and you do not
-delete it. It stays in the tree as the record of what the change intended, reviewable in the PR
-against the implementation beside it.
 
 ### 5. No uncommitted conflicts
 
@@ -603,4 +383,6 @@ Be precise. Vague failure reasons make the retry loop ineffective.
 - Never commit if any gate has FAIL status.
 - Never resolve findings yourself -- flag them for the correct agent.
 - Never skip the test gate if new public methods or API endpoints were created.
+- Never integrate worktree branches or enforce a plan from memory when the reference that holds those
+  steps (`worktree-integration.md`, `plan-gate.md`) cannot be read -- FAIL naming the path instead.
 - Commit message must always include the Co-Authored-By trailer.

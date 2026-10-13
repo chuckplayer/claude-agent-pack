@@ -26,13 +26,15 @@ from it, never hand-edited**, so a derived view cannot drift from its source.
 defaulting to `docs/specs` when the key is absent. An unfilled `[e.g., ...]` placeholder value counts
 as unset.
 
-Then guard the value, and do it as an action rather than as a principle: **open `agents/tech-lead.md`
-now and apply its plan-directory rejection table to the resolved `spec_dir`.** Apply **only** that
-table — **not** that file's Naming section, whose `-2` / `-3` collision suffixes are wrong here for
-the reason step 1's run-state table gives below. **Do not reproduce the table's rows in this file**: a
+Then guard the value, and do it as an action rather than as a principle: **open
+`{{AGENT_PACK_REFS}}/plan-directory-guard.md` now and apply its rejection table to the resolved
+`spec_dir`** (if that path is relative, prefix it with the project root). That file holds the rejection
+conditions only and has no naming rules, so it does not bring in the `-2` / `-3` collision suffixes that
+step 1's run-state table below explains are wrong here. **Do not reproduce the table's rows in this file**: a
 second copy goes stale the first time the table grows a row, and a stale copy that reads as
 authoritative is worse than a pointer. **Fail closed** — if that file cannot be read, use `docs/specs`
-rather than proceeding with an unguarded value.
+and ignore the configured value, rather than proceeding with an unguarded one, and say so out loud so a
+configured directory that was bypassed is not discovered later.
 
 **Slug.** Propose a kebab-case `<feature>` slug and confirm it **once**. Both artifacts share it:
 `<spec_dir>/<feature>.md` and `<spec_dir>/<feature>.manifest.md`.

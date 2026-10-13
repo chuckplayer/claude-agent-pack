@@ -14,15 +14,15 @@ After running the installer, do these three steps in each project where you want
 
 ```powershell
 # Windows
-Copy-Item "$env:USERPROFILE\.claude\skills\claude-agent-pack\CLAUDE.md" ".\CLAUDE.md"
+Copy-Item "$env:USERPROFILE\.claude\skills\claude-agent-pack\docs\CLAUDE.template.md" ".\CLAUDE.md"
 ```
 
 ```bash
 # macOS
-cp ~/.claude/skills/claude-agent-pack/CLAUDE.md ./CLAUDE.md
+cp ~/.claude/skills/claude-agent-pack/docs/CLAUDE.template.md ./CLAUDE.md
 ```
 
-Without this file, the orchestration rules do not exist. Agents will run, but without routing, memory, or convention rules.
+Copy `docs/CLAUDE.template.md`, not the pack repository's own `CLAUDE.md` -- that one adds pack-development gates a consuming project does not have. `/setup-project` does this copy for you. Without this file, the orchestration rules do not exist. Agents will run, but without routing, memory, or convention rules. The template keeps the rules every dispatch needs and points to longer rules the pack installs under `agent-pack/references/`, which are read only when a task reaches them.
 
 **Step 2: Copy the memory scaffold and commit it**
 
@@ -233,6 +233,8 @@ Vague description to avoid:
 - **User-level** (available in all your projects): `~/.claude/agents/` (macOS) or `$env:USERPROFILE\.claude\agents\` (Windows).
 
 Project-level agents take precedence over user-level agents with the same name. This lets you tune an agent's behavior for a specific codebase without affecting other projects.
+
+The pack's own installer can target either place: `bash install.sh` installs to `~/.claude` (user scope), and `bash install.sh --scope project` installs to `<project>/.claude`, to be committed with the project. It refuses to install into a second scope, because skills resolve user-over-project -- the opposite of agents -- so two copies would answer to different names depending on the lookup. The README's "Install scope" section has the flags, the detection rules, and the whole-directory skill replacement behaviour.
 
 ### Minimum frontmatter
 

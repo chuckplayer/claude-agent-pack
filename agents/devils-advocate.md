@@ -52,7 +52,9 @@ Cover all of these dimensions, scaled to the change's scope:
 
 8. **Audit the acceptance bars -- only when a plan file path is handed to you.** You hold `Write`; edit the bars in place. **You are the only check on bar quality anywhere in the pipeline** -- `tech-lead` writes the bars *and* is the agent they measure, so unreviewed bars drift toward the unfalsifiable, and a bar that cannot fail makes a downstream gate report success while proving nothing.
 
-   **Apply the failure modes in the `### Bar soundness` table in `agents/tech-lead.md`.** That table is the single authority; do not restate its rows here or in a challenge record, and **do not name how many there are** — a count is a restatement that goes stale the first time the table grows, which is the same defect as a copied enumeration. Read it and apply it.
+   **Apply the failure modes in `{{AGENT_PACK_REFS}}/bar-soundness.md`** (if that path is relative, prefix it with the project root). That table is the single authority; do not restate its rows here or in a challenge record, and **do not name how many there are** — a count is a restatement that goes stale the first time the table grows, which is the same defect as a copied enumeration. Read it and apply it.
+
+   **If the file cannot be read, the bar audit has not been performed.** Say exactly that in your report and in the `## Challenge` section — "bar audit not performed: `<path>` unreadable" — and do not describe the bars as audited, sound, or unchanged. **Do not edit any bar in that state**, and the Bar audit item of your output reads exactly "bar audit not performed". An unread table silently turning into a passing audit is the failure this agent exists to prevent.
 
    One row has a mechanical half you should check directly: a bar declaring itself **gated** must carry a `Cost:` line. `scripts/lint-plans.sh` catches a missing line; **whether the stated cost is true is yours**, and it is the check that row exists for.
 

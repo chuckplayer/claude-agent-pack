@@ -7,12 +7,12 @@ set -euo pipefail
 #
 # Takes explicit paths ONLY. It never globs a plan directory, because plan
 # consumption in this pack is opt-in per invocation: a glob would let one run
-# validate — and report on — a plan belonging to unrelated work. See CLAUDE.md
-# "Consumption is opt-in per invocation".
+# validate — and report on — a plan belonging to unrelated work. See
+# references/orchestration-rules.md, "Plan spine", "Consumption is opt-in per invocation".
 #
 # Checks structure, never truth. It cannot know whether a bar's evidence proves
 # anything or whether a stated cost is accurate; those are a reader's job, and
-# the bar-soundness table in agents/tech-lead.md is where that judgement lives.
+# the bar-soundness table in references/bar-soundness.md is where that judgement lives.
 
 PASS=0
 FAIL=0
@@ -261,9 +261,9 @@ for plan in "$@"; do
     # row 5 in the checker itself, and it reports the opposite of the truth on
     # the one question the sentinel exists to answer.
     #
-    # This literal is the single authority shared with agents/merge-reviewer.md
+    # This literal is the single authority shared with references/plan-gate.md
     # Tier 1, which greps the same string. Keep them identical: if tech-lead's
-    # sentinel line in agents/tech-lead.md ever changes, all three move together.
+    # sentinel line in references/plan-file-authoring.md ever changes, all three move together.
     if grep -qF "## Deviations" "$plan"; then
         case "$(deviations_state "$plan")" in
             empty)
